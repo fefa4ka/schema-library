@@ -1,0 +1,5 @@
+# skidl requires KiCad libraries
+skidl==0.0.24
+
+# libngspice need to be installed ofr PySpice
+PySpice==1.2.0

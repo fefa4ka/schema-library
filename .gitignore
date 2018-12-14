@@ -112,3 +112,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Skidl
+compose_lib_sklib.py
+compose.erc
+compose.log
+compose.net
