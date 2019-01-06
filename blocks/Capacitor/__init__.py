@@ -3,6 +3,8 @@ from skidl import Part, TEMPLATE
 
 
 class Base(Block):
+    increase = False
+    
     def parallel_sum(self, values):
         return sum(values) @ u_Ohm
 
