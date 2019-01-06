@@ -4,6 +4,7 @@ from settings import BLOCKS_PATH, DEBUG, parts
 import matplotlib.pyplot as plt
 from skidl import subcircuit, Net, Network, Part, TEMPLATE
 from copy import copy
+from PySpice.Unit import u_ms
 
 import logging
 logger = logging.getLogger(__name__)
@@ -27,8 +28,8 @@ class Build:
         self.base = base_file.exists() and importlib.import_module(BLOCKS_PATH + '.' + self.name).Base        
         
         for mod, value in kwargs.items():
+            value = str(value)
             module_file = Path(BLOCKS_PATH) / self.name / ('_' + mod) / (value + '.py')
-
             if module_file.exists():
                 Module = importlib.import_module(BLOCKS_PATH + '.' + self.name + '._' + mod + '.' + value)
                 self.models.append(Module.Modificator)
@@ -63,9 +64,10 @@ class Block:
     name = None
     mods = {}
     props = {}
-
+    
     input = None
     output = None
+    v_ref = None
     gnd = None
 
     element = None
@@ -82,29 +84,31 @@ class Block:
 
     def  __series__(self, instance):
         if self.output and instance.input:
-            print(self.output)
-            print(instance.input)
-            
             self.output += instance.input
             self.output._name = instance.input._name = f'{self.name}{instance.name}_Net'
             
             # instance.input._name = self.output._name
             
-        if self.gnd and instance.gnd:
-            self.gnd += instance.gnd
-    
+        self.connect_power_bus(instance)
+
     def __parallel__(self, instance):
         self.input += instance.input
         self.output += instance.output
-             
+        
+        self.connect_power_bus(instance)
+
+    def connect_power_bus(self, instance):
         if self.gnd and instance.gnd:
             self.gnd += instance.gnd
+        
+        if self.v_ref and instance.v_ref:
+            self.v_ref += instance.v_ref
 
     def __getitem__(self, *pin_ids, **criteria):
         return self.element.__getitem__(*pin_ids, **criteria)
 
     def __and__(self, instance):
-        # print(f'{self.title} series connect {instance.title if hasattr(instance, "title") else instance.name}')
+        print(f'{self.title} series connect {instance.title if hasattr(instance, "title") else instance.name}')
 
         if issubclass(type(instance), Block):
             self.__series__(instance)
@@ -118,9 +122,11 @@ class Block:
 
             return Network(self.input, ntwk[-1])
     
+    # def __rand__(self, instance):
+    #     return instance & self
 
     def __or__(self, instance):
-        # print(f'{self.title} parallel connect {instance.title if hasattr(instance, "title") else instance.name}')
+        print(f'{self.title} parallel connect {instance.title if hasattr(instance, "title") else instance.name}')
         if issubclass(type(instance), Block):
             self.__parallel__(instance)
 
@@ -157,24 +163,43 @@ class Block:
         return self.part
 
     @property
-    def footprint(self):
+    def available_parts(self):
+        """Available parts in stock 
+            from settings.py variable `parts`
+            filtered by Block modifications and properties.
+        
+        Returns:
+            list -- of parts with available values
+        """
+
         params = list(self.props.keys()) + list(self.mods.keys())
         values = list(self.props.values()) + list(self.mods.values())
 
-        if self.props.get('footprint', None):
-            return self.props['footprint']
-
+        available = []
+        
         for part in parts.get(self.name, []):
             for index, param in enumerate(params):
                 if part.get(param, None) and part[param] != values[index]:
                     break
             else:
-                return part['footprint']
+                available.append(part)
 
             continue
 
-        return None
+        return available
 
+
+    @property
+    def footprint(self):
+        if self.props.get('footprint', None):
+            return self.props['footprint']
+
+        block_parts = self.available_parts
+        if len(block_parts):
+            return block_parts[0]['footprint']
+
+        return None
+    
     @property
     def clone(self):
         return copy(self)
@@ -197,12 +222,7 @@ class Block:
 
     @subcircuit
     def create_network(self):
-        input = Net() 
-        output = Net() 
-        output += self.output
-        input += self.input
-
-        return [input, output]
+        return [self.input, self.output]
 
     def set_pins(self):
         self.input = self.element[1]
@@ -225,15 +245,13 @@ class Block:
         return label_prepare(input_name) + ' ⟶ ' + self.name + ' ⟶ ' + label_prepare(output_name)
 
     def log(self, message):
-        logger.info(self.title + ' - ' + message)
+        logger.info(self.title + ' - ' + str(message))
 
     def test(self):
         from skidl.pyspice import generate_netlist, node
 
         # Simulate the circuit.
         circuit = generate_netlist()  # Translate the SKiDL code into a PyCircuit Circuit object.
-        from time import sleep
-        sleep(3)
         self.simulation = circuit.simulator()  # Create a simulator for the Circuit object.
         self.node = node
 
@@ -255,7 +273,6 @@ class Block:
         
         # Graph
         plt.title(self.title)
-        
         xlabel = []
         ylabel = []
             
@@ -276,3 +293,19 @@ class Block:
         plt.legend(loc='upper right')
 
         plt.show()
+
+    def test_voltage(self, step_time=0.5 @ u_ms, end_time=200 @ u_ms):
+        self.test()
+
+        waveforms = self.simulation.transient(step_time=step_time, end_time=end_time)  # Run a transient simulation from 0 to 10 msec.
+
+        # Get the simulation data.
+        time = waveforms.time                # Time values for each point on the waveforms.
+        pulses = waveforms[self.node(self.input)]  # Voltage on the positive terminal of the pulsed voltage source.
+        
+        capacitor_voltage = waveforms[self.node(self.output)]  # Voltage on the capacitor.
+
+        self.test_plot(Time_ms=time.as_ndarray() * 1000, V_pulses=pulses.as_ndarray(), V_capacitor=capacitor_voltage.as_ndarray(),
+                       plots=[('Time_ms', 'V_pulses'), ('Time_ms', 'V_capacitor')],
+                       table=False)
+        
