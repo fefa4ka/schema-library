@@ -1,5 +1,4 @@
 from bem import Block, Build
-from copy import copy
 from settings import parts
 from skidl import Net, subcircuit
 from PySpice.Unit import u_Ohm, u_V, u_F, u_ms
@@ -39,41 +38,21 @@ class Base(Block):
         
         
         if self.R_in_value and not self.C_out_value:        
-            self.C_out_value = (Time_to_V_out / (R_in_value * log(V_in / (V_in - V_out)))) @ u_F
+            self.C_out_value = ((Time_to_V_out / (R_in_value * log(V_in / (V_in - V_out)))) @ u_F).canonise()
         
         if self.C_out_value and not self.R_in_value:
-            self.R_in_value = (Time_to_V_out / (C_out_value * log(V_in / (V_in - V_out)))) @ u_Ohm
+            self.R_in_value = ((Time_to_V_out / (C_out_value * log(V_in / (V_in - V_out)))) @ u_Ohm).canonise()
 
-        instance = copy(self)
+        instance = self.clone
         instance.input = Net("DecayInput")
         instance.output = Net("DecayOutput")
-        instance.gnd = Net("DecayGround")
+        instance.gnd = Net()
 
-        rin = R(value = self.R_in_value @ u_Ohm)
-        cout = C(value = self.C_out_value @ u_F).element
+        rin = R(value = self.R_in_value)
+        cout = C(value = self.C_out_value).element
         route = instance.input & rin \
                             & instance.output \
                     & cout['+', '-'] \
                 & instance.gnd
 
         return instance
-
-    def test(self):
-        super().test()
-
-        # dc_vals = self.simulation.dc(VS=slice(0, 5, 0.5)) 
-        # voltage = dc_vals[self.node(self.input)]       # Get the voltage applied by the positive terminal of the source.
-        # voltage_out = dc_vals[self.node(self.output)]  
-        # current = -dc_vals['VS']  # Get the current coming out of the positive terminal of the voltage source.
-        
-        waveforms = self.simulation.transient(step_time=self.Time_to_V_out / 10, end_time=self.Time_to_V_out * 10)  # Run a transient simulation from 0 to 10 msec.
-
-        # Get the simulation data.
-        time = waveforms.time                # Time values for each point on the waveforms.
-        pulses = waveforms[self.node(self.input)]    # Voltage on the positive terminal of the pulsed voltage source.
-        capacitor_voltage = waveforms[self.node(self.output)]  # Voltage on the capacitor.
-
-        self.test_plot(Time_ms=time.as_ndarray() * 1000, V_pulses=pulses.as_ndarray(), V_capacitor=capacitor_voltage.as_ndarray(),
-                       plots=[('Time_ms', 'V_pulses'), ('Time_ms', 'V_capacitor')],
-                       table=False)
-        
