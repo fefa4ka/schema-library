@@ -11,20 +11,16 @@ class Base(Block):
         if gnd:
             instance.gnd = gnd
         else:
-            if self.DEBUG:
-                from skidl.pyspice import gnd
-                instance.gnd = gnd
-            else:
-                instance.gnd = Net('Groud')
+            instance.gnd = Net()
 
         if source:
             instance.element = source
             VCC = instance.element['VCC'] if hasattr(source, 'VCC') else instance.element[1]
             GND = instance.element['GND'] if hasattr(source, 'GND') else instance.element[2]
             
-            instance.input = instance.output = VCC
+            instance.input = instance.v_ref = VCC
             instance.gnd += GND
         else:
-            instance.input = instance.output = Net('VCC')
+            instance.input = instance.v_ref = Net('VCC')
 
         return instance
