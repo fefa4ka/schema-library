@@ -1,13 +1,13 @@
 from pathlib import Path
 import importlib
 from settings import BLOCKS_PATH, DEBUG, parts
-import matplotlib.pyplot as plt
 from skidl import subcircuit, Net, Network, Part, TEMPLATE
 from copy import copy
 from PySpice.Unit import u_ms
-
+import inspect
 import logging
 logger = logging.getLogger(__name__)
+from PySpice.Unit.Unit import UnitValue
 
 def label_prepare(text):
     last_dash = text.rfind('_')
@@ -53,7 +53,7 @@ class Build:
                         'mods': self.mods,
                         'props': self.props,
                         'DEBUG': DEBUG
-                    })().create_circuit
+                    })
 
     @property
     def element(self):
@@ -61,7 +61,7 @@ class Build:
 
 
 class Block:
-    name = None
+    name = ''
     mods = {}
     props = {}
     
@@ -74,6 +74,14 @@ class Block:
     simulation = None
 
     DEBUG = False
+
+    def __init__(self, circuit=True, *args, **kwargs):
+        for prop in kwargs.keys():
+            if hasattr(self, prop):
+                setattr(self, prop, kwargs[prop])
+        
+        if circuit:
+            self.circuit()
 
     def __str__(self):
         body = [self.name]
@@ -142,6 +150,50 @@ class Block:
 
             return self
     
+    def get_description(self):
+        return [cls.__doc__ for cls in inspect.getmro(self) if cls.__doc__ and cls != object]
+
+    def get_arguments(self):
+        arguments = {}
+        for arg in inspect.getargspec(self.__init__).args:
+            if arg in ['self', 'circuit']:
+                continue
+
+            default = getattr(self, arg)
+            if type(default) == UnitValue:
+                arguments[arg] = {
+                    'value': default.value * default.scale,
+                    'unit': {
+                        'name': default.unit.unit_name,
+                        'suffix': default.unit.unit_suffix
+                    }
+                }
+            elif type(default) in [int, float]:
+                arguments[arg] = {
+                    'value': default,
+                    'unit': {
+                        'name': 'number'
+                    }
+                }
+            elif default == None:
+                arguments[arg] = {
+                    'unit': {
+                        'name': 'network'
+                    }
+                }
+        
+        return arguments
+
+    def get_pins(self):
+        pins = []
+        # test = inspect.getmembers(Block, lambda item: not (inspect.isroutine(item)))
+        for key, value in inspect.getmembers(self, lambda item: not (inspect.isroutine(item))):
+            if type(value) == type(None) and key not in ['__doc__', 'element', 'simulation']:
+                pins.append(key)
+        
+        return pins
+
+
     @property
     def part(self):
         part = None
@@ -205,7 +257,7 @@ class Block:
         return copy(self)
 
     @subcircuit
-    def create_circuit(self, **kwargs):
+    def circuit(self, *args, **kwargs):
         Model = None
         if self.DEBUG:
             Model = self.spice_part
@@ -213,7 +265,7 @@ class Block:
             Model = self.part
         
         instance = copy(self)
-        element = Model(**kwargs)
+        element = Model(*args, **kwargs)
         instance.element = element
         
         instance.set_pins()
@@ -256,6 +308,7 @@ class Block:
         self.node = node
 
     def test_plot(self, **kwargs):
+        import matplotlib.pyplot as plt
         args = list(kwargs.items())
         fields = [label_prepare(arg[0]) for arg in args]
 
@@ -301,11 +354,11 @@ class Block:
 
         # Get the simulation data.
         time = waveforms.time                # Time values for each point on the waveforms.
-        pulses = waveforms[self.node(self.input)]  # Voltage on the positive terminal of the pulsed voltage source.
+        input = waveforms[self.node(self.input)]  # Voltage on the positive terminal of the pulsed voltage source.
         
-        capacitor_voltage = waveforms[self.node(self.output)]  # Voltage on the capacitor.
+        output = waveforms[self.node(self.output)]  # Voltage on the capacitor.
 
-        self.test_plot(Time_ms=time.as_ndarray() * 1000, V_pulses=pulses.as_ndarray(), V_capacitor=capacitor_voltage.as_ndarray(),
-                       plots=[('Time_ms', 'V_pulses'), ('Time_ms', 'V_capacitor')],
+        self.test_plot(Time_ms=time.as_ndarray() * 1000, V_input=input.as_ndarray(), V_output=output.as_ndarray(),
+                       plots=[('Time_ms', 'V_input'), ('Time_ms', 'V_output')],
                        table=False)
         

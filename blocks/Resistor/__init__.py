@@ -6,7 +6,19 @@ import numpy as np
 import logging
 
 class Base(Block):
+    """Resistor
+    
+    Generic resistance. 
+    Resistance implemented by combination of series or parallel connected resistors from available values in stock. 
+    """
+
     increase = True
+    value = 0 @ u_Ohm
+
+    def __init__(self, value):
+        self.value = value.canonise()
+        
+        self.circuit()
 
     def series_sum(self, values):
         return sum(values) @ u_Ohm
@@ -27,7 +39,7 @@ class Base(Block):
 
 
     @subcircuit
-    def create_circuit(self, value):
+    def circuit(self):
         R_model = None
         if self.DEBUG:
             from skidl.pyspice import R
@@ -35,16 +47,13 @@ class Base(Block):
             R_model = R
         else:
             R_model = self.part
-        
-        instance = self.clone
-        instance.value = value
     
-        values = self.values_optimal(instance.value, error=5)
+        values = self.values_optimal(self.value, error=5)
         resistors = []
         rin = Net()
         rout = Net()
         
-        self.log(f'{value} implemented by {len(values)} resistors: ' + ', '.join([str(value) + " Ω" for value in values]))
+        self.log(f'{self.value} implemented by {len(values)} resistors: ' + ', '.join([str(value) + " Ω" for value in values]))
 
         for index, value in enumerate(values):
             if type(value) == list:
@@ -75,7 +84,5 @@ class Base(Block):
         rin += resistors[0][1]
         rout += resistors[-1][2]
         
-        instance.input = rin
-        instance.output = rout
-        
-        return instance
+        self.input = rin
+        self.output = rout

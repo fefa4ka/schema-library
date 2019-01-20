@@ -5,22 +5,25 @@ from PySpice.Unit import u_Ohm, u_V
 
 
 class Base(Block):
+    source = None
+    gnd = None
+    def __init__(self, source=None, gnd=None):
+        self.element = source
+
+        self.circuit(gnd)
+
     @subcircuit
-    def create_circuit(self, source=None, gnd=None):
-        instance = self.clone
+    def circuit(self, gnd=None):
         if gnd:
-            instance.gnd = gnd
+            self.gnd = gnd
         else:
-            instance.gnd = Net()
+            self.gnd = Net()
 
-        if source:
-            instance.element = source
-            VCC = instance.element['VCC'] if hasattr(source, 'VCC') else instance.element[1]
-            GND = instance.element['GND'] if hasattr(source, 'GND') else instance.element[2]
+        if self.element:
+            VCC = self.element['VCC'] if hasattr(self.element, 'VCC') else self.element[1]
+            GND = self.element['GND'] if hasattr(self.element, 'GND') else self.element[2]
             
-            instance.input = instance.v_ref = VCC
-            instance.gnd += GND
+            self.input = self.v_ref = VCC
+            self.gnd += GND
         else:
-            instance.input = instance.v_ref = Net('VCC')
-
-        return instance
+            self.input = self.v_ref = Net('VCC')

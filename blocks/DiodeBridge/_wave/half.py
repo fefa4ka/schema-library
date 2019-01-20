@@ -10,9 +10,7 @@ class Modificator(Block):
         circuit = self.input & D()['A,K'] & self.output
 
     @subcircuit
-    def create_circuit(self, **kwargs):
-        instance = super().create_circuit(**kwargs)
+    def circuit(self, **kwargs):
+        super().circuit(**kwargs)
 
-        instance.gnd += instance.output_gnd
-
-        return instance
+        self.gnd += self.output_gnd

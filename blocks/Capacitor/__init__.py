@@ -1,10 +1,17 @@
 from bem import Block
 from skidl import Part, TEMPLATE
-
+from PySpice.Unit import u_F
+import numpy as np
 
 class Base(Block):
     increase = False
-    
+    value = 0 @ u_F
+
+    def __init__(self, value):
+        self.value = value.canonise()
+        
+        self.circuit()
+
     def parallel_sum(self, values):
         return sum(values) @ u_Ohm
 

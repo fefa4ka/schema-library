@@ -1,31 +1,40 @@
 from .. import Base, Build
 from skidl import Net, subcircuit
-from PySpice.Unit import u_Ohm, u_ms
+from PySpice.Unit import u_Ohm, u_mA, u_ms
+import numpy as np
 
 class Modificator(Base):
+    """Two Resistor Voltage Divider
+    
+    Divider implemented by two generic resitance element.
+    """
+
     def power(self, voltage):
         return voltage * voltage / (self.R_in_value + self.R_out_value)
 
     def V_out_compute(self):
         return self.R_out_value * self.V_in / (self.R_in_value + self.R_out_value)
-        
+                
     @subcircuit
-    def create_circuit(self, V_in, V_out):
-        self.V_in = V_in
-        self.V_out = V_out
-
-        instance = self.clone
-        instance.input = Net('DividerIn')
-        instance.output = Net('DividerOut')
-        instance.gnd = Net()
+    def circuit(self):
+        self.input = Net('DividerIn')
+        self.output = Net('DividerOut')
+        self.gnd = Net()
 
         R = Build('Resistor', **self.mods, **self.props).block
 
-        self.R_in_value, self.R_out_value = 0.5, 0.5 #self.resistor_set()
+        # Solving system of equation 
+        V_in_value = self.V_in.scale * self.V_in.value
+        V_out_value = self.V_out.scale * self.V_out.value
+        I_out_value = self.I_out.scale * self.I_out.value
+        A = np.array([[V_out_value, V_out_value - V_in_value], [1, 1]])
+        B = np.array([[0], [V_in_value / I_out_value]])
+        X = np.linalg.inv(A) @ B
 
-        rin = R(value = self.R_in_value @ u_Ohm) 
-        rout = R(value = self.R_out_value @ u_Ohm)
+        self.R_in = X[0][0] @ u_Ohm
+        self.R_out = X[1][0] @ u_Ohm
 
-        circuit = instance.input & rin & instance.output & rout & instance.gnd
-    
-        return instance
+        rin = R(value = self.R_in) 
+        rout = R(value = self.R_out)
+
+        circuit = self.input & rin & self.output & rout & self.gnd
