@@ -1,0 +1,16 @@
+@import '~antd/dist/antd.css';
+
+@font-face {
+  font-family: 'ISOCPEUR';
+  src: url('font.ttf')  format('truetype');
+}
+
+.App {
+  font-family: 'ISOCPEUR';
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.ant-layout-content {
+  padding: 24px;
+}
