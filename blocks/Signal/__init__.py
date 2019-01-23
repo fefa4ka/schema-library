@@ -4,7 +4,7 @@ from skidl import Net, subcircuit
 
 class Base(Block):
     def __init__(self, input=None):
-        self.input = signal
+        self.input = input
 
         self.circuit()
 

@@ -1,6 +1,6 @@
 from bem import Block, Build
 from skidl import Net, subcircuit
-from PySpice.Unit import u_ms, u_Ohm, u_A, u_V, u_Hz
+from PySpice.Unit import u_ms, u_Ohm, u_A, u_V, u_Hz, u_W
 
 
 class Base(Block):
@@ -12,6 +12,7 @@ class Base(Block):
     wave = half | full
     rectifier = full | split
 
+    ```python
     Power = Build('Power').block
     DiodeBridge = Build('DiodeBridge', wave='full', rectifier='split').block
 
@@ -19,21 +20,24 @@ class Base(Block):
     bridge = DiodeBridge(V_ripple = 0.01 @ u_V, frequency=100 @ u_Hz, R_load=600 @ u_Ohm, V_out = 10 @ u_V)
     bridge.output_gnd += gnd
     rc = VCC & bridge & divi
-    der  & gnd
+    ```
     """
 
+    mods = {
+        'rectifier': ['split'],
+        'wave': ['full']
+    }
+
     output_gnd = None
-    V_out = None
+    V_out = 10 @ u_V
     V_ripple = 1 @ u_V
 
     R_load = 0 @ u_Ohm
     I_load = 0 @ u_A
-    P_load = 0
+    P_load = 0 @ u_W
     frequency = 220 @ u_Hz
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(circuit=False, *args, **kwargs)
-
+    def __init__(self, V_out=None, V_ripple=None,  frequency=None, R_load=None, I_load=None, P_load=None):
         if self.R_load and self.V_out:
             self.I_load = self.V_out / self.R_load
         

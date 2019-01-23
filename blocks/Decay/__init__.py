@@ -6,12 +6,12 @@ from math import log
 
 class Base(Block):
     # Props
-    V_in = 0 @ u_V
-    V_out = 0 @ u_V
-    Time_to_V_out = 0 @ u_s
+    V_in = 10 @ u_V
+    V_out = 8 @ u_V
+    Time_to_V_out = 1 @ u_s
 
-    R_in_value = 0 @ u_Ohm
-    C_out_value = 0 @ u_Ohm
+    R_in = 0 @ u_Ohm
+    C_out = 0 @ u_Ohm
 
     def __init__(self, V_in, V_out, Time_to_V_out):
         self.V_in = V_in
@@ -22,29 +22,36 @@ class Base(Block):
 
     @subcircuit
     def circuit(self):
-        C = Build('Capacitor', **self.mods, **self.props).block
+        C = Build('Capacitor', **self.mods, **self.props).block 
         R = Build('Resistor', **self.mods, **self.props).block
 
-        R_in_value = self.R_in_value.value * self.R_in_value.scale
-        C_out_value = self.C_out_value.value * self.C_out_value.scale
+        R_in_value = self.R_in.value * self.R_in.scale
+        C_out_value = self.C_out.value * self.C_out.scale
+
+        if not (R_in_value and C_out_value):
+            self.R_in = 10000 @ u_Ohm
+            R_in_value = self.R_in.value * self.R_in.scale
 
         Time_to_V_out = self.Time_to_V_out.value * self.Time_to_V_out.scale
         V_in = self.V_in.value * self.V_in.scale
         V_out = self.V_out.value * self.V_out.scale
         
         
-        if self.R_in_value and not self.C_out_value:        
-            self.C_out_value = (Time_to_V_out / (R_in_value * log(V_in / (V_in - V_out)))) @ u_F
+        if R_in_value and not C_out_value:        
+            self.C_out = (Time_to_V_out / (R_in_value * log(V_in / (V_in - V_out)))) @ u_F
         
-        if self.C_out_value and not self.R_in_value:
-            self.R_in_value = (Time_to_V_out / (C_out_value * log(V_in / (V_in - V_out)))) @ u_Ohm
+        if C_out_value and not R_in_value:
+            self.R_in = (Time_to_V_out / (C_out_value * log(V_in / (V_in - V_out)))) @ u_Ohm
 
         self.input = Net("DecayInput")
         self.output = Net("DecayOutput")
         self.gnd = Net()
 
-        rin = R(value = self.R_in_value)
-        cout = C(value = self.C_out_value).element
+        rin = R(value = self.R_in, ref='R_in')
+        cout = C(value=self.C_out).element
+
+        cout.ref = 'C_out'
+
         route = self.input & rin \
                             & self.output \
                     & cout['+', '-'] \

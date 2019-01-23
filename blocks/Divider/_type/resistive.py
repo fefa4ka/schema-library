@@ -4,7 +4,7 @@ from PySpice.Unit import u_Ohm, u_mA, u_ms
 import numpy as np
 
 class Modificator(Base):
-    """Two Resistor Voltage Divider
+    """**Two Resistor Voltage Divider**
     
     Divider implemented by two generic resitance element.
     """
@@ -34,7 +34,7 @@ class Modificator(Base):
         self.R_in = X[0][0] @ u_Ohm
         self.R_out = X[1][0] @ u_Ohm
 
-        rin = R(value = self.R_in) 
-        rout = R(value = self.R_out)
+        rin = R(value = self.R_in, ref='R_in') 
+        rout = R(value=self.R_out, ref='R_out')
 
         circuit = self.input & rin & self.output & rout & self.gnd

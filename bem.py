@@ -2,12 +2,13 @@ from pathlib import Path
 import importlib
 from settings import BLOCKS_PATH, DEBUG, parts
 from skidl import subcircuit, Net, Network, Part, TEMPLATE
-from copy import copy
+from skidl.Net import Net as NetType
 from PySpice.Unit import u_ms
 import inspect
 import logging
 logger = logging.getLogger(__name__)
 from PySpice.Unit.Unit import UnitValue
+from PySpice.Unit import PeriodValue
 
 def label_prepare(text):
     last_dash = text.rfind('_')
@@ -29,13 +30,26 @@ class Build:
         
         for mod, value in kwargs.items():
             value = str(value)
-            module_file = Path(BLOCKS_PATH) / self.name / ('_' + mod) / (value + '.py')
-            if module_file.exists():
-                Module = importlib.import_module(BLOCKS_PATH + '.' + self.name + '._' + mod + '.' + value)
-                self.models.append(Module.Modificator)
+            self.mods[mod] = value.split(',')
+        
+        for mod, value in self.base.mods.items():
+            if not self.mods.get(mod, None):
                 self.mods[mod] = value
-            else:
-                self.props[mod] = value
+
+        for mod, values in self.mods.items():
+            if type(values) != list:
+                values = [str(values)]
+
+            for value in values:
+                module_file = Path(BLOCKS_PATH) / self.name / ('_' + mod) / (value + '.py')
+                if module_file.exists():
+                    Module = importlib.import_module(BLOCKS_PATH + '.' + self.name + '._' + mod + '.' + value)
+                    self.models.append(Module.Modificator)
+                else:
+                    self.props[mod] = value
+
+        for key, value in self.props.items():
+            del self.mods[key]
 
     @property
     def block(self):
@@ -151,7 +165,12 @@ class Block:
             return self
     
     def get_description(self):
-        return [cls.__doc__ for cls in inspect.getmro(self) if cls.__doc__ and cls != object]
+        description = []
+        for doc in [cls.__doc__ for cls in inspect.getmro(self) if cls.__doc__ and cls != object]:
+            doc = '\n'.join([line.strip() for line in doc.split('\n')])
+            description.append(doc)
+        
+        return description
 
     def get_arguments(self):
         arguments = {}
@@ -160,7 +179,7 @@ class Block:
                 continue
 
             default = getattr(self, arg)
-            if type(default) == UnitValue:
+            if type(default) in [UnitValue, PeriodValue]:
                 arguments[arg] = {
                     'value': default.value * default.scale,
                     'unit': {
@@ -175,7 +194,7 @@ class Block:
                         'name': 'number'
                     }
                 }
-            elif default == None:
+            elif type(default) == type(None):
                 arguments[arg] = {
                     'unit': {
                         'name': 'network'
@@ -183,19 +202,46 @@ class Block:
                 }
         
         return arguments
+    
+    def get_params(self):
+        params = {}
+        for param, default in inspect.getmembers(self, lambda a:not(inspect.isroutine(a))):
+            if param in inspect.getargspec(self.__init__).args:
+                continue
+
+            if type(default) in [UnitValue, PeriodValue]:
+                params[param] = {
+                    'value': default.value * default.scale,
+                    'unit': {
+                        'name': default.unit.unit_name,
+                        'suffix': default.unit.unit_suffix
+                    }
+                }
+            elif type(default) in [int, float]:
+                params[param] = {
+                    'value': default,
+                    'unit': {
+                        'name': 'number'
+                    }
+                }
+        
+        return params
 
     def get_pins(self):
-        pins = []
+        pins = {}
         # test = inspect.getmembers(Block, lambda item: not (inspect.isroutine(item)))
         for key, value in inspect.getmembers(self, lambda item: not (inspect.isroutine(item))):
-            if type(value) == type(None) and key not in ['__doc__', 'element', 'simulation']:
-                pins.append(key)
-        
+            if type(value) == NetType and key not in ['__doc__', 'element', 'simulation']:
+                pins[key] = [str(pin) for pin in getattr(self, key) and getattr(self, key).get_pins()]
+
         return pins
 
 
     @property
     def part(self):
+        if self.DEBUG:
+            return
+            
         part = None
 
         if self.props.get('part', None) or self.name.find(':') != -1:
@@ -251,10 +297,6 @@ class Block:
             return block_parts[0]['footprint']
 
         return None
-    
-    @property
-    def clone(self):
-        return copy(self)
 
     @subcircuit
     def circuit(self, *args, **kwargs):
@@ -264,21 +306,20 @@ class Block:
         else:
             Model = self.part
         
-        instance = copy(self)
         element = Model(*args, **kwargs)
-        instance.element = element
+        self.element = element
         
-        instance.set_pins()
-
-        return instance
+        self.set_pins()
 
     @subcircuit
     def create_network(self):
         return [self.input, self.output]
 
     def set_pins(self):
-        self.input = self.element[1]
-        self.output = self.element[2]
+        self.input = Net('Input') 
+        self.output = Net('Output')
+        self.input += self.element[1]
+        self.output += self.element[2]
     
     def power(self):
         return None

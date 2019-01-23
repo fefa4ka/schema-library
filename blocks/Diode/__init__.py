@@ -11,6 +11,9 @@ class Base(Block):
 
     @property
     def part(self):
+        if self.DEBUG:
+            return
+
         part = Part('Device', 'D', footprint=self.footprint, dest=TEMPLATE)
         part.set_pin_alias('A', 1)
         part.set_pin_alias('K', 2)

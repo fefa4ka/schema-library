@@ -2,13 +2,9 @@ from bem import Block, Build
 from PySpice.Unit import u_Ohm, u_V, u_A
 
 class Base(Block):
-    """Voltage Divider
+    """**Voltage Divider**
 
-    Voltage divider from `V_in` to `V_out` could be implemented in different ways
-    and provide current `I_out`.
-    
-    Arguments:
-        Block {[type]} -- [description]
+    Voltage divider from `V_in` to `V_out` could be implemented in different ways and provide current `I_out`.
     """
 
     # Props
@@ -18,6 +14,10 @@ class Base(Block):
 
     R_in = 0 @ u_Ohm
     R_out = 0 @ u_Ohm
+
+    mods = {
+        'type': ['resistive']
+    }
 
     def __init__(self, V_in, V_out, I_out):
         self.V_in = V_in

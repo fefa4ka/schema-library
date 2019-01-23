@@ -13,11 +13,19 @@ class Base(Block):
     """
 
     increase = True
-    value = 0 @ u_Ohm
+    value = 1 @ u_Ohm
 
-    def __init__(self, value):
+    ref = 'R'
+
+    def __init__(self, value, ref=None):
+        if type(value) == str:
+            value = float(value) @ u_Ohm
+
         self.value = value.canonise()
         
+        if ref:
+            self.ref = ref
+
         self.circuit()
 
     def series_sum(self, values):
@@ -31,24 +39,29 @@ class Base(Block):
         
     @property
     def part(self):
-        part = Part('Device', 'R', footprint=self.footprint, dest=TEMPLATE)
-        part.set_pin_alias('p', 1)
-        part.set_pin_alias('n', 2)
+        if not self.DEBUG:
+            part = Part('Device', 'R', footprint=self.footprint, dest=TEMPLATE)
+            part.set_pin_alias('p', 1)
+            part.set_pin_alias('n', 2)
 
-        return part
+            return part
+        else:
+            return None
 
 
     @subcircuit
     def circuit(self):
         R_model = None
+
         if self.DEBUG:
             from skidl.pyspice import R
 
             R_model = R
         else:
             R_model = self.part
+
     
-        values = self.values_optimal(self.value, error=5)
+        values = self.values_optimal(self.value, error=5) if not self.DEBUG else [self.value]
         resistors = []
         rin = Net()
         rout = Net()
@@ -62,7 +75,8 @@ class Base(Block):
                 
                 for resistance in value:
                     r = R_model(value=resistance)
-
+                    r.ref = self.ref
+                        
                     r[1] += parallel_in
                     r[2] += parallel_out
                 
@@ -73,8 +87,10 @@ class Base(Block):
                 resistors.append((None, parallel_in, parallel_out))
 
             else:
-                r = R_model(value = value)
-
+                r = R_model(value=value)
+                r.ref = self.ref
+                self.element = r
+                        
                 if index:
                     previous_r = resistors[-1]
                     previous_r[2] += r[1]
