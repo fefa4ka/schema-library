@@ -16,14 +16,14 @@ class Base(Block):
 
         self.input = Net()
         self.output = Net()
-        self.gnd = Net()
+        self.gnd = self.input_n = self.output_n = Net()
 
         sections = []
         
         if self.scale % 2:
-            sections.append((self.gnd, self.input))
+            sections.append((self.input_n, self.input))
         else:
-            sections.append((self.input, self.gnd))
+            sections.append((self.input, self.input_n))
         
         for block in range(self.scale):
             last = sections[-1]

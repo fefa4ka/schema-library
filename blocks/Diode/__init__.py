@@ -1,13 +1,11 @@
-from bem import Block
+from bem import Block, Build
 from skidl import Part, TEMPLATE
 
 
 class Base(Block):
     @property
     def spice_part(self):
-        from skidl.pyspice import D
-
-        return D
+        return Build('D').spice
 
     @property
     def part(self):

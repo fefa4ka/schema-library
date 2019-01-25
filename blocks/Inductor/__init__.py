@@ -1,4 +1,4 @@
-from bem import Block
+from bem import Block, Build
 from skidl import Part, TEMPLATE
 from PySpice.Unit import u_H
 
@@ -16,9 +16,7 @@ class Base(Block):
 
     @property
     def spice_part(self):
-        from skidl.pyspice import L
-
-        return L
+        return Build('L').spice
 
     @property
     def part(self):

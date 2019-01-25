@@ -15,11 +15,11 @@ class Modificator(Base):
     def V_out_compute(self):
         return self.R_out_value * self.V_in / (self.R_in_value + self.R_out_value)
                 
-    @subcircuit
+    # @subcircuit
     def circuit(self):
         self.input = Net('DividerIn')
         self.output = Net('DividerOut')
-        self.gnd = Net()
+        self.gnd = self.input_n = self.output_n = Net()
 
         R = Build('Resistor', **self.mods, **self.props).block
 
@@ -38,3 +38,5 @@ class Modificator(Base):
         rout = R(value=self.R_out, ref='R_out')
 
         circuit = self.input & rin & self.output & rout & self.gnd
+
+        return 'Divider'

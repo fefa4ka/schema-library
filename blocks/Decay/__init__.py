@@ -7,8 +7,8 @@ from math import log
 class Base(Block):
     # Props
     V_in = 10 @ u_V
-    V_out = 8 @ u_V
-    Time_to_V_out = 1 @ u_s
+    V_out = 6 @ u_V
+    Time_to_V_out = 0.005 @ u_s
 
     R_in = 0 @ u_Ohm
     C_out = 0 @ u_Ohm
@@ -20,7 +20,7 @@ class Base(Block):
 
         self.circuit()
 
-    @subcircuit
+    # @subcircuit
     def circuit(self):
         C = Build('Capacitor', **self.mods, **self.props).block 
         R = Build('Resistor', **self.mods, **self.props).block
@@ -29,7 +29,7 @@ class Base(Block):
         C_out_value = self.C_out.value * self.C_out.scale
 
         if not (R_in_value and C_out_value):
-            self.R_in = 10000 @ u_Ohm
+            self.R_in = 1000 @ u_Ohm
             R_in_value = self.R_in.value * self.R_in.scale
 
         Time_to_V_out = self.Time_to_V_out.value * self.Time_to_V_out.scale
@@ -45,6 +45,8 @@ class Base(Block):
 
         self.input = Net("DecayInput")
         self.output = Net("DecayOutput")
+
+        # self.v_ref = Net()
         self.gnd = Net()
 
         rin = R(value = self.R_in, ref='R_in')
@@ -54,5 +56,5 @@ class Base(Block):
 
         route = self.input & rin \
                             & self.output \
-                    & cout['+', '-'] \
+                    & cout['+,-'] \
                 & self.gnd

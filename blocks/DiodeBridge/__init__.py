@@ -24,7 +24,6 @@ class Base(Block):
     """
 
     mods = {
-        'rectifier': ['split'],
         'wave': ['full']
     }
 
@@ -48,17 +47,18 @@ class Base(Block):
             self.output._name = instance.input._name = f'{self.name}{instance.name}_Net'
             self.output += instance.input
         
-        if self.output_gnd and instance.gnd:
-            self.output_gnd += instance.gnd
+        if self.output_n and instance.input_n:
+            self.output_n += instance.input_n
         
         if self.v_ref and instance.v_ref:
             self.v_ref += instance.v_ref
 
-    @subcircuit
+    #@subcircuit
     def circuit(self, **kwargs):
         self.input = Net("BridgeVoltage")
         self.gnd = Net()
+        self.input_n = Net()
         self.output = Net("BridgeOutput")
-        self.output_gnd = Net()
+        self.output_n = Net()
         
         self.create_bridge()

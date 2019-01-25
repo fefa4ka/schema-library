@@ -8,7 +8,7 @@ class Base(Block):
 
         self.circuit()
 
-    @subcircuit
+    
     def circuit(self):
         self.input = self.output = self.input or Net('SignalInput')
 

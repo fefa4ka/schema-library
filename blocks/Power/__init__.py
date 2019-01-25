@@ -22,8 +22,11 @@ class Base(Block):
         if self.element:
             VCC = self.element['VCC'] if hasattr(self.element, 'VCC') else self.element[1]
             GND = self.element['GND'] if hasattr(self.element, 'GND') else self.element[2]
-            
             self.input = self.v_ref = VCC
             self.gnd += GND
         else:
             self.input = self.v_ref = Net('VCC')
+
+        self.input_n = self.output_n = self.gnd
+
+        return 'Power'

@@ -3,6 +3,7 @@ from blocks.Combination import Base as Block
 from skidl import Part, Net, subcircuit, TEMPLATE
 from PySpice.Unit import u_Ohm, u_V
 import numpy as np
+from bem import Build
 import logging
 
 class Base(Block):
@@ -13,7 +14,7 @@ class Base(Block):
     """
 
     increase = True
-    value = 1 @ u_Ohm
+    value = 1000 @ u_Ohm
 
     ref = 'R'
 
@@ -49,14 +50,12 @@ class Base(Block):
             return None
 
 
-    @subcircuit
+    # @subcircuit
     def circuit(self):
         R_model = None
 
         if self.DEBUG:
-            from skidl.pyspice import R
-
-            R_model = R
+            R_model = Build('R').spice
         else:
             R_model = self.part
 
@@ -100,5 +99,9 @@ class Base(Block):
         rin += resistors[0][1]
         rout += resistors[-1][2]
         
-        self.input = rin
+        self.input = self.v_ref = rin
         self.output = rout
+
+        self.input_n = self.output_n = self.gnd = Net()
+
+        return 'Resistor'

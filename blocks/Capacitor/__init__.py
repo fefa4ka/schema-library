@@ -1,4 +1,4 @@
-from bem import Block
+from bem import Block, Build
 from skidl import Part, TEMPLATE
 from PySpice.Unit import u_F
 import numpy as np
@@ -23,9 +23,7 @@ class Base(Block):
 
     @property
     def spice_part(self):
-        from skidl.pyspice import C
-
-        return C
+        return Build('C').spice
 
     @property
     def part(self):

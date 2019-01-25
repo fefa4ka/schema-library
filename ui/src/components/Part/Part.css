@@ -1,0 +1,8 @@
+.Part .ant-input-group-wrapper {
+    margin-bottom: 4px;
+}
+
+.Part .ant-input-group-addon:first-child {
+    min-width: 160px;
+    text-align: left;
+}

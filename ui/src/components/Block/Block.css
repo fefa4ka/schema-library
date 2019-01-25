@@ -2,11 +2,14 @@
     margin-top: -8px;
 }
 
-.Block-Arguments .ant-input-group-wrapper {
+.Block-Characteristics .ant-input-group-wrapper {
     margin-bottom: 4px;
 }
-.Block-Arguments .ant-input-group-addon:first-child {
+.Block-Characteristics .ant-input-group-addon:first-child {
     min-width: 60px;
+}
+.Block-Characteristics h2 {
+    margin-top: 8px;
 }
 
 .Block-Arguments .ant-input-group-addon:last-child {
@@ -14,5 +17,6 @@
 }
 
 .Block-Pins button {
-    margin-right: 16px;
+    display: block;
+    margin-bottom: 8px;
 }
