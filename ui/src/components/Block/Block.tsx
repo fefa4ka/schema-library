@@ -114,7 +114,7 @@ export class Block extends React.Component<IProps, {}> {
                     ), [])
                 
                 const get_name = (pin: string, index: number) => {
-                    console.log(pin)
+            
                     const [_, data] = pin.split(' ')
                     const vars = data.split('/')
 

@@ -12,9 +12,6 @@
     margin-top: 8px;
 }
 
-.Block-Arguments .ant-input-group-addon:last-child {
-    min-width: 40px;
-}
 
 .Block-Pins button {
     display: block;
