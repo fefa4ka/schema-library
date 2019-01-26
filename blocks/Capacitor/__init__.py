@@ -7,12 +7,12 @@ class Base(Block):
     increase = False
     value = 1 @ u_F
 
-    def __init__(self, value):
+    def __init__(self, value, ref=None):
         if type(value) in [float, int]:
             value = float(value) @ u_F
 
         self.value = value.canonise()
-        
+        self.ref = ref
         self.circuit(value=value)
 
     def parallel_sum(self, values):

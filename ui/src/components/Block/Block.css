@@ -17,3 +17,12 @@
     display: block;
     margin-bottom: 8px;
 }
+
+.Block-AddPart {
+    background: #ffffff;
+    border-style: dashed;
+}
+
+.Block-CodeExample {
+    font-size: 11px;
+}

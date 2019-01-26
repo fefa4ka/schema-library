@@ -9,11 +9,16 @@ class Base(Block):
 
     # Props
     V_in = 10 @ u_V
+    """Input voltage"""
     V_out = 3 @ u_V
+    """Desirable output voltage"""
     I_out = 0.05 @ u_A
+    """Desirable output current"""
 
     R_in = 0 @ u_Ohm
+    """Input resistance"""
     R_out = 0 @ u_Ohm
+    """Output resistance"""
 
     mods = {
         'type': ['resistive']

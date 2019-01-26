@@ -27,7 +27,11 @@ export class UnitInput extends React.Component<IProps, {}> {
     onChange(value: string) {        
         this.state.value !== value && this.setState({ value })
         
-        return parseFloat(value) * Math.pow(10, this.state.exponenta)
+        const originValue = parseFloat(value) * Math.pow(10, this.state.exponenta)
+
+        return isNaN(originValue)
+            ? ''
+            : originValue
     }
     render() { 
         const { name, suffix, value } = this.props
@@ -64,7 +68,7 @@ export class UnitInput extends React.Component<IProps, {}> {
                         fixed = fixed.toFixed(Math.abs(exponenta - valueScale))
                     }
                     
-                    return <Option value={unit}>
+                    return <Option value={unit} key={unit}>
                         <Tooltip title={<span>{this.state.value} {suffix} × 10<sup>{scale[unit][1]}</sup><br/>{fixed.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} {suffix}</span>}>
                             <span>{scale[unit][0]}{suffix}</span>
                         </Tooltip>

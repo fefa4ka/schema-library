@@ -6,7 +6,7 @@ export interface IProps extends IClassNameProps {
     name: string,
     suffix: never,
     value: string | number,
-    onChange: (value: number) => void
+    onChange: (value: number | string) => void
 }
 
 export const UnitInput = compose()(Base);

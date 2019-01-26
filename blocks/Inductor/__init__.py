@@ -6,12 +6,12 @@ class Base(Block):
     increase = False
     value = 0 @ u_H
 
-    def __init__(self, value):
+    def __init__(self, value, ref=None):
         if type(value) in [float, int]:
             value = float(value) @ u_H
 
         self.value = value.canonise()
-        
+        self.ref = ref
         self.circuit()
 
     @property

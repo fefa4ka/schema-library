@@ -2,17 +2,20 @@ import * as React from 'react'
 import { IProps } from './index'
 import { cn } from '@bem-react/classname'
 import axios from 'axios'
-import { Button, Input, TreeSelect} from 'antd'
-import { Tabs, Row, Col, Modal } from 'antd'
+import { Divider, Tag, Button, Input, TreeSelect} from 'antd'
+import { Icon, Tabs, Row, Col, Modal } from 'antd'
 import Markdown from 'react-markdown'
 import { Part } from '../Part'
 const { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceArea } = require('recharts')
 const TabPane = Tabs.TabPane;
 import { UnitInput } from '../UnitInput'
-const nomnoml = require('nomnoml')
+import { Diagram } from './Diagram'
 const TreeNode = TreeSelect.TreeNode;
+import {UnControlled as CodeMirror} from 'react-codemirror2'
 
 import './Block.css';
+require('codemirror/lib/codemirror.css')
+require('codemirror/mode/python/python')
 
 const cnBlock = cn('Block')
 
@@ -22,22 +25,52 @@ const initialState = {
     description: [''],
     selectedMods: [],
     args: {},
-    pins: [],
+    nets: {},
+    pins: {},
     params: {},
     modalVisible: false,
     chartData: [],
-    modalConfirmLoading: false
+    modalConfirmLoading: false,
+    editableSource: {
+        name: '',
+        args: {},
+        pins: {},
+        index: -1
+    },
+    sources: [{
+        'name': 'SINEV',
+        'args': { 'amplitude': '10', 'frequency': '20' },
+        'pins': { 'p': ['input'], 'n': ['output', 'gnd'] },
+        'index': 0
+    }],
+    mods: {},
+    example: ''
 }
 
-// type State = typeof initialState
+type Source = {
+    name: string,
+    args: {
+        [name: string]: string 
+    },
+    pins: {
+        [name: string]: string[]
+    },
+    index: number
+}
+
 type State = {
     name: string,
     description: string[],
     selectedMods: string[],
-    pins: string[],
+    nets: {
+        [name:string]: string[]
+    },
+    pins: {
+        [name:string]: string[]
+    },
     args: {
         [name:string]: {
-            value: number,
+            value: number | string,
             unit: {
                 name: string,
                 suffix: string
@@ -46,24 +79,31 @@ type State = {
     },
     params: {
         [name:string]: {
-            value: number,
+            value: number | string,
             unit: {
                 name: string,
                 suffix: string
             }
         }
     },
+    editableSource: Source,
+    sources: Source[],
     chartData: {
         [name:string]: number[]
     }[],
     modalVisible: boolean,
-    modalConfirmLoading: boolean
+    modalConfirmLoading: boolean,
+    mods?: {
+        [name:string]: string[]
+    },
+    example: string
 }
 
 
 export class Block extends React.Component<IProps, {}> {
     state: State = initialState
-    private canvasRef = React.createRef<HTMLCanvasElement>()
+    codeInstance: any
+
     componentDidUpdate(prevProps: IProps, prevState: State) {
         // console.log(prevProps.name, this.props.name)
         // console.log(prevState.selectedMods.join(''), this.state.selectedMods.join(''))
@@ -76,6 +116,24 @@ export class Block extends React.Component<IProps, {}> {
         }
 
         return true
+    }
+    loadSimulation() {
+        const { args, sources } = this.state
+
+
+        axios.post('http://localhost:3000/api/blocks/' + this.props.name + '/simulate/',
+        {
+            mods: this.state.mods,
+            args: Object.keys(args).reduce((result: { [name:string]: string | number }, arg) => {
+                result[arg] = args[arg].value
+                
+                return result
+            }, {}),
+            sources
+        })
+            .then(res => {
+                this.setState({ chartData: res.data })
+            })
     }
     loadBlock() {
         const selectedMods: { [name:string]: string[] } = this.state.selectedMods.reduce((mods: { [name:string]: string[] }, mod) => {
@@ -97,91 +155,75 @@ export class Block extends React.Component<IProps, {}> {
             
         axios.get('http://localhost:3000/api/blocks/' + this.props.name + '/' + urlParams)
             .then(res => {
-                const { description, args, params, mods, pins, parts, nets } = res.data
-
-                // if (argsUrlParam.length > 0) {
-                    const modsUrlParam = Object.keys(mods).map((mod:string) => mod + '=' + mods[mod].join(','))
-                    const argsUrlParam = Object.keys(args).map(arg => arg + '=' + args[arg].value)
-                    axios.get('http://localhost:3000/api/blocks/' + this.props.name + '/simulate/?' + modsUrlParam.concat(argsUrlParam).join('&'))
-                        .then(res => {
-                            this.setState({ chartData: res.data })
-                        })
-                // }
-
+                const { name, description, args, params, mods, pins, parts, nets } = res.data
+                const { sources } = this.state
+               
+                
                 const selectedMods = Object.keys(mods).reduce((selected, type) =>
                     selected.concat(
                         mods[type].map((value: string) => type + '=' + value)
                     ), [])
                 
-                const get_name = (pin: string, index: number) => {
-            
-                    const [_, data] = pin.split(' ')
-                    const vars = data.split('/')
+                const codeUnits = Object.keys(args).map(arg => args[arg].unit.suffix).filter((value, index, self) => self.indexOf(value) === index).map(item => 'u_' + item).join(', ')
+                const codeArgs = Object.keys(args).map(arg => arg + ' = ' + args[arg].value + ' @ u_' + args[arg].unit.suffix).join(',\n\t')
+                const codeMods = Object.keys(mods).map((mod:string) => mod + "=['" + mods[mod].join("', '") + "']").join(', ')
+                const codeExample = `from bem import Build
+from PySpice.Unit import ${codeUnits}
 
-                    return vars[index]
-                }
-    
-                const network = Object.keys(nets).map((net, index) => {
-                    const pins: string[] = nets[net]
-                    const wire = pins.map((pin, index, list) => {
-                       
-                        if (list.length - 1 > index) {
-                            return `[${get_name(pin, 0)}]${get_name(pin, 2)}-${get_name(list[index + 1], 2)}[${get_name(list[index + 1], 0)}]`
-                        }
-                    }).join(';')
+# With variables
+${name} = Build('${name}', ${codeMods}).block
+${name.toLowerCase()} = ${name}(
+    ${codeArgs}
+)
 
-                    return wire
-                }).join('')
+# Inline
+Build('${name}', ${codeMods}).block(
+    ${codeArgs}
+)`
 
-                const pinsNet = Object.keys(pins).map((pin: string, index, list) => {
-                    const isAlreadyExists = list.reduce((exists, sub_pin, sub_index) => {
-                        if (index > sub_index && pins[pin][0] === pins[sub_pin][0]) {
-                            return true
-                        }
-
-                        return exists
-                    }, false)
-
-                    if(pins[pin][0] && !isAlreadyExists) {
-                        return `[<label>${pin}]-${get_name(pins[pin][0], 2)}[${get_name(pins[pin][0], 0)}]`
-                    }
-                }).filter(item => item).join(';')
-
-                const settings = ['#font: ISOCPEUR', '#stroke: #000000', '#fill: #ffffff', '#leading: 0.8', '#lineWidth: 1'].join('\n')
-                const graph = settings + '\n' + [network, '[<label>input]', '[<label>output]', '[<end>gnd]', pinsNet].filter(_=>_).join(';')
-                nomnoml.draw(this.canvasRef.current, graph);
-                
                 this.setState({
                     description,
+                    mods,
                     args,
                     params, 
-                    pins: Object.keys(pins),
+                    nets,
+                    pins,
+                    example: codeExample,
                     selectedMods
-                })
+                }, this.loadSimulation)
             })
     }
     showModal = () => {
+        console.log(this.state.editableSource)
         this.setState({
             modalVisible: true,
         });
     }
     handleOk = () => {
-        this.setState({
-            modalConfirmLoading: true,
-        });
-        setTimeout(() => {
-            this.setState({
-             modalVisible: false,
-             modalConfirmLoading: false,
-            });
-        }, 2000);
+        this.setState(({ sources, editableSource }: State) => {
+            console.log('modalok', editableSource)
+            if (editableSource.index >= 0) {
+                sources[editableSource.index] = editableSource
+            } else {
+                sources = sources.concat([editableSource])
+            }
+
+            return {
+                modalConfirmLoading: false,
+                sources,
+                editableSource: {},
+                modalVisible: false,
+            }
+        }, this.loadSimulation)
     }
 
     handleCancel = () => {
         console.log('Clicked cancel button');
         this.setState({
             modalVisible: false,
-        });
+            editableSource: {},
+            example: ''
+        }, () => this.codeInstance.refresh())
     }
     render() {
         const { mods } = this.props
@@ -250,7 +292,7 @@ export class Block extends React.Component<IProps, {}> {
                 className={cnBlock('ParamInput')}
             />
         })
-        
+
         return (
             <div className={this.props.className || cnBlock()}>
                 <Row>
@@ -285,43 +327,79 @@ export class Block extends React.Component<IProps, {}> {
                 </Row>
             
                 <Tabs defaultActiveKey="1" onChange={_ => {console.log('tab')}}>
-                    <TabPane tab="Description" key="1">
+                    <TabPane tab="Simulation" key="1">
                         <Row>
-                            <Col span={14} className={cnBlock('Description')}>
+                            <Col span={17} className={cnBlock('Description')}>
+                                <Divider orientation="left">
+                                    Description
+                                </Divider>
                                 {description}
                                 <Row className={cnBlock('Pins')}>
-                                    <Col span={5}>
-                                        <Button onClick={this.showModal} type="primary" icon="api">Add Source</Button>
+                                    <Col span={8}>
+                                        <Divider orientation="left">
+                                            Sources 
+                                        </Divider>
+                                        
                                         <Modal
                                             title="Title"
                                             visible={this.state.modalVisible}
                                             onOk={this.handleOk}
-                                            confirmLoading={this.state.modalConfirmLoading}
                                             onCancel={this.handleCancel}
                                             >
-                                                <Part type='source'/>
-                                            </Modal>
-                                        {this.state.pins.filter(item => item.includes('output') === false).map(pin => 
-                                            <Button type='dashed' key={pin}>{pin}</Button>)
-                                        }
+                                                <Part
+                                                    type='source'
+                                                    source={this.state.editableSource}
+                                                    pins={Object.keys(this.state.pins)}
+                                                    onChange={(source:Source) =>
+                                                        this.setState(({ editableSource }:State) => ({ editableSource: source }), () => console.log('change', this.state))
+                                                    }
+                                                />
+                                        </Modal>
+                                        {this.state.sources.map((source, index) => 
+                                            <Tag
+                                                key={source.name + index.toString()}
+                                                closable
+                                                onClick={_ => {
+                                                    this.setState({ editableSource: this.state.sources[index] }, this.showModal)
+                                                }}
+                                                onClose={() => {
+                                                    this.setState(({ sources }: State) => {
+                                                        
+                                                        sources.splice(index, 1)
+                                                        
+                                                        return { sources }
+                                                    })
+                                            }}>
+                                                {source.name}
+                                            </Tag>
+                                        )} <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableSource: { index: -1} }, this.showModal) }><Icon type="api" /> Add</Tag>
+
+                                        <Divider orientation="left">Load</Divider>
+                                        <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableSource: { index: -1} }, this.showModal) }><Icon type="api" /> Add</Tag>
                                     </Col>
-                                    <Col span={13}><canvas ref={this.canvasRef} /></Col>
-                                    <Col span={4}>
-                                        
-                                        {this.state.pins.filter(item => item.includes('output')).map(pin => 
-                                            <Button type='dashed' key={pin}>{pin}</Button>)
-                                        }
-                                    </Col>
+                                    <Col span={16}>
+                                        <Divider orientation="left">
+                                            Schematics
+                                        </Divider>
+                                        <Diagram pins={this.state.pins} nets={this.state.nets} sources={this.state.sources} /></Col>
                                 </Row>
                             </Col>
-                            <Col span={10} className={cnBlock('Characteristics')}>
-                                <h2>Electrical Characteristics</h2>
+                            <Col span={7} className={cnBlock('Characteristics')}>
+                                <Divider orientation="left">Characteristics</Divider>
                                 {attributes}
                                 {params}
+                                <Divider orientation="left">Code Examples</Divider>
+                                {this.state.example && <CodeMirror
+                                    className={cnBlock('CodeExample')}
+                                    options={{
+                                        mode: 'python',
+                                    }}
+                                    value={this.state.example}
+                                />}
                             </Col>
                         </Row> 
                         
-                        <h2>Waveforms</h2>
+                        <Divider orientation="left">Waveforms</Divider>
                         <ResponsiveContainer width='100%' aspect={4.0/1.0}>
                             <LineChart data={this.state.chartData}>
                                 <XAxis dataKey="time"/>

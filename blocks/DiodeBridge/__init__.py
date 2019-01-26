@@ -4,23 +4,9 @@ from PySpice.Unit import u_ms, u_Ohm, u_A, u_V, u_Hz, u_W
 
 
 class Base(Block):
-    """Diode Bridge
-
-    Props:
-    R_load=None, V_out=None, V_ripple=1 @ u_V, I_load=1 @ u_A, P_load=None, frequency=220 @ u_Hz
+    """**Diode Bridge**
     
-    wave = half | full
-    rectifier = full | split
-
-    ```python
-    Power = Build('Power').block
-    DiodeBridge = Build('DiodeBridge', wave='full', rectifier='split').block
-
-    VCC = Power(source=SINEV(amplitude=10@u_V, frequency=100@u_Hz))
-    bridge = DiodeBridge(V_ripple = 0.01 @ u_V, frequency=100 @ u_Hz, R_load=600 @ u_Ohm, V_out = 10 @ u_V)
-    bridge.output_gnd += gnd
-    rc = VCC & bridge & divi
-    ```
+    A diode bridge is an arrangement of four (or more) diodes in a bridge circuit configuration that provides the same polarity of output for either polarity of input.
     """
 
     mods = {

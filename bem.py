@@ -1,14 +1,21 @@
-from pathlib import Path
 import importlib
-from settings import BLOCKS_PATH, DEBUG, parts
-from skidl import subcircuit, Net, Network, Part, TEMPLATE
-from skidl.Net import Net as NetType
-from PySpice.Unit import u_ms
 import inspect
 import logging
-logger = logging.getLogger(__name__)
+from pathlib import Path
+
+from PySpice.Unit import PeriodValue, u_ms
 from PySpice.Unit.Unit import UnitValue
-from PySpice.Unit import PeriodValue
+from skidl import TEMPLATE, Net, Network, Part, subcircuit
+from skidl.Net import Net as NetType
+
+from settings import BLOCKS_PATH, DEBUG, parts
+
+logger = logging.getLogger(__name__)
+
+try:
+    import __builtin__ as builtins
+except ImportError:
+    import builtins
 
 def label_prepare(text):
     last_dash = text.rfind('_')
@@ -19,6 +26,12 @@ def label_prepare(text):
     
     
 class Build:
+    name = None
+    base = None
+    mods = {}
+    props = {}
+    models = {}
+
     def __init__(self, name, **kwargs):
         self.name = name
         self.mods = {}
@@ -27,29 +40,33 @@ class Build:
 
         base_file = Path(BLOCKS_PATH) / self.name / ('__init__.py')
         self.base = base_file.exists() and importlib.import_module(BLOCKS_PATH + '.' + self.name).Base        
-        
-        for mod, value in kwargs.items():
-            value = str(value)
-            self.mods[mod] = value.split(',')
-        
-        for mod, value in self.base.mods.items():
-            if not self.mods.get(mod, None):
-                self.mods[mod] = value
 
-        for mod, values in self.mods.items():
-            if type(values) != list:
-                values = [str(values)]
-
-            for value in values:
-                module_file = Path(BLOCKS_PATH) / self.name / ('_' + mod) / (value + '.py')
-                if module_file.exists():
-                    Module = importlib.import_module(BLOCKS_PATH + '.' + self.name + '._' + mod + '.' + value)
-                    self.models.append(Module.Modificator)
+        if self.base:
+            for mod, value in kwargs.items():
+                if type(value) == list:
+                    self.mods[mod] = value
                 else:
-                    self.props[mod] = value
+                    value = str(value)
+                    self.mods[mod] = value.split(',')
+            
+            for mod, value in self.base.mods.items():
+                if not self.mods.get(mod, None):
+                    self.mods[mod] = value
 
-        for key, value in self.props.items():
-            del self.mods[key]
+            for mod, values in self.mods.items():
+                if type(values) != list:
+                    values = [str(values)]
+
+                for value in values:
+                    module_file = Path(BLOCKS_PATH) / self.name / ('_' + mod) / (value + '.py')
+                    if module_file.exists():
+                        Module = importlib.import_module(BLOCKS_PATH + '.' + self.name + '._' + mod + '.' + value)
+                        self.models.append(Module.Modificator)
+                    else:
+                        self.props[mod] = value
+
+            for key, value in self.props.items():
+                del self.mods[key]
 
     @property
     def block(self):
@@ -70,6 +87,21 @@ class Build:
                     })
 
     @property
+    def spice(self):
+        from skidl import SKIDL, SPICE, set_default_tool, SchLib, Net
+        from skidl.tools.spice import set_net_bus_prefixes
+        from skidl.libs.pyspice_sklib import pyspice_lib
+        import sys
+        set_default_tool(SPICE) 
+        set_net_bus_prefixes('N', 'B')
+        _splib = SchLib('pyspice', tool=SKIDL)
+        _this_module = sys.modules[__name__]
+        
+        for p in _splib.get_parts():
+            if self.name == p.name:
+                return p
+
+    @property
     def element(self):
         return self.block().element
 
@@ -78,14 +110,20 @@ class Block:
     name = ''
     mods = {}
     props = {}
-    
+
     input = None
     output = None
+
+    input_n = None
+    output_n = None
+
     v_ref = None
     gnd = None
 
     element = None
     simulation = None
+
+    ref = None
 
     DEBUG = False
 
@@ -93,7 +131,7 @@ class Block:
         for prop in kwargs.keys():
             if hasattr(self, prop):
                 setattr(self, prop, kwargs[prop])
-        
+       
         if circuit:
             self.circuit()
 
@@ -106,17 +144,21 @@ class Block:
 
     def  __series__(self, instance):
         if self.output and instance.input:
-            self.output += instance.input
             self.output._name = instance.input._name = f'{self.name}{instance.name}_Net'
-            
-            # instance.input._name = self.output._name
-            
+            self.output += instance.input
+        
+        if self.output_n and instance.input_n:
+            self.output_n += instance.input_n
+        
         self.connect_power_bus(instance)
 
     def __parallel__(self, instance):
         self.input += instance.input
+        self.input_n += instance.input_n
+
         self.output += instance.output
-        
+        self.output_n += instance.output_n
+
         self.connect_power_bus(instance)
 
     def connect_power_bus(self, instance):
@@ -174,7 +216,11 @@ class Block:
 
     def get_arguments(self):
         arguments = {}
-        for arg in inspect.getargspec(self.__init__).args:
+        args = []
+        for cls in inspect.getmro(self):
+            args += inspect.getargspec(cls.__init__).args
+
+        for arg in args:
             if arg in ['self', 'circuit']:
                 continue
 
@@ -229,9 +275,8 @@ class Block:
 
     def get_pins(self):
         pins = {}
-        # test = inspect.getmembers(Block, lambda item: not (inspect.isroutine(item)))
         for key, value in inspect.getmembers(self, lambda item: not (inspect.isroutine(item))):
-            if type(value) == NetType and key not in ['__doc__', 'element', 'simulation']:
+            if type(value) == NetType and key not in ['__doc__', 'element', 'simulation', 'ref']:
                 pins[key] = [str(pin) for pin in getattr(self, key) and getattr(self, key).get_pins()]
 
         return pins
@@ -241,7 +286,7 @@ class Block:
     def part(self):
         if self.DEBUG:
             return
-            
+
         part = None
 
         if self.props.get('part', None) or self.name.find(':') != -1:
@@ -298,7 +343,6 @@ class Block:
 
         return None
 
-    @subcircuit
     def circuit(self, *args, **kwargs):
         Model = None
         if self.DEBUG:
@@ -307,11 +351,12 @@ class Block:
             Model = self.part
         
         element = Model(*args, **kwargs)
+        element.ref = self.ref or element.ref 
         self.element = element
+        
         
         self.set_pins()
 
-    @subcircuit
     def create_network(self):
         return [self.input, self.output]
 
@@ -320,6 +365,9 @@ class Block:
         self.output = Net('Output')
         self.input += self.element[1]
         self.output += self.element[2]
+        
+        # self.gnd == Net('0')
+        self.input_n = self.output_n = self.gnd = Net()
     
     def power(self):
         return None
@@ -341,10 +389,10 @@ class Block:
         logger.info(self.title + ' - ' + str(message))
 
     def test(self):
-        from skidl.pyspice import generate_netlist, node
+        from skidl.pyspice import node
 
         # Simulate the circuit.
-        circuit = generate_netlist()  # Translate the SKiDL code into a PyCircuit Circuit object.
+        circuit = builtins.default_circuit.generate_netlist()  # Translate the SKiDL code into a PyCircuit Circuit object.
         self.simulation = circuit.simulator()  # Create a simulator for the Circuit object.
         self.node = node
 
@@ -388,6 +436,26 @@ class Block:
 
         plt.show()
 
+    def test_pins(self, step_time=0.5 @ u_ms, end_time=200 @ u_ms):
+        self.test()
+
+        waveforms = self.simulation.transient(step_time=step_time, end_time=end_time)  # Run a transient simulation from 0 to 10 msec.
+        time = waveforms.time                # Time values for each point on the waveforms.
+        input = waveforms[self.node(self.input)]  # Voltage on the positive terminal of the pulsed voltage source.
+        output = waveforms[self.node(self.output)]  # Voltage on the capacitor.
+        current = waveforms['VS']
+        
+        data = []
+        for index, time in enumerate(time):
+            data.append({
+                'time': str(time.canonise()),
+                'V_in': input[index].scale * input[index].value,
+                'V_out': output[index].scale*output[index].value,
+                'I_out': current[index].scale*current[index].value,
+            })
+
+        return data
+
     def test_voltage(self, step_time=0.5 @ u_ms, end_time=200 @ u_ms):
         self.test()
 
@@ -402,4 +470,3 @@ class Block:
         self.test_plot(Time_ms=time.as_ndarray() * 1000, V_input=input.as_ndarray(), V_output=output.as_ndarray(),
                        plots=[('Time_ms', 'V_input'), ('Time_ms', 'V_output')],
                        table=False)
-        

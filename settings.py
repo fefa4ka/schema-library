@@ -1,11 +1,11 @@
 import os
 import sys
-sys.dont_write_bytecode = True
-
 # KiCad path for skidl
 
 # KiCad Modules directory
 os.environ['KISYSMOD'] = '/Users/fefa4ka/Development/_clone/kicad/modules'
+os.environ['KICAD_SYMBOL_DIR'] = '/Users/fefa4ka/Development/_clone/kicad/library'
+
 # Path where is libngspice.dylib placed
 os.environ['DYLD_LIBRARY_PATH'] = '/usr/local/Cellar/libngspice/28/lib/'
 
@@ -71,6 +71,12 @@ parts = {
         {
             'mount': 'smd',
             'footprint': 'Diode_SMD:D_MiniMELF'
+        }
+    ],
+    'Transformer': [
+        {
+            'mount': 'tht',
+            'footprint': 'Transformer_THT:Transformer_37x44'
         }
     ]
 }
