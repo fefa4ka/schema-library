@@ -25,4 +25,37 @@
 
 .Block-CodeExample {
     font-size: 11px;
+    height: auto;
+}
+
+
+.Block-Code .CodeMirror {
+    height: 100vh;
+}
+
+.Block-Code > .ant-tabs-card > .ant-tabs-content {
+    height: 100vh;
+
+    margin-top: -16px;
+  }
+
+.Block-Code > .ant-tabs-card > .ant-tabs-content > .ant-tabs-tabpane {
+    background: #fff;
+    padding: 0;
+
+    height: 100vh;
+}
+
+.Block-Code > .ant-tabs-card > .ant-tabs-bar {
+    border-color: #fff;
+}
+
+.Block-Code > .ant-tabs-card > .ant-tabs-bar .ant-tabs-tab {
+    border-color: transparent;
+    background: transparent;
+}
+
+.Block-Code > .ant-tabs-card > .ant-tabs-bar .ant-tabs-tab-active {
+    border-color: #fff;
+    background: #fff;
 }

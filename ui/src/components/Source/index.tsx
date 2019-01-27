@@ -1,5 +1,5 @@
 import { compose, IClassNameProps } from '@bem-react/core';
-import { Part  as  Base } from './Part';
+import { Part  as  Base } from './Source';
 
 export type TArgs = {
     [name:string]: {
@@ -12,25 +12,10 @@ export type TArgs = {
 }
 export type TSource = {
     name: string,
-    description: string[],
+    description: string,
     args: TArgs,
-    mods?: {
-        [name:string]: string[]
-    },
-    nets: {
-        [name:string]: string[]
-    },
     pins: {
         [name: string]: string[]
-    },
-    params: {
-        [name:string]: {
-            value: number | string,
-            unit: {
-                name: string,
-                suffix: string
-            }
-        }
     },
     index: number
 }
@@ -42,4 +27,4 @@ export interface IProps extends IClassNameProps {
     onChange(source:TSource): void
 }
 
-export const Part = compose()(Base);
+export const Source = compose()(Base);

@@ -97,6 +97,7 @@ def blocks():
     blocks = defaultdict()
     for block in [block.split('/')[2] for block in glob.glob('./blocks/*/__init__.py')]:
         blocks[block] = defaultdict(list)
+        
         for mod_type, mod_value in [(mod.split('/')[3], mod.split('/')[4]) for mod in glob.glob('./blocks/%s/_*/*.py' % block)]:
             mod_type = mod_type[1:]
             mod_value = mod_value.replace('.py', '')
@@ -112,6 +113,9 @@ def get_arguments_values(Block, params):
         props[attr] = getattr(Block, attr)
 
         arg = params.get(attr, None)
+        if arg and type(arg) == dict:
+            arg = arg['value']
+
         if arg and not isnan(float(arg)):
             if type(props[attr]) in [int, float]:
                 props[attr] = float(arg)
@@ -141,18 +145,20 @@ def block(name):
         Instance = Block(**props)
         
         parts = []
-        for part in Instance.input.circuit.parts:
-            pins = [str(pin) for pin in part.get_pins()]
-            parts.append({
-                'name': part.name,
-                'description': part.description,
-                'pins': pins
-            })
-
         nets = {}
-        for net in Instance.input.circuit.get_nets():
-            pins = [str(pin) for pin in net.get_pins()]
-            nets[net.name] = pins
+
+        if Instance.input:
+            for part in Instance.input.circuit.parts:
+                pins = [str(pin) for pin in part.get_pins()]
+                parts.append({
+                    'name': part.name,
+                    'description': part.description,
+                    'pins': pins
+                })
+
+            for net in Instance.input.circuit.get_nets():
+                pins = [str(pin) for pin in net.get_pins()]
+                nets[net.name] = pins
 
         params = {
             'name': Block.name,
@@ -161,6 +167,7 @@ def block(name):
             'args': Block.get_arguments(Block),
             'params': Instance.get_params(),
             'pins': Instance.get_pins(),
+            'files': Block.files,
             'parts': parts,
             'nets': nets
         }
@@ -211,7 +218,7 @@ def simulate(name):
         # R_pr
         # e_load = Build('Resistor').block(value = 100 @ u_Ohm)
         # signal = Build('PULSEV').spice(ref='VS', initial_value=-8 @ u_V, pulsed_value=10 @ u_V, pulse_width=40 @ u_ms, period=80 @ u_ms)
-        R_load = Build('Resistor').block(value = 10000 @ u_Ohm)
+        # R_load = Build('Resistor').block(value = 10000 @ u_Ohm)
         # Instance.input += signal['p']
         # gnd += signal['n']
         Instance.gnd += gnd
@@ -223,18 +230,33 @@ def simulate(name):
             part = get_part(source['name'])
             args = {}
             for arg in source['args'].keys():
-                if source['args'][arg] :
-                    args[arg] = float(source['args'][arg]) @ get_arg_units(part, arg)
+                if source['args'][arg]['value']:
+                    print(source['args'][arg]['value'])
+                    args[arg] = float(source['args'][arg]['value']) @ get_arg_units(part, arg)
 
             signal = Build(source['name']).spice(ref='VS', **args)
 
             for source_pin in source['pins'].keys():
                 for pin in source['pins'][source_pin]:
-                    if pin == 'output':
-                        R_load.input += Instance.output
-                        signal[source_pin] += R_load.output
-                    else:
-                        signal[source_pin] += getattr(Instance, pin)
+                    signal[source_pin] += getattr(Instance, pin)
+
+        load = params['load']
+        for source in params['load']:
+            print(source)
+            mods = {}
+            if source.get('mods', None):
+                mods = source['mods']
+
+            LoadBlock = Build(source['name'], **mods).block
+            args = get_arguments_values(LoadBlock, source['args'])
+            print('LOAD ARG', args)
+            load = LoadBlock(**args)
+            
+            for source_pin in source['pins'].keys():
+                for pin in source['pins'][source_pin]:
+                    print(source_pin, load, pin)
+                    load_pin = getattr(load, source_pin)
+                    load_pin += getattr(Instance, pin)
         
         pins = Instance.test_pins()
         
@@ -243,6 +265,20 @@ def simulate(name):
     params = build()
     # builtins.default_circuit.reset()
     return params
+
+
+@app.route('/api/files/', methods=['GET'])
+def get_file():
+    name = request.args.get('name', None)
+    if name:
+        file = open(name, 'r')
+        return ''.join(file.readlines())
+    else:
+        return ''
+    
+@app.route('/api/files/', methods=['POST'])
+def save_file():
+    return ''
 
 if __name__ == "__main__":
     app.debug = True

@@ -12,7 +12,7 @@ class Base(Block):
 
         self.value = value.canonise()
         self.ref = ref
-        self.circuit()
+        self.circuit(value=value)
 
     @property
     def spice_part(self):

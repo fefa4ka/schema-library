@@ -1,6 +1,7 @@
 
 import { compose, IClassNameProps } from '@bem-react/core';
-import { Diagram  as  Base } from './Block-Diagram';
+import { Diagram as Base } from './Block-Diagram';
+import { TSource } from '../../Part';
 
 export interface IProps extends IClassNameProps {
     name: string,
@@ -10,15 +11,8 @@ export interface IProps extends IClassNameProps {
     pins: {
         [name:string]: string[]
     },
-    sources: {
-        name: string,
-        args: {
-            [name:string]: number | string
-        },
-        pins: {
-            [name: string]: string[]
-        }
-    }[]
+    sources: TSource[],
+    load: TSource[]
 }
 
 export const Diagram = compose()(Base);

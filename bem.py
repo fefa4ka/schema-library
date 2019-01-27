@@ -3,7 +3,7 @@ import inspect
 import logging
 from pathlib import Path
 
-from PySpice.Unit import PeriodValue, u_ms
+from PySpice.Unit import PeriodValue, u_ms, FrequencyValue
 from PySpice.Unit.Unit import UnitValue
 from skidl import TEMPLATE, Net, Network, Part, subcircuit
 from skidl.Net import Net as NetType
@@ -31,17 +31,21 @@ class Build:
     mods = {}
     props = {}
     models = {}
+    files = []
 
     def __init__(self, name, **kwargs):
         self.name = name
         self.mods = {}
         self.props = {}
         self.models = []
+        self.files = []
 
         base_file = Path(BLOCKS_PATH) / self.name / ('__init__.py')
         self.base = base_file.exists() and importlib.import_module(BLOCKS_PATH + '.' + self.name).Base        
 
         if self.base:
+            self.files.append(str(base_file))
+
             for mod, value in kwargs.items():
                 if type(value) == list:
                     self.mods[mod] = value
@@ -60,8 +64,10 @@ class Build:
                 for value in values:
                     module_file = Path(BLOCKS_PATH) / self.name / ('_' + mod) / (value + '.py')
                     if module_file.exists():
+                        self.files.append(str(module_file))
                         Module = importlib.import_module(BLOCKS_PATH + '.' + self.name + '._' + mod + '.' + value)
                         self.models.append(Module.Modificator)
+                    
                     else:
                         self.props[mod] = value
 
@@ -72,19 +78,24 @@ class Build:
     def block(self):
         if self.base:
             Models = self.models
-            Models.append(self.base)
+            Models.reverse()
+            if self.base not in Models:
+                Models.append(self.base)
             Models = tuple(self.models)
         else:
             Models = (Block,)
 
-        return type(self.name,
+        Block = type(self.name,
                     Models,
                     {
                         'name': self.name,
                         'mods': self.mods,
                         'props': self.props,
-                        'DEBUG': DEBUG
+                        'DEBUG': DEBUG,
+                        'files': self.files
                     })
+
+        return Block
 
     @property
     def spice(self):
@@ -124,7 +135,7 @@ class Block:
     simulation = None
 
     ref = None
-
+    files = []
     DEBUG = False
 
     def __init__(self, circuit=True, *args, **kwargs):
@@ -135,10 +146,14 @@ class Block:
         if circuit:
             self.circuit()
 
+    @property
+    def __instance__name__(self):
+        return [k for k,v in globals().items() if v is self]
+
     def __str__(self):
         body = [self.name]
         for key, value in self.mods.items():
-            body.append(key + ' = ' + value)
+            body.append(key + ' = ' + str(value))
         
         return '\n'.join(body)
 
@@ -217,15 +232,17 @@ class Block:
     def get_arguments(self):
         arguments = {}
         args = []
-        for cls in inspect.getmro(self):
+        classes = list(inspect.getmro(self))
+        classes.reverse()
+        for cls in classes:
             args += inspect.getargspec(cls.__init__).args
-
+        
         for arg in args:
             if arg in ['self', 'circuit']:
                 continue
 
             default = getattr(self, arg)
-            if type(default) in [UnitValue, PeriodValue]:
+            if type(default) in [UnitValue, PeriodValue, FrequencyValue]:
                 arguments[arg] = {
                     'value': default.value * default.scale,
                     'unit': {
@@ -246,7 +263,7 @@ class Block:
                         'name': 'network'
                     }
                 }
-        
+
         return arguments
     
     def get_params(self):
@@ -255,7 +272,7 @@ class Block:
             if param in inspect.getargspec(self.__init__).args:
                 continue
 
-            if type(default) in [UnitValue, PeriodValue]:
+            if type(default) in [UnitValue, PeriodValue, FrequencyValue]:
                 params[param] = {
                     'value': default.value * default.scale,
                     'unit': {
@@ -280,12 +297,11 @@ class Block:
                 pins[key] = [str(pin) for pin in getattr(self, key) and getattr(self, key).get_pins()]
 
         return pins
-
-
+        
     @property
     def part(self):
         if self.DEBUG:
-            return
+            return None
 
         part = None
 
@@ -349,12 +365,15 @@ class Block:
             Model = self.spice_part
         else:
             Model = self.part
-        
+
+        if not Model:
+            return
+
         element = Model(*args, **kwargs)
         element.ref = self.ref or element.ref 
         self.element = element
         
-        
+        print('INSTANCE NAME', self.__instance__name__)
         self.set_pins()
 
     def create_network(self):
@@ -393,6 +412,7 @@ class Block:
 
         # Simulate the circuit.
         circuit = builtins.default_circuit.generate_netlist()  # Translate the SKiDL code into a PyCircuit Circuit object.
+        print(circuit)
         self.simulation = circuit.simulator()  # Create a simulator for the Circuit object.
         self.node = node
 

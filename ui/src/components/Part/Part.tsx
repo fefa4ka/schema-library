@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { IProps, TSource } from './index'
+import { IProps, TSource, TArgs } from './index'
 import { cn } from '@bem-react/classname'
 import axios from 'axios'
 import { Button, Select, TreeSelect} from 'antd'
@@ -19,30 +19,26 @@ const cnPart = cn('Part')
 const initialState = {
     name: '',
     pins: {},
-    parts: [],
+    parts: {},
+    selectedMods: [],
     index: -1
 }
 
 // type State = typeof initialState
-type Args = {
-    [name:string]: {
-        value: number | string,
-        unit: {
-            name: string,
-            suffix: string
-        }
+
+
+
+type TPartList = {
+    [name: string]: {
+        [name: string]: string[]
     }
-}
-type TPart = {
-    name: string,
-    description: string,
-    pins: string[],
-    args: Args
 }
 type State = {
     name: string,
     pins: TSource['pins'],
-    parts: TPart[],
+    parts: TPartList,
+    part?: TSource,
+    selectedMods: string[],
     index: number
 }
 
@@ -54,59 +50,114 @@ export class Part extends React.Component<IProps, {}> {
         index: this.props.source.index >= 0
             ? this.props.source.index 
             : -1,
-        pins: this.props.source.pins
+        pins: this.props.source.pins,
+        selectedMods: this.props.source.mods 
+            ? Object.keys(this.props.source.mods).map((mod: string) => `${mod}=${this.props.source.mods && this.props.source.mods[mod]}`)
+            : []
     }
 
     componentWillMount() {
         this.loadParts()
+        this.state.name && this.loadPart()
 
         return true
     }
     loadParts() {
-        axios.get('http://localhost:3000/api/sources/')
+        axios.get('http://localhost:3000/api/blocks/')
             .then(res => {
                 const parts = res.data
-                this.setState({ parts }, () => this.loadSource(this.props.source))
+                this.setState({ parts })
             })
     }
-    getCurrentSource() {
-        const { name } = this.state
-        const args: Args = this.state.parts.reduce((args, item) => item.name === name ? item.args : args, {})
-       
+    loadPart(callback?: any) {
+        const selectedMods: { [name:string]: string[] } = this.state.selectedMods.reduce((mods: { [name:string]: string[] }, mod) => {
+            const [type, value] = mod.split('=')
+            mods[type] = mods[type] || []
+            mods[type].push(value)
+
+            return mods
+        }, {})
+
+        const args = this.state.part
+            ? this.state.part.args
+            : {}
+
+        const modsUrlParam = Object.keys(selectedMods).map((mod:string) => mod + '=' + selectedMods[mod].join(','))
+        const argsUrlParam = Object.keys(args).map(arg => arg + '=' + args[arg].value)
+        let urlParams = '?' + modsUrlParam.concat(argsUrlParam).join('&')
+        
+        axios.get('http://localhost:3000/api/blocks/' + this.state.name + '/' + urlParams)
+            .then(res => {
+                const part = res.data
+                const selectedMods = Object.keys(part.mods).reduce((selected, type) =>
+                    selected.concat(
+                        part.mods[type].map((value: string) => type + '=' + value)
+                    ), [])
+                        
+                this.setState({
+                    part,
+                    selectedMods
+                }, () => callback && callback())
+            })
+    }
+    getCurrentLoad() {
+        const { name, part } = this.state
+    
         return {
             name,
-            args: Object.keys(args).reduce((attr:any, arg) => {
-                attr[arg] = args[arg].value
-                return attr
-            }, {}),
+            description: part ? part.description : [],
+            args: part ? part.args : {},
+            mods: part ? part.mods : {},
             pins: Object.assign({}, this.state.pins),
+            nets: {},
+            params: {},
             index: this.state.index
         }
 
     }
-    loadSource({ name, args, pins, index }: TSource) {
-        this.setState(({ parts }: State) => {
-            if (index === -1 || index === undefined) {
-                return {
-                    name: undefined,
-                    index: -1,
-                    pins: {}
-                }
-            } else {
-                const partArgs: Args = parts.reduce((args, item) => item.name === name ? item.args : args, {})
-                Object.keys(args).forEach(arg => {
-                    const floated = parseFloat(args[arg])
-                    partArgs[arg].value = isNaN(floated) ? '' : floated
-                })
-
-                return {
-                    parts,
-                    name,
-                    index,
-                    pins
-                }
-            }
-        })
+    loadSource({ name, args, pins, index, mods }: TSource) {
+        if (index === -1 || index === undefined) {
+            this.setState({
+                name: undefined,
+                part: undefined,
+                index: -1,
+                pins: {}
+            })
+        } else {
+            const _mods: any = mods
+            const selectedMods = mods
+                ? Object.keys(mods).reduce((selected, type) =>
+                    selected.concat(
+                        _mods[type].map((value: string) => type + '=' + value)
+                    ), [])
+            : []
+            this.setState({
+                name,
+                part: {
+                    pins: {},
+                    args,
+                    description: []
+                },
+                pins,
+                index,
+                selectedMods
+            }, () =>
+                    this.loadPart(() => 
+                        this.setState(({ part }: State) => {
+                            part && Object.keys(part.args).forEach(arg => {
+                                const floated = parseFloat(args[arg].value.toString())
+                                part.args[arg].value = isNaN(floated) ? '' : floated
+                            })
+                            
+                            return {
+                                part: {
+                                    ...part,
+                                    args
+                                }
+                            }
+                        })
+                ))
+        }
     }
     componentDidUpdate(prevProps: IProps) {
         if (prevProps.source.index !== this.props.source.index) {
@@ -114,13 +165,16 @@ export class Part extends React.Component<IProps, {}> {
         }
     }
     render() { 
-        const { onChange } = this.props
-        const { parts, name } = this.state
-        const current = parts.filter(part => part.description.toLowerCase().indexOf('current') !== -1)
-        const voltage = parts.filter(part => part.description.toLowerCase().indexOf('current') === -1)
-        const args:Args = this.state.parts.reduce((args, item) => item.name === name ? item.args : args, {})
-        const pins:string[] = this.state.parts.reduce((pins, item) => item.name === name ? item.pins : pins, [''])
+        const { type, onChange } = this.props
+        const { parts, part, name } = this.state
 
+        const args: any = part
+            ? part.args
+            : {}
+        const pins: string[] = part 
+            ? Array.isArray(part.pins) ? part.pins : Object.keys(part.pins).filter(pin => part.pins[pin].length  > 0)
+            : []
+        
         const attributes = Object.keys(args).map(name => {
             const isExists = args.hasOwnProperty(name)
 
@@ -142,15 +196,13 @@ export class Part extends React.Component<IProps, {}> {
                 suffix={suffix}
                 value={value.toString()}
                 onChange={(val: number) => {
-                    this.setState(({ parts }: State) => {
-                        const part = parts.find(item => item.name === this.state.name)
-                        console.log('unitinput,', part, name, val)
+                    this.setState(({ part }: State) => {
                         if (part) {
                             part.args[name].value = val
                         }
 
-                        return { parts }
-                    }, () => onChange(this.getCurrentSource()))
+                        return { part }
+                    }, () => onChange(this.getCurrentLoad()))
                 }}
             />
         })
@@ -172,7 +224,7 @@ export class Part extends React.Component<IProps, {}> {
                                 pins[pin] = value
 
                                 return { pins }
-                            }, () => onChange(this.getCurrentSource()))
+                            }, () => onChange(this.getCurrentLoad()))
                         }}
                     >
                         {this.props.pins.map(pin => <Option key={pin} value={pin}>{pin}</Option>)}
@@ -181,24 +233,58 @@ export class Part extends React.Component<IProps, {}> {
             })}
             </Form>
 
-        
+        const description = part && part.description.map((description, index) =>
+            <Markdown key={index} source={description}/>
+        )
+        const mods = this.state.parts[name]
+
         return (
             <div className={cnPart()}>
-                <Select
-                    style={{ width: '100%' }}
-                    placeholder='Select Power Source'
-                    value={this.state.name}
-                    onChange={name => this.setState({
-                        name
-                    }, () => onChange(this.getCurrentSource()))}
-                >
-                    <OptGroup label="Voltage">
-                        {voltage.map(item => <Option value={item.name} key={item.name}>{item.description}</Option>)}
-                    </OptGroup>
-                    <OptGroup label="Current">
-                        {current.map(item => <Option value={item.name} key={item.name}>{item.description}</Option>)}
-                    </OptGroup>
-                </Select>
+                <Row>
+                    <Col span={mods && Object.keys(mods).length ? 12 : 24}>
+                    <Select
+                        style={{ width: '100%' }}
+                        placeholder='Select Load'
+                        value={this.state.name}
+                        onChange={name =>
+                            this.setState({
+                                name
+                            }, () =>
+                                    this.loadPart(
+                                        () => onChange(this.getCurrentLoad())
+                                    )
+                            )
+                        }
+                    >   
+                        {Object.keys(parts).map(item => <Option value={item} key={item}>{item}</Option>)}
+                    </Select>
+                    </Col>
+                    {mods && Object.keys(mods).length  
+                    ? <Col span={12} className={cnPart('Modificator')}>
+                            <TreeSelect
+                                showSearch
+                                style={{ width: '100%' }}
+                                value={this.state.selectedMods}
+                                placeholder="Modificators"
+                                treeCheckable={true}
+                                multiple
+                                treeDefaultExpandAll
+                                onChange={selectedMods => this.setState({ selectedMods }, this.loadPart)}
+                            >
+                                {Object.keys(mods).map(type =>
+                                    <TreeNode value={type} title={type} key={type}>
+                                        {mods[type].map(value => 
+                                            <TreeNode value={type + '=' + value} title={value} key={type + '=' + value} />
+                                        )}
+                                    </TreeNode>
+                                )}
+                            </TreeSelect>
+                        </Col>
+                    : ''}
+                    
+                </Row>
+                
+                {description}
                 <Divider orientation="left">Properties</Divider>
                 <div className={cnPart('Attributes')}>
                     {attributes}

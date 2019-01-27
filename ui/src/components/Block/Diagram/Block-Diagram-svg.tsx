@@ -1,23 +1,74 @@
 import * as React from 'react'
 import { IProps } from './index'
+import { cn } from '@bem-react/classname'
+import './Block-Diagram.css'
 const nomnoml = require('nomnoml')
 
+const cnDiagram = cn('Block')('Diagram')
 const initialState = {
     exponenta: 0,
     value: '',
+    graph: ''
 }
 
 type State = {
     exponenta: number,
-    value: string | number
+    value: string | number,
+    graph: string
 }
 
+function convertReactSVGDOMProperty(str:string) {
+    return str.replace(/[-|:]([a-z])/g, function (g) { return g[1].toUpperCase(); })
+}
+
+function startsWith(str:string, substring:string) {
+    return str.indexOf(substring) === 0;
+}
+
+const DataPropPrefix = 'data-';
+
+function serializeAttrs(map:any) {
+    const ret:any = {};
+    for (let prop, i = 0; i < map.length; i++) {
+        const key = map[i].name;
+        if (key == "class") {
+            prop = "className";
+        }
+        else if (!startsWith(key, DataPropPrefix)) {
+            prop = convertReactSVGDOMProperty(key);
+        }
+        else {
+            prop = key;
+        }
+
+        ret[prop] = map[i].value;
+    }
+    return ret;
+}
+
+function getSVGFromSource(src:string) {
+    const svgContainer = document.createElement('div');
+    svgContainer.innerHTML = src
+    const svg = svgContainer.firstElementChild
+    svg && svg.remove 
+        ? svg.remove()
+        : svg && svgContainer.removeChild(svg); // deref from parent element
+    
+    return svg
+}
+
+// get <svg /> element props
+function extractSVGProps(src: string) {
+    const obj = getSVGFromSource(src)
+    return (obj && obj.attributes && obj.attributes.length > 0) ? serializeAttrs(obj.attributes) : null;
+}
+  
 export class Diagram extends React.Component<IProps, {}> {
     state: State = initialState
     private canvasRef = React.createRef<HTMLCanvasElement>()
 
-    componentDidUpdate() {
-        const { nets, pins, sources, load } = this.props
+    render() { 
+        const { nets, pins, sources } = this.props
 
         const get_name = (pin: string, index: number) => {
             const [_, data] = pin.split(' ')
@@ -26,23 +77,13 @@ export class Diagram extends React.Component<IProps, {}> {
             return vars[index]
         }
 
-        const connectedSourcePins = sources.reduce((pins:string[], source) => {
+        const connectedPins = sources.reduce((pins:string[], source) => {
             const sourcePins: string[] = Object.keys(source.pins).reduce((pins: string[], pin) => 
                 pins.concat(source.pins[pin])
-                , [])
+            , [])
 
             return pins.concat(sourcePins)
         }, []).filter((value, index, self) => self.indexOf(value) === index)
-
-        const connectedLoadPins = load.reduce((pins:string[], source) => {
-            const sourcePins: string[] = Object.keys(source.pins).reduce((pins: string[], pin) => 
-                pins.concat(source.pins[pin])
-                , [])
-
-            return pins.concat(sourcePins)
-        }, []).filter((value, index, self) => self.indexOf(value) === index)
-        
-        const connectedPins = connectedSourcePins.concat(connectedLoadPins)
 
         
         const network = Object.keys(nets).map((net, index) => {
@@ -79,38 +120,25 @@ export class Diagram extends React.Component<IProps, {}> {
         const sourcesNet = sources.map(source => {
             const name = source.description || source.name
             const args = Object.keys(source.args).filter(arg => source.args[arg].value).map(arg => `${arg} = ${source.args[arg].value} ${source.args[arg].unit.suffix}`).join(';')
-            
-            const diagram = [`[<source>${name}|${args}]`]
+
+            const diagram = [`[${name}|${args}]`]
             Object.keys(source.pins).forEach(pin => {
-                source.pins[pin].forEach((input:string) =>
+                source.pins[pin].forEach(input =>
                     diagram.push(`[${name}]${pin}-[${input}]`)
                 )
             })
 
             return diagram.join(';')
         }).join(';')
-
-        const loadNet = load.map(source => {
-            const { name } = source
-            const args = Object.keys(source.args).filter(arg => source.args[arg].value).map(arg => `${arg} = ${source.args[arg].value} ${source.args[arg].unit.suffix}`).join(';')
-            
-            const diagram = [`[<load>${name}|${args}]`]
-            Object.keys(source.pins).forEach(pin => {
-                source.pins[pin].forEach((input:string) =>
-                    diagram.push(`[${name}]${pin}-[${input}]`)
-                )
-            })
-
-            return diagram.join(';')
-        }).join(';')
-
-        const settings = ['#font: ISOCPEUR', '#stroke: #000000', '#.load: stroke=#afafaf fill=#f0f2f5', '#.source: stroke=#afafaf fill=#f0f2f5', '#direction: down', '#fill: #ffffff', '#lineWidth: 1', '#.unwired: stroke=red visual=none bold', '#.unwiredgnd: stroke=red visual=end empty '].join('\n')
-        const graph = settings + '\n' + [network, `[<${connectedPins.includes('gnd') ? 'end' : 'unwiredgnd'}>gnd]`, pinsNet, sourcesNet, loadNet].filter(_=>_).join(';')
-        
-        nomnoml.draw(this.canvasRef.current, graph);
-    }
-    render() { 
-
-       return <canvas ref={this.canvasRef} />
+        // const ids = ['#label: stroke=#000001']
+        const settings = ['#font: ISOCPEUR', '#stroke: #000000', '#direction: down', '#fill: #ffffff', '#lineWidth: 1', '#.unwired: stroke=red visual=none bold', '#.unwiredgnd: stroke=red visual=end empty', '#.label: visual=none align=center'].join('\n')
+        const graph = settings + '\n' + [network, `[<${connectedPins.includes('gnd') ? 'end' : 'unwiredgnd'}>gnd]`, pinsNet, sourcesNet].filter(_ => _).join(';')
+        console.log(graph)
+        return (
+            <div
+                dangerouslySetInnerHTML={{ __html: nomnoml.renderSvg(graph) }}
+                className={cnDiagram}
+            >
+            </div>)
     }
 }

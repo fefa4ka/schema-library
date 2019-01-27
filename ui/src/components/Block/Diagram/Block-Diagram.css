@@ -1,0 +1,7 @@
+.Block-Diagram > svg * {
+    cursor: pointer;
+}
+
+.Block-Diagram > svg *:hover {
+    stroke: red !important;
+}

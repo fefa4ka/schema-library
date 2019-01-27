@@ -5,15 +5,17 @@ import axios from 'axios'
 import { Divider, Tag, Button, Input, TreeSelect} from 'antd'
 import { Icon, Tabs, Row, Col, Modal } from 'antd'
 import Markdown from 'react-markdown'
+import { Source, TSource } from '../Source'
 import { Part } from '../Part'
 const { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceArea } = require('recharts')
 const TabPane = Tabs.TabPane;
 import { UnitInput } from '../UnitInput'
 import { Diagram } from './Diagram'
+import { Code } from '../Code'
 const TreeNode = TreeSelect.TreeNode;
 import {UnControlled as CodeMirror} from 'react-codemirror2'
 
-import './Block.css';
+import './Block.css'
 require('codemirror/lib/codemirror.css')
 require('codemirror/mode/python/python')
 
@@ -28,35 +30,73 @@ const initialState = {
     nets: {},
     pins: {},
     params: {},
-    modalVisible: false,
+    modalSourceVisible: false,
+    modalLoadVisible: false,
     chartData: [],
     modalConfirmLoading: false,
     editableSource: {
         name: '',
+        description: '',
         args: {},
         pins: {},
         index: -1
     },
+    editableSourceType: '',
     sources: [{
         'name': 'SINEV',
-        'args': { 'amplitude': '10', 'frequency': '20' },
-        'pins': { 'p': ['input'], 'n': ['output', 'gnd'] },
+        'description': 'Sinusoidal voltage source',
+        'args': {
+            'amplitude': {
+                value: '10',
+                unit: {
+                    name: 'volt',
+                    suffix: 'V'
+                }
+            },
+            'frequency': {
+                value: 20,
+                unit: {
+                    name: 'volt',
+                    suffix: 'A'
+                }
+            }
+        },
+        'pins': { 'p': ['input'], 'n': ['gnd'] },
         'index': 0
     }],
+    editableLoad: {
+        name: '',
+        description: '',
+        args: {},
+        pins: {},
+        index: -1
+    },
+    load: [{
+        name: 'RLC',
+        description: '',
+        mods: {
+            series: ['R']
+        },
+        args: {
+            R_series: {
+                value: '10',
+                unit: {
+                    name: 'ohm',
+                    suffix: 'Ω'
+                }
+            }
+        },
+        pins: {
+            input: ['output'],
+            output: ['gnd']
+        },
+        index: 0
+    }],
     mods: {},
-    example: ''
+    example: '',
+    files: []
 }
 
-type Source = {
-    name: string,
-    args: {
-        [name: string]: string 
-    },
-    pins: {
-        [name: string]: string[]
-    },
-    index: number
-}
 
 type State = {
     name: string,
@@ -86,27 +126,32 @@ type State = {
             }
         }
     },
-    editableSource: Source,
-    sources: Source[],
+    load: TSource[],
+    editableLoad: TSource,
+    editableSource: TSource,
+    editableSourceType: string,
+    sources: TSource[],
     chartData: {
         [name:string]: number[]
     }[],
-    modalVisible: boolean,
+    modalSourceVisible: boolean,
+    modalLoadVisible: boolean,
     modalConfirmLoading: boolean,
     mods?: {
         [name:string]: string[]
     },
-    example: string
+    example: string,
+    files: string[]
 }
 
 
 export class Block extends React.Component<IProps, {}> {
     state: State = initialState
     codeInstance: any
-
+    componentWillMount() {
+        this.loadBlock()
+    }
     componentDidUpdate(prevProps: IProps, prevState: State) {
-        // console.log(prevProps.name, this.props.name)
-        // console.log(prevState.selectedMods.join(''), this.state.selectedMods.join(''))
         if (prevProps.name !== this.props.name) {
             this.setState({
                 selectedMods: [],
@@ -118,7 +163,7 @@ export class Block extends React.Component<IProps, {}> {
         return true
     }
     loadSimulation() {
-        const { args, sources } = this.state
+        const { args, sources, load } = this.state
 
 
         axios.post('http://localhost:3000/api/blocks/' + this.props.name + '/simulate/',
@@ -129,7 +174,8 @@ export class Block extends React.Component<IProps, {}> {
                 
                 return result
             }, {}),
-            sources
+            sources,
+            load
         })
             .then(res => {
                 this.setState({ chartData: res.data })
@@ -155,7 +201,7 @@ export class Block extends React.Component<IProps, {}> {
             
         axios.get('http://localhost:3000/api/blocks/' + this.props.name + '/' + urlParams)
             .then(res => {
-                const { name, description, args, params, mods, pins, parts, nets } = res.data
+                const { name, description, args, params, mods, pins, files, nets } = res.data
                 const { sources } = this.state
                
                 
@@ -171,15 +217,15 @@ export class Block extends React.Component<IProps, {}> {
 from PySpice.Unit import ${codeUnits}
 
 # With variables
-${name} = Build('${name}', ${codeMods}).block
-${name.toLowerCase()} = ${name}(
+${name} = Build('${name}'${codeMods ? ', ' + codeMods: ''}).block
+${name.toLowerCase()} = ${name}${codeArgs ? `(
     ${codeArgs}
-)
+)` : '()'}
 
 # Inline
-Build('${name}', ${codeMods}).block(
+Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
     ${codeArgs}
-)`
+)` : '()'}`
 
                 this.setState({
                     description,
@@ -189,19 +235,18 @@ Build('${name}', ${codeMods}).block(
                     nets,
                     pins,
                     example: codeExample,
+                    files,
                     selectedMods
                 }, this.loadSimulation)
             })
     }
-    showModal = () => {
-        console.log(this.state.editableSource)
+    showModal = (name:string) => {
         this.setState({
-            modalVisible: true,
+            [`modal${name}Visible`]: true,
         });
     }
-    handleOk = () => {
+    handleSourceOk = () => {
         this.setState(({ sources, editableSource }: State) => {
-            console.log('modalok', editableSource)
             if (editableSource.index >= 0) {
                 sources[editableSource.index] = editableSource
             } else {
@@ -212,18 +257,36 @@ Build('${name}', ${codeMods}).block(
                 modalConfirmLoading: false,
                 sources,
                 editableSource: {},
-                modalVisible: false,
+                modalSourceVisible: false,
             }
         }, this.loadSimulation)
     }
+    handleLoadOk = () => {
+        this.setState(({ load, editableLoad }: State) => {
+            
+            if (editableLoad.index >= 0) {
+                load[editableLoad.index] = editableLoad
+            } else {
+                load = load.concat([editableLoad])
+            }
 
-    handleCancel = () => {
-        console.log('Clicked cancel button');
+            console.log('modalok', load, editableLoad)
+
+            return {
+                modalConfirmLoading: false,
+                load,
+                editableLoad: {},
+                modalLoadVisible: false,
+            }
+        }, this.loadSimulation)
+    }
+    handleModalCancel = (name:string) => {
+        console.log(name, 'Clicked cancel button');
         this.setState({
-            modalVisible: false,
+            [`modal${name}Visible`]: false,
             editableSource: {},
-            example: ''
-        }, () => this.codeInstance.refresh())
+            editableLoad: {}
+        })
     }
     render() {
         const { mods } = this.props
@@ -326,7 +389,7 @@ Build('${name}', ${codeMods}).block(
                     </Col>
                 </Row>
             
-                <Tabs defaultActiveKey="1" onChange={_ => {console.log('tab')}}>
+                <Tabs defaultActiveKey="1" onChange={_ => {console.log('tab')}}  className={cnBlock('BlockTabs')}>
                     <TabPane tab="Simulation" key="1">
                         <Row>
                             <Col span={17} className={cnBlock('Description')}>
@@ -335,32 +398,41 @@ Build('${name}', ${codeMods}).block(
                                 </Divider>
                                 {description}
                                 <Row className={cnBlock('Pins')}>
-                                    <Col span={8}>
+                                    
+                                    <Col span={24}>
+                                        <Divider orientation="left">
+                                            Schematics
+                                        </Divider>
+                                        <Diagram pins={this.state.pins} nets={this.state.nets} sources={this.state.sources} load={this.state.load}/></Col>
+                                </Row>
+                                <Row>
+                                <Col span={12}>
                                         <Divider orientation="left">
                                             Sources 
                                         </Divider>
                                         
                                         <Modal
-                                            title="Title"
-                                            visible={this.state.modalVisible}
-                                            onOk={this.handleOk}
-                                            onCancel={this.handleCancel}
+                                            title="Add Power Source"
+                                            visible={this.state.modalSourceVisible}
+                                            onOk={this.handleSourceOk}
+                                            onCancel={() => this.handleModalCancel('Source')}
                                             >
-                                                <Part
-                                                    type='source'
+                                                <Source
+                                                    type={this.state.editableSourceType}
                                                     source={this.state.editableSource}
                                                     pins={Object.keys(this.state.pins)}
-                                                    onChange={(source:Source) =>
+                                                    onChange={(source:TSource) =>
                                                         this.setState(({ editableSource }:State) => ({ editableSource: source }), () => console.log('change', this.state))
                                                     }
                                                 />
                                         </Modal>
+
                                         {this.state.sources.map((source, index) => 
                                             <Tag
                                                 key={source.name + index.toString()}
                                                 closable
                                                 onClick={_ => {
-                                                    this.setState({ editableSource: this.state.sources[index] }, this.showModal)
+                                                    this.setState({ editableSource: this.state.sources[index] }, () => this.showModal('Source'))
                                                 }}
                                                 onClose={() => {
                                                     this.setState(({ sources }: State) => {
@@ -372,16 +444,45 @@ Build('${name}', ${codeMods}).block(
                                             }}>
                                                 {source.name}
                                             </Tag>
-                                        )} <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableSource: { index: -1} }, this.showModal) }><Icon type="api" /> Add</Tag>
-
-                                        <Divider orientation="left">Load</Divider>
-                                        <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableSource: { index: -1} }, this.showModal) }><Icon type="api" /> Add</Tag>
+                                        )} <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableSourceType: 'source', editableSource: { index: -1} }, () => this.showModal('Source')) }><Icon type="api" /> Add</Tag>
                                     </Col>
-                                    <Col span={16}>
-                                        <Divider orientation="left">
-                                            Schematics
-                                        </Divider>
-                                        <Diagram pins={this.state.pins} nets={this.state.nets} sources={this.state.sources} /></Col>
+                                    <Col span={6}>
+                                        <Divider orientation="left">Load</Divider>
+                                        {this.state.load.map((source, index) => 
+                                            <Tag
+                                                key={source.name + index.toString()}
+                                                closable
+                                                onClick={_ => {
+                                                    this.setState({ editableLoad: this.state.load[index] }, () => this.showModal('Load'))
+                                                }}
+                                                onClose={() => {
+                                                    this.setState(({ load }: State) => {
+                                                        
+                                                        load.splice(index, 1)
+                                                        
+                                                        return { load }
+                                                    })
+                                            }}>
+                                                {source.name}
+                                            </Tag>
+                                        )}<Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableLoad: { index: -1 } }, () => this.showModal('Load'))}><Icon type="api" /> Add</Tag>
+                                        
+                                        <Modal
+                                            title="Add Load"
+                                            visible={this.state.modalLoadVisible}
+                                            onOk={this.handleLoadOk}
+                                            onCancel={() => this.handleModalCancel('Load')}
+                                            >
+                                                <Part
+                                                    source={this.state.editableLoad}
+                                                    pins={Object.keys(this.state.pins)}
+                                                onChange={(load: TSource) =>
+                                                        this.setState({ editableLoad: load }, () => console.log('change', this.state))
+                                                    }
+                                                />
+                                        </Modal>
+                                        
+                                    </Col>
                                 </Row>
                             </Col>
                             <Col span={7} className={cnBlock('Characteristics')}>
@@ -402,19 +503,30 @@ Build('${name}', ${codeMods}).block(
                         <Divider orientation="left">Waveforms</Divider>
                         <ResponsiveContainer width='100%' aspect={4.0/1.0}>
                             <LineChart data={this.state.chartData}>
+                                <Legend verticalAlign='top'/>
                                 <XAxis dataKey="time"/>
-                                <YAxis yAxisId="left" />
-                                <YAxis yAxisId="right" orientation="right" />
+                                <YAxis yAxisId="left" label='Volt' />
+                                <YAxis yAxisId="right" label='Ampere' orientation="right" />
                                 <CartesianGrid strokeDasharray="3 3"/>
                                 <Tooltip/>
-                                <Legend />
                                 <Line type="monotone" dataKey="V_in" stroke="#1890ff" dot={false} unit='V' yAxisId="left" />
                                 <Line type="monotone" dataKey="V_out" stroke="#000000" dot={false} unit='V' yAxisId="left" />
                                 <Line type="monotone" dataKey="I_out" stroke="red" dot={false} unit='A' yAxisId="right" />
                             </LineChart>
                         </ResponsiveContainer>
                     </TabPane>
-                    <TabPane tab="Code" key="2">Code</TabPane>
+                    <TabPane tab="Code" key="2" className={cnBlock('Code')}>
+                        <Tabs key={'dsad'} type="card">
+                        {this.state.files.map(file => 
+                            <TabPane tab={file.replace('blocks/' + this.props.name + '/', '')} key={file}>
+                                <Code
+                                    file={file}
+                                />
+                            </TabPane>
+                        )}
+                        </Tabs>
+                        
+                    </TabPane>
                 </Tabs>
             </div>
         )

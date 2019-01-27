@@ -12,7 +12,7 @@ const { SubMenu } = Menu;
 
 const initState = {
   blocks: {},
-  selectedBlock: 'Resistor'
+  selectedBlock: ''
 }
 type State = {
   blocks: {
@@ -67,10 +67,10 @@ class App extends Component {
               </Menu>
             </Sider>
             <Content>
-              <Block name={selectedBlock} mods={this.state.blocks[selectedBlock]} />
+              {selectedBlock && <Block name={selectedBlock} mods={this.state.blocks[selectedBlock]} />}
             </Content>
           </Layout>
-          <Footer>© bem-skidl</Footer>
+          <Footer><strong>⏚ Circuits</strong> builds by <strong>B</strong>locks with <strong>E</strong>lements and <strong>M</strong>odificators</Footer>
         </Layout>
       </div>
       
