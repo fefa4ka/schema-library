@@ -14,19 +14,6 @@ class Base(Block):
     }
 
     output_gnd = None
-    V_out = 10 @ u_V
-    V_ripple = 1 @ u_V
-
-    R_load = 0 @ u_Ohm
-    I_load = 0 @ u_A
-    P_load = 0 @ u_W
-    frequency = 220 @ u_Hz
-    
-    def __init__(self, V_out=None, V_ripple=None,  frequency=None, R_load=None, I_load=None, P_load=None):
-        if self.R_load and self.V_out:
-            self.I_load = self.V_out / self.R_load
-        
-        self.circuit()
 
     def __series__(self, instance):
         if self.output and instance.input:
@@ -48,3 +35,6 @@ class Base(Block):
         self.output_n = Net()
         
         self.create_bridge()
+
+    def test_load(self):
+        return []

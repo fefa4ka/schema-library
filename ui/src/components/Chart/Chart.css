@@ -1,0 +1,8 @@
+.Chart .recharts-legend-item {
+    cursor: pointer;
+}
+
+.Chart .recharts-legend-item:hover {
+    font-weight: bold;
+    cursor: pointer;
+}

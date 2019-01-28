@@ -6,9 +6,10 @@ class Modificator(Base):
     R_series = 1 @ u_Ohm
 
     def __init__(self, R_series, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.R_series = R_series
-        
+
+        super().__init__(*args, **kwargs)
+
     def circuit(self):
         super().circuit()
         
@@ -18,5 +19,5 @@ class Modificator(Base):
         R = Build('Resistor').block
         
         R_out = R(value=self.R_series, ref='R_s')
-
+        
         circuit = signal & R_out['+,-'] & self.output

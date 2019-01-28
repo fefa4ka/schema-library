@@ -30,7 +30,7 @@ export class UnitInput extends React.Component<IProps, {}> {
         const originValue = parseFloat(value) * Math.pow(10, this.state.exponenta)
 
         return isNaN(originValue)
-            ? ''
+            ? this.state.value
             : originValue
     }
     render() { 

@@ -121,22 +121,17 @@ def get_arguments_values(Block, params):
                 props[attr] = float(arg)
             else:
                 props[attr]._value = float(arg)
-        
+    
     return props
 
 @app.route('/api/blocks/<name>/', methods=['GET'])
 def block(name):
-    # Reset default circuit
-    # builtins.default_circuit = Circuit()
     builtins.default_circuit.reset(init=True)
     del builtins.default_circuit
     builtins.default_circuit = Circuit()
     builtins.NC = builtins.default_circuit.NC
     gnd = Net('0')
 
-    
-
-    # @subcircuit
     def build():
         params = request.args
         Block = Build(name, **params).block
@@ -159,23 +154,24 @@ def block(name):
             for net in Instance.input.circuit.get_nets():
                 pins = [str(pin) for pin in net.get_pins()]
                 nets[net.name] = pins
-
+        
         params = {
             'name': Block.name,
             'mods': Block.mods,
             'description': Block.get_description(Block),
-            'args': Block.get_arguments(Block),
+            'args':  Block.get_arguments(Block, Instance),
             'params': Instance.get_params(),
             'pins': Instance.get_pins(),
             'files': Block.files,
             'parts': parts,
-            'nets': nets
+            'nets': nets,
+            'sources': params.get('sources', Instance.test_sources()),
+            'load': params.get('load', Instance.test_load())
         }
         
         return params
 
     params = build()
-    # builtins.default_circuit.reset(init=true)
     return params
 
 @app.route('/api/blocks/<name>/simulate/', methods=['POST'])
@@ -231,7 +227,6 @@ def simulate(name):
             args = {}
             for arg in source['args'].keys():
                 if source['args'][arg]['value']:
-                    print(source['args'][arg]['value'])
                     args[arg] = float(source['args'][arg]['value']) @ get_arg_units(part, arg)
 
             signal = Build(source['name']).spice(ref='VS', **args)
@@ -242,19 +237,16 @@ def simulate(name):
 
         load = params['load']
         for source in params['load']:
-            print(source)
             mods = {}
             if source.get('mods', None):
                 mods = source['mods']
 
             LoadBlock = Build(source['name'], **mods).block
             args = get_arguments_values(LoadBlock, source['args'])
-            print('LOAD ARG', args)
             load = LoadBlock(**args)
             
             for source_pin in source['pins'].keys():
                 for pin in source['pins'][source_pin]:
-                    print(source_pin, load, pin)
                     load_pin = getattr(load, source_pin)
                     load_pin += getattr(Instance, pin)
         
@@ -278,7 +270,13 @@ def get_file():
     
 @app.route('/api/files/', methods=['POST'])
 def save_file():
-    return ''
+    data = request.data
+    file = open(data.get('name', ''), 'w')
+    content = data.get('content', '')
+    file.write(content)
+    file.close()
+
+    return { 'success': 'ok' }
 
 if __name__ == "__main__":
     app.debug = True

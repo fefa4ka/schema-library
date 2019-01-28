@@ -6,8 +6,9 @@ class Modificator(Base):
     L_series = 1 @ u_H
 
     def __init__(self, L_series, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.L_series = L_series
+
+        super().__init__(*args, **kwargs)
 
     def circuit(self):
         super().circuit()

@@ -146,7 +146,7 @@ export class Part extends React.Component<IProps, {}> {
                         this.setState(({ part }: State) => {
                             part && Object.keys(part.args).forEach(arg => {
                                 const floated = parseFloat(args[arg].value.toString())
-                                part.args[arg].value = isNaN(floated) ? '' : floated
+                                part.args[arg].value = isNaN(floated) ? args[arg].value : floated
                             })
                             
                             return {

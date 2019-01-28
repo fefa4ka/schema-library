@@ -11,17 +11,20 @@ require('codemirror/mode/python/python')
 const cnCode = cn('Code')
 
 const initialState = {
-    value: ''
+    value: '',
+    edited: ''
 }
 
 type State = {
-    value: string
+    value: string,
+    edited: string
 }
   
 export class Code extends React.Component<IProps, {}> {
     state: State = {
         ...initialState,
-        value: this.props.value
+        value: this.props.value,
+        edited: this.props.value
     }
 
     componentDidMount() {
@@ -34,10 +37,14 @@ export class Code extends React.Component<IProps, {}> {
        return (<CodeMirror
             options={{
                 mode: 'python',
-               lineNumbers: true,
+                lineNumbers: true,
                 lint: true
             }}
-            value={this.state.value}
+           value={this.state.value}
+           onBlur={() => axios.post('/api/files/', { name: this.props.file, content: this.state.edited }) }
+           onChange={(editor, data, value) => {
+                this.setState({ edited: value })
+           }}
         />)
     }
 }

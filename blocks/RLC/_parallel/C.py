@@ -6,8 +6,9 @@ class Modificator(Base):
     C_parallel = 1 @ u_F
 
     def __init__(self, C_parallel, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.C_parallel = C_parallel
+        
+        super().__init__(*args, **kwargs)
 
     def circuit(self):
         super().circuit()

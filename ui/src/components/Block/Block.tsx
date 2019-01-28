@@ -12,6 +12,7 @@ const TabPane = Tabs.TabPane;
 import { UnitInput } from '../UnitInput'
 import { Diagram } from './Diagram'
 import { Code } from '../Code'
+import { Chart } from '../Chart'
 const TreeNode = TreeSelect.TreeNode;
 import {UnControlled as CodeMirror} from 'react-codemirror2'
 
@@ -42,28 +43,7 @@ const initialState = {
         index: -1
     },
     editableSourceType: '',
-    sources: [{
-        'name': 'SINEV',
-        'description': 'Sinusoidal voltage source',
-        'args': {
-            'amplitude': {
-                value: '10',
-                unit: {
-                    name: 'volt',
-                    suffix: 'V'
-                }
-            },
-            'frequency': {
-                value: 20,
-                unit: {
-                    name: 'volt',
-                    suffix: 'A'
-                }
-            }
-        },
-        'pins': { 'p': ['input'], 'n': ['gnd'] },
-        'index': 0
-    }],
+    sources: [],
     editableLoad: {
         name: '',
         description: '',
@@ -71,30 +51,11 @@ const initialState = {
         pins: {},
         index: -1
     },
-    load: [{
-        name: 'RLC',
-        description: '',
-        mods: {
-            series: ['R']
-        },
-        args: {
-            R_series: {
-                value: '10',
-                unit: {
-                    name: 'ohm',
-                    suffix: 'Ω'
-                }
-            }
-        },
-        pins: {
-            input: ['output'],
-            output: ['gnd']
-        },
-        index: 0
-    }],
+    load: [],
     mods: {},
     example: '',
-    files: []
+    files: [],
+    showLabels: {}
 }
 
 
@@ -141,7 +102,10 @@ type State = {
         [name:string]: string[]
     },
     example: string,
-    files: string[]
+    files: string[],
+    showLabels: {
+        [name: string]: boolean
+    }
 }
 
 
@@ -156,7 +120,9 @@ export class Block extends React.Component<IProps, {}> {
             this.setState({
                 selectedMods: [],
                 args: {},
-                charData: []
+                charData: [],
+                sources: [],
+                load: []
             }, this.loadBlock)
         }
 
@@ -164,7 +130,6 @@ export class Block extends React.Component<IProps, {}> {
     }
     loadSimulation() {
         const { args, sources, load } = this.state
-
 
         axios.post('http://localhost:3000/api/blocks/' + this.props.name + '/simulate/',
         {
@@ -178,7 +143,23 @@ export class Block extends React.Component<IProps, {}> {
             load
         })
             .then(res => {
-                this.setState({ chartData: res.data })
+                const labels = res.data && res.data.length > 0
+                    ? Object.keys(res.data[0]).filter(label => label !== 'time')
+                    : []
+                
+                
+                this.setState(({ showLabels }:State) => {
+                    return {
+                        chartData: res.data,
+                        showLabels: labels.reduce((labels: any, label) => {
+                            labels[label] = showLabels[label] === false 
+                                ? false 
+                                : true
+    
+                            return labels
+                        }, {})
+                    }
+                })
             })
     }
     loadBlock() {
@@ -201,9 +182,7 @@ export class Block extends React.Component<IProps, {}> {
             
         axios.get('http://localhost:3000/api/blocks/' + this.props.name + '/' + urlParams)
             .then(res => {
-                const { name, description, args, params, mods, pins, files, nets } = res.data
-                const { sources } = this.state
-               
+                const { name, description, args, params, mods, pins, files, nets, sources, load } = res.data               
                 
                 const selectedMods = Object.keys(mods).reduce((selected, type) =>
                     selected.concat(
@@ -227,16 +206,28 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
     ${codeArgs}
 )` : '()'}`
 
-                this.setState({
-                    description,
-                    mods,
-                    args,
-                    params, 
-                    nets,
-                    pins,
-                    example: codeExample,
-                    files,
-                    selectedMods
+                this.setState((prevState:State) => {
+                    const elements:any = {}
+                    if (prevState.sources.length === 0) {
+                        elements.sources = sources.map((item:any, index:number) => ({ ...item, description: '', index }))
+                    }
+
+                    if(prevState.load.length === 0) {
+                        elements.load = load.map((item:any, index:number) => ({ ...item, description: '', index }))
+                    }
+
+                    return {
+                        description,
+                        mods,
+                        args,
+                        params, 
+                        nets,
+                        pins,
+                        example: codeExample,
+                        files,
+                        selectedMods,
+                        ...elements
+                    }
                 }, this.loadSimulation)
             })
     }
@@ -270,8 +261,6 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                 load = load.concat([editableLoad])
             }
 
-            console.log('modalok', load, editableLoad)
-
             return {
                 modalConfirmLoading: false,
                 load,
@@ -281,7 +270,6 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
         }, this.loadSimulation)
     }
     handleModalCancel = (name:string) => {
-        console.log(name, 'Clicked cancel button');
         this.setState({
             [`modal${name}Visible`]: false,
             editableSource: {},
@@ -313,7 +301,10 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
             const save = (value:string) => {
 
                 this.setState((prevState: State) => {
-                    prevState.args[name].value = parseFloat(value)
+                    const floated = parseFloat(value)
+                    prevState.args[name].value = isNaN(floated)
+                        ? value
+                        : floated
                     
                     return prevState
                 }, () => {
@@ -356,6 +347,21 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
             />
         })
 
+        // const chartLabels = this.state.chartData.length > 0
+        //     ? Object.keys(this.state.chartData[0]).filter(label => label !== 'time').map(label => {
+        //         return {
+        //             name: label,
+        //             color: label.includes('I_')
+        //                 ? 'red'
+        //                 : label.includes('input')
+        //                     ? "#1890ff"
+        //                     : "#000",
+        //             unit: label.includes('I_') ? 'A' : 'V',
+        //             axis: label.includes('I_') ? 'right' : 'left'
+        //         }
+        //     })
+        //     : []
+
         return (
             <div className={this.props.className || cnBlock()}>
                 <Row>
@@ -375,7 +381,7 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                                 treeCheckable={true}
                                 multiple
                                 treeDefaultExpandAll
-                                onChange={selectedMods => this.setState({ selectedMods }, this.loadBlock)}
+                                onChange={selectedMods => this.setState({ selectedMods, sources: [], load: [] }, this.loadBlock)}
                             >
                                 {Object.keys(mods).map(type =>
                                     <TreeNode value={type} title={type} key={type}>
@@ -389,10 +395,10 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                     </Col>
                 </Row>
             
-                <Tabs defaultActiveKey="1" onChange={_ => {console.log('tab')}}  className={cnBlock('BlockTabs')}>
+                <Tabs defaultActiveKey="1" onChange={(key) => key === '1' && this.loadBlock()} className={cnBlock('BlockTabs')}>
                     <TabPane tab="Simulation" key="1">
                         <Row>
-                            <Col span={17} className={cnBlock('Description')}>
+                            <Col span={16} className={cnBlock('Description')}>
                                 <Divider orientation="left">
                                     Description
                                 </Divider>
@@ -405,6 +411,12 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                                         </Divider>
                                         <Diagram pins={this.state.pins} nets={this.state.nets} sources={this.state.sources} load={this.state.load}/></Col>
                                 </Row>
+                                
+                            </Col>
+                            <Col span={8} className={cnBlock('Characteristics')}>
+                                <Divider orientation="left">Characteristics</Divider>
+                                {attributes}
+                                {params}
                                 <Row>
                                 <Col span={12}>
                                         <Divider orientation="left">
@@ -432,7 +444,7 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                                                 key={source.name + index.toString()}
                                                 closable
                                                 onClick={_ => {
-                                                    this.setState({ editableSource: this.state.sources[index] }, () => this.showModal('Source'))
+                                                    this.setState({ editableSource: { ...this.state.sources[index], index } }, () => this.showModal('Source'))
                                                 }}
                                                 onClose={() => {
                                                     this.setState(({ sources }: State) => {
@@ -440,13 +452,13 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                                                         sources.splice(index, 1)
                                                         
                                                         return { sources }
-                                                    })
+                                                    }, this.loadBlock)
                                             }}>
                                                 {source.name}
                                             </Tag>
                                         )} <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableSourceType: 'source', editableSource: { index: -1} }, () => this.showModal('Source')) }><Icon type="api" /> Add</Tag>
                                     </Col>
-                                    <Col span={6}>
+                                    <Col span={12}>
                                         <Divider orientation="left">Load</Divider>
                                         {this.state.load.map((source, index) => 
                                             <Tag
@@ -461,7 +473,7 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                                                         load.splice(index, 1)
                                                         
                                                         return { load }
-                                                    })
+                                                    }, this.loadBlock)
                                             }}>
                                                 {source.name}
                                             </Tag>
@@ -484,11 +496,6 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                                         
                                     </Col>
                                 </Row>
-                            </Col>
-                            <Col span={7} className={cnBlock('Characteristics')}>
-                                <Divider orientation="left">Characteristics</Divider>
-                                {attributes}
-                                {params}
                                 <Divider orientation="left">Code Examples</Divider>
                                 {this.state.example && <CodeMirror
                                     className={cnBlock('CodeExample')}
@@ -501,19 +508,30 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                         </Row> 
                         
                         <Divider orientation="left">Waveforms</Divider>
-                        <ResponsiveContainer width='100%' aspect={4.0/1.0}>
+                        <Chart
+                            chartData={this.state.chartData}
+                            showLabels={this.state.showLabels}
+                            onLegendClick={(e: any) => this.setState(({ showLabels }:State) => {
+                                showLabels[e.dataKey] = !showLabels[e.dataKey]
+            
+                                return showLabels
+                            })}
+                        />
+                        {/* <ResponsiveContainer width='100%' aspect={4.0/1.0}>
                             <LineChart data={this.state.chartData}>
-                                <Legend verticalAlign='top'/>
+                                <Legend verticalAlign='top' onClick={(e: any) => this.setState(({ showLabels }:State) => {
+                                    showLabels[e.dataKey] = !showLabels[e.dataKey]
+
+                                    return showLabels
+                                })}/>
                                 <XAxis dataKey="time"/>
                                 <YAxis yAxisId="left" label='Volt' />
                                 <YAxis yAxisId="right" label='Ampere' orientation="right" />
                                 <CartesianGrid strokeDasharray="3 3"/>
-                                <Tooltip/>
-                                <Line type="monotone" dataKey="V_in" stroke="#1890ff" dot={false} unit='V' yAxisId="left" />
-                                <Line type="monotone" dataKey="V_out" stroke="#000000" dot={false} unit='V' yAxisId="left" />
-                                <Line type="monotone" dataKey="I_out" stroke="red" dot={false} unit='A' yAxisId="right" />
+                                <Tooltip />
+                                {chartLabels.map(label => <Line type="monotone" strokeOpacity={this.state.showLabels[label.name] ? 1 : 0.1} key={label.name} dataKey={label.name} stroke={label.color} dot={false} unit={label.unit} yAxisId={label.axis} />)}
                             </LineChart>
-                        </ResponsiveContainer>
+                        </ResponsiveContainer> */}
                     </TabPane>
                     <TabPane tab="Code" key="2" className={cnBlock('Code')}>
                         <Tabs key={'dsad'} type="card">

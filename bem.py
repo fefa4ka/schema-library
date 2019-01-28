@@ -229,7 +229,7 @@ class Block:
         
         return description
 
-    def get_arguments(self):
+    def get_arguments(self, Instance=None):
         arguments = {}
         args = []
         classes = list(inspect.getmro(self))
@@ -241,7 +241,7 @@ class Block:
             if arg in ['self', 'circuit']:
                 continue
 
-            default = getattr(self, arg)
+            default = getattr(Instance or self, arg)
             if type(default) in [UnitValue, PeriodValue, FrequencyValue]:
                 arguments[arg] = {
                     'value': default.value * default.scale,
@@ -373,7 +373,6 @@ class Block:
         element.ref = self.ref or element.ref 
         self.element = element
         
-        print('INSTANCE NAME', self.__instance__name__)
         self.set_pins()
 
     def create_network(self):
@@ -415,6 +414,52 @@ class Block:
         print(circuit)
         self.simulation = circuit.simulator()  # Create a simulator for the Circuit object.
         self.node = node
+
+    def test_sources(self):
+        return [{
+                'name': 'SINEV',
+                'args': {
+                    'amplitude': {
+                        'value': 10,
+                        'unit': {
+                            'name': 'volt',
+                            'suffix': 'V'
+                        }
+                    },
+                    'frequency': {
+                        'value': 10,
+                        'unit': {
+                            'name': 'herz',
+                            'suffix': 'Hz'
+                        }
+                    }
+                },
+                'pins': {
+                    'p': ['input'],
+                    'n': ['gnd']
+                }
+        }]
+    
+    def test_load(self):
+        return [{
+                'name': 'RLC',
+                'mods': {
+                    'series': 'R'
+                },
+                'args': {
+                    'R_series': {
+                        'value': 1000,
+                        'unit': {
+                            'name': 'ohm',
+                            'suffix': 'Ω'
+                        }
+                    }
+                },
+                'pins': {
+                    'input': ['output'],
+                    'output': ['gnd']
+                }
+        }]
 
     def test_plot(self, **kwargs):
         import matplotlib.pyplot as plt
@@ -460,19 +505,35 @@ class Block:
         self.test()
 
         waveforms = self.simulation.transient(step_time=step_time, end_time=end_time)  # Run a transient simulation from 0 to 10 msec.
-        time = waveforms.time                # Time values for each point on the waveforms.
-        input = waveforms[self.node(self.input)]  # Voltage on the positive terminal of the pulsed voltage source.
-        output = waveforms[self.node(self.output)]  # Voltage on the capacitor.
+        time = waveforms.time  # Time values for each point on the waveforms.
+        
+        pins = self.get_pins().keys()
+
+        chart_data = {}
+        for pin in pins:
+            try: 
+                net = getattr(self, pin)
+                if net and pin != 'gnd' and net != self.gnd:
+                    node = self.node(net)
+                    chart_data['V_' + pin] = waveforms[node]
+            except:
+                pass
+
+        # input = waveforms[self.node(self.input)]  # Voltage on the positive terminal of the pulsed voltage source.
+        # output = waveforms[self.node(self.output)]  # Voltage on the capacitor.
         current = waveforms['VS']
         
         data = []
         for index, time in enumerate(time):
-            data.append({
+            entry = {
                 'time': str(time.canonise()),
-                'V_in': input[index].scale * input[index].value,
-                'V_out': output[index].scale*output[index].value,
-                'I_out': current[index].scale*current[index].value,
-            })
+                 'I_out': current[index].scale*current[index].value,
+            }
+            
+            for key in chart_data.keys():
+                entry[key] = chart_data[key][index].scale * chart_data[key][index].value 
+
+            data.append(entry)
 
         return data
 
