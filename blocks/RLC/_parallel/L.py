@@ -7,17 +7,18 @@ class Modificator(Base):
 
     def __init__(self, L_parallel, *args, **kwargs):
         self.L_parallel = L_parallel
-        
+
         super().__init__(*args, **kwargs)
 
     def circuit(self):
         super().circuit()
-        
-        signal = self.output
-        self.output = Net('ParallelInductorOutput')
+
+        if not (self.input and self.output):
+            self.input = Net('RLCInput')
+            self.output = Net('RLCOutput')
 
         L = Build('Inductor').block
         
         L_out = L(value=self.L_parallel, ref='L_p')
 
-        circuit = signal & self.output & L_out['+,-'] & self.gnd
+        circuit = self.input & L_out['+,-'] & self.output

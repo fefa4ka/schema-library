@@ -1,15 +1,15 @@
 from .. import Base, Build
 from skidl import Net
-from PySpice.Unit import u_F
+from PySpice.Unit import u_Ohm
 
 class Modificator(Base):
-    C_series = 1 @ u_F
+    R_gnd = 1 @ u_Ohm
 
-    def __init__(self, C_series, *args, **kwargs):
-        self.C_series = C_series
+    def __init__(self, R_gnd, *args, **kwargs):
+        self.R_gnd = R_gnd
 
         super().__init__(*args, **kwargs)
-        
+
     def circuit(self):
         super().circuit()
         
@@ -19,10 +19,9 @@ class Modificator(Base):
             self.output = Net('RLCOutput')
         else:
             signal = self.output
-            self.output = Net('SeriesCapacitorOutput')
+            self.output = Net('ParallelResistorOutput')
 
-        C = Build('Capacitor').block
-        
-        C_out = C(value=self.C_series, ref='C_s')
+        R = Build('Resistor').block
+        R_out = R(value=self.R_gnd, ref='R_g')
 
-        circuit = signal & C_out['+', '-'] & self.output 
+        circuit = signal & self.output & R_out['+,-'] & self.gnd

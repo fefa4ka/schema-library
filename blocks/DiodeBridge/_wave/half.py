@@ -15,14 +15,14 @@ class Modificator(Block):
 
     def test_sources(self):
         return super().test_sources()
-        
+
     def test_load(self):
         load = super().test_load()
 
         return load + [{
                 'name': 'RLC',
                 'mods': {
-                    'series': 'R'
+                    'series': ['R']
                 },
                 'args': {
                     'R_series': {

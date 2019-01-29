@@ -22,7 +22,7 @@ manage = {
 
 
 # Available parts
-from PySpice.Unit import u_pF, u_uF, u_Ohm, u_kOhm
+from PySpice.Unit import u_pF, u_V, u_uF, u_Ohm, u_kOhm, u_MHz, u_mA
 
 parts = {
     'Capacitor': [
@@ -71,6 +71,28 @@ parts = {
         {
             'mount': 'smd',
             'footprint': 'Diode_SMD:D_MiniMELF'
+        }
+    ],
+    'Transistor': [
+        {
+            'mount': 'tht',
+            'bipolar': 'npn',
+            'model': '2n2222a',
+            'footprint': 'Package_TO_SOT_THT:TO-92',
+            'h_fe': 100,
+            'V_ce': 40 @ u_V,
+            'I_c': 800 @ u_mA,
+            'f_T': 300 @ u_MHz
+        },
+        {
+            'mount': 'tht',
+            'bipolar': 'npn',
+            'model': '2n2222',
+            'footprint': 'Package_TO_SOT_THT:TO-92',
+            'h_fe': 120,
+            'V_ce': 40 @ u_V,
+            'I_c': 800 @ u_mA,
+            'f_T': 300 @ u_MHz
         }
     ],
     'Transformer': [

@@ -1,6 +1,6 @@
 from bem import Block, Build
 from skidl import Net, subcircuit
-# from PySpice.Unit import u_kOhm, u_V
+# from PySpice.Unit import u_Ohm, u_V, u_A
 
 class Base(Block):
     def __init__(self, input=None):

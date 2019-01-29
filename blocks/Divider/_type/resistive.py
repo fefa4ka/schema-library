@@ -37,10 +37,10 @@ class Modificator(Base):
         #rin = R(value = self.R_in, ref='R_in') 
         #rout = R(value=self.R_out, ref='R_out')
 		
-        RLC = Build('RLC', series=['R'], parallel=['R']).block
+        RLC = Build('RLC', series=['R'], gnd=['R']).block
         rlc = RLC(
-            R_parallel = self.R_out,
-            R_series = self.R_in
+            R_series = self.R_in,
+            R_gnd = self.R_out
         )
         self.gnd = rlc.gnd
         self.input = rlc.input

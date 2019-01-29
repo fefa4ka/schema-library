@@ -32,7 +32,7 @@ class Modificator(Block):
                 },
                 'pins': {
                     'p': ['input'],
-                    'n': ['input_n']
+                    'n': ['input_n', 'gnd']
                 }
         }]
     
@@ -42,7 +42,7 @@ class Modificator(Block):
         return load + [{
                 'name': 'RLC',
                 'mods': {
-                    'series': 'R'
+                    'series': ['R']
                 },
                 'args': {
                     'R_series': {

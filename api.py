@@ -1,5 +1,6 @@
 import inspect
 import glob
+import os
 from math import isnan
 from flask import request
 from flask_api import FlaskAPI
@@ -43,6 +44,31 @@ def get_arg_units(part, arg):
             unit = u_V
     
     return unit
+
+def get_minimum_period(sources):
+    period = 0 # Default 100 ms
+    min_period = None
+
+    for source in sources:
+        for arg in source['args'].keys():
+            if arg.find('time') != -1 or arg in ['pulse_width', 'period', 'duration']:
+                if source['args'][arg]['value']:
+                    time = float(source['args'][arg]['value'])
+                    if period < time:
+                        period = time
+                    
+                    if not min_period or min_period > time:
+                        min_period = time
+            
+            if arg.find('frequency') != -1:
+                time = 1 / float(source['args'][arg]['value'])
+                if period < time:
+                    period = time
+                
+                if not min_period or min_period > time:
+                    min_period = time
+
+    return period if period / min_period <= 20 else period / 5
 
 @app.route('/api/sources/', methods=['GET'])
 def sources():
@@ -113,12 +139,23 @@ def get_arguments_values(Block, params):
         props[attr] = getattr(Block, attr)
 
         arg = params.get(attr, None)
-        if arg and type(arg) == dict:
-            arg = arg['value']
+        # if arg and type(arg) == dict:
+        #     arg = arg['value']
 
-        if arg and not isnan(float(arg)):
+        # if arg and not isnan(float(arg)):
+        #     if type(props[attr]) in [int, float]:
+        #         props[attr] = float(arg)
+        #     else:
+        #         props[attr]._value = float(arg)
+        
+        if arg: 
+            if type(arg) == dict:
+                arg = arg['value']
+            
             if type(props[attr]) in [int, float]:
                 props[attr] = float(arg)
+            elif type(props[attr]) == str:
+                props[attr] = arg
             else:
                 props[attr]._value = float(arg)
     
@@ -217,25 +254,74 @@ def simulate(name):
         # R_load = Build('Resistor').block(value = 10000 @ u_Ohm)
         # Instance.input += signal['p']
         # gnd += signal['n']
+        
         Instance.gnd += gnd
         # R_load.input += Instance.output
         # gnd += R_load.output
 
         sources = params['sources']
+        series_sources = defaultdict(list)
+        series_sources_allready = []
+        
+        periods = []  # frequency, time, delay, duration
+        
+        # Get Series Source with same input
         for source in params['sources']:
-            part = get_part(source['name'])
-            args = {}
-            for arg in source['args'].keys():
-                if source['args'][arg]['value']:
-                    args[arg] = float(source['args'][arg]['value']) @ get_arg_units(part, arg)
+            pins = source['pins'].keys()
+            hash_name = str(source['pins']['p']) + str(source['pins']['n'])
+        
+            for source_another_index, source_another in enumerate(params['sources']):
+                is_same_connection = True
+                for source_pin in pins:
+                    for index, pin in enumerate(source['pins'][source_pin]):
+                        if source_another['pins'][source_pin][index] != pin:
+                            is_same_connection = False
+                            break
+                
+                if is_same_connection and source_another_index not in series_sources_allready:
+                    series_sources_allready.append(source_another_index)
+                    series_sources[hash_name].append(source_another)
 
-            signal = Build(source['name']).spice(ref='VS', **args)
+        
+        for series in series_sources.keys():
+            last_source = None
 
-            for source_pin in source['pins'].keys():
-                for pin in source['pins'][source_pin]:
-                    signal[source_pin] += getattr(Instance, pin)
+            for source in series_sources[series]:
+                part_name = source['name'].split('_')[0]
+                part = get_part(part_name)
+                args = {}
+                for arg in source['args'].keys():
+                    if source['args'][arg]['value']:
+                        args[arg] = float(source['args'][arg]['value']) @ get_arg_units(part, arg)
+
+                signal = Build(part_name).spice(ref='VS', **args)
+
+                if not last_source:
+                    for pin in source['pins']['n']:
+                        signal['n'] += getattr(Instance, pin)
+                else:
+                    last_source['p'] += signal['n']
+
+                last_source = signal
+            
+            for pin in source['pins']['p']:
+                signal['p'] += getattr(Instance, pin)
+
+        # for source in params['sources']:
+        #     part = get_part(source['name'])
+        #     args = {}
+        #     for arg in source['args'].keys():
+        #         if source['args'][arg]['value']:
+        #             args[arg] = float(source['args'][arg]['value']) @ get_arg_units(part, arg)
+
+        #     signal = Build(source['name']).spice(ref='VS', **args)
+
+        #     for source_pin in source['pins'].keys():
+        #         for pin in source['pins'][source_pin]:
+        #             signal[source_pin] += getattr(Instance, pin)
 
         load = params['load']
+        loads = []
         for source in params['load']:
             mods = {}
             if source.get('mods', None):
@@ -244,14 +330,20 @@ def simulate(name):
             LoadBlock = Build(source['name'], **mods).block
             args = get_arguments_values(LoadBlock, source['args'])
             load = LoadBlock(**args)
+            loads.append(load)
             
             for source_pin in source['pins'].keys():
                 for pin in source['pins'][source_pin]:
                     load_pin = getattr(load, source_pin)
                     load_pin += getattr(Instance, pin)
         
-        pins = Instance.test_pins()
-        
+        period = get_minimum_period(params['sources'])
+        end_time = period * 10
+        step_time = period / 50
+
+        spice_libs = list(set([os.path.dirname(file) for file in glob.glob('./blocks/*/*/spice/*.lib')]))
+        pins = Instance.test_pins(libs=spice_libs, end_time=end_time @ u_s, step_time=step_time @ u_s)
+
         return pins
     
     params = build()

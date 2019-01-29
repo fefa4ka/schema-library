@@ -12,11 +12,12 @@ class Modificator(Base):
 
     def circuit(self):
         super().circuit()
-        
-        signal = self.output
-        self.output = Net('ParallelResistorOutput')
+
+        if not (self.input and self.output):
+            self.input = Net('RLCInput')
+            self.output = Net('RLCOutput')
 
         R = Build('Resistor').block
         R_out = R(value=self.R_parallel, ref='R_p')
 
-        circuit = signal & self.output & R_out['+,-'] & self.gnd
+        circuit = self.input & R_out['+,-'] & self.output

@@ -3,13 +3,13 @@ from skidl import Net
 from PySpice.Unit import u_F
 
 class Modificator(Base):
-    C_series = 1 @ u_F
+    C_gnd = 1 @ u_F
 
-    def __init__(self, C_series, *args, **kwargs):
-        self.C_series = C_series
-
-        super().__init__(*args, **kwargs)
+    def __init__(self, C_gnd, *args, **kwargs):
+        self.C_gnd = C_gnd
         
+        super().__init__(*args, **kwargs)
+
     def circuit(self):
         super().circuit()
         
@@ -19,10 +19,9 @@ class Modificator(Base):
             self.output = Net('RLCOutput')
         else:
             signal = self.output
-            self.output = Net('SeriesCapacitorOutput')
+            self.output = Net('ParallelCapacitorOutput')
 
         C = Build('Capacitor').block
-        
-        C_out = C(value=self.C_series, ref='C_s')
+        C_out = C(value=self.C_gnd, ref='C_g')
 
-        circuit = signal & C_out['+', '-'] & self.output 
+        circuit = signal & self.output & C_out['+', '-'] & self.gnd

@@ -82,12 +82,12 @@ export class Chart extends React.Component<IProps, {}> {
             }
         })
         : []
-
+// console.log({this.props.xRefStart,- {this.props.xRefStop})
     
-       return  <ResponsiveContainer width='100%' aspect={4.0/1.0} className={cnChart()}>
+       return  <ResponsiveContainer width='100%' height='auto' aspect={4.0/1.0} className={cnChart()}>
             <LineChart data={chartData}>
                <Legend verticalAlign='top' onClick={this.props.onLegendClick}/>
-                <XAxis dataKey="time"/>
+               <XAxis dataKey="time" allowDataOverflow={true} domain={[this.props.xRefStart, this.props.xRefStop]} type='number'/>
                 <YAxis yAxisId="left" label='Volt' />
                 <YAxis yAxisId="right" label='Ampere' orientation="right" />
                 <CartesianGrid strokeDasharray="3 3"/>
@@ -101,8 +101,10 @@ export class Chart extends React.Component<IProps, {}> {
                        stroke={label.color}
                        dot={false}
                        unit={label.unit}
-                       yAxisId={label.axis} />)}
-            </LineChart>
+                       yAxisId={label.axis}
+                       animationDuration={300}
+                    />)}
+           </LineChart>
         </ResponsiveContainer>
     }
 }

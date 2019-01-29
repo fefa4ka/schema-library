@@ -2,7 +2,7 @@ import * as React from 'react'
 import { IProps } from './index'
 import { cn } from '@bem-react/classname'
 import axios from 'axios'
-import { Divider, Tag, Button, Input, TreeSelect} from 'antd'
+import { Slider, Divider, Tag, Button, Input, TreeSelect} from 'antd'
 import { Icon, Tabs, Row, Col, Modal } from 'antd'
 import Markdown from 'react-markdown'
 import { Source, TSource } from '../Source'
@@ -55,7 +55,9 @@ const initialState = {
     mods: {},
     example: '',
     files: [],
-    showLabels: {}
+    showLabels: {},
+    simulationStartTime: 0,
+    simulationStopTime: 0.01
 }
 
 
@@ -93,7 +95,7 @@ type State = {
     editableSourceType: string,
     sources: TSource[],
     chartData: {
-        [name:string]: number[]
+        [name:string]: number
     }[],
     modalSourceVisible: boolean,
     modalLoadVisible: boolean,
@@ -105,7 +107,9 @@ type State = {
     files: string[],
     showLabels: {
         [name: string]: boolean
-    }
+    },
+    simulationStartTime: number,
+    simulationStopTime: number
 }
 
 
@@ -129,7 +133,7 @@ export class Block extends React.Component<IProps, {}> {
         return true
     }
     loadSimulation() {
-        const { args, sources, load } = this.state
+        const { args, sources, load, simulationStopTime } = this.state
 
         axios.post('http://localhost:3000/api/blocks/' + this.props.name + '/simulate/',
         {
@@ -140,9 +144,11 @@ export class Block extends React.Component<IProps, {}> {
                 return result
             }, {}),
             sources,
-            load
+            load,
+            simulationTime: simulationStopTime
         })
             .then(res => {
+                const chartData = res.data
                 const labels = res.data && res.data.length > 0
                     ? Object.keys(res.data[0]).filter(label => label !== 'time')
                     : []
@@ -150,14 +156,15 @@ export class Block extends React.Component<IProps, {}> {
                 
                 this.setState(({ showLabels }:State) => {
                     return {
-                        chartData: res.data,
+                        chartData,
                         showLabels: labels.reduce((labels: any, label) => {
                             labels[label] = showLabels[label] === false 
                                 ? false 
                                 : true
     
                             return labels
-                        }, {})
+                        }, {}),
+                        simulationStopTime: chartData[chartData.length - 1].time
                     }
                 })
             })
@@ -190,7 +197,7 @@ export class Block extends React.Component<IProps, {}> {
                     ), [])
                 
                 const codeUnits = Object.keys(args).map(arg => args[arg].unit.suffix).filter((value, index, self) => self.indexOf(value) === index).map(item => 'u_' + item).join(', ')
-                const codeArgs = Object.keys(args).map(arg => arg + ' = ' + args[arg].value + ' @ u_' + args[arg].unit.suffix).join(',\n\t')
+                const codeArgs = Object.keys(args).map(arg => arg + ' = ' + args[arg].value + (args[arg].unit.suffix ? ' @ u_' + args[arg].unit.suffix : '')).join(',\n\t')
                 const codeMods = Object.keys(mods).map((mod:string) => mod + "=['" + mods[mod].join("', '") + "']").join(', ')
                 const codeExample = `from bem import Build
 from PySpice.Unit import ${codeUnits}
@@ -241,7 +248,21 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
             if (editableSource.index >= 0) {
                 sources[editableSource.index] = editableSource
             } else {
-                sources = sources.concat([editableSource])
+                const lastId = sources.reduce((id, source) => {
+                    if (source.name.includes(editableSource.name)) {
+                        let [name, number] = source.name.split('_')
+                        if (number && parseInt(number) > id) {
+                            id = parseInt(number)
+                        }
+                    }
+
+                    return id
+                }, 0)
+                editableSource.name += '_' + (lastId + 1)
+                sources = sources.concat([{
+                    ...editableSource,
+                    index: sources.length
+                }])
             }
 
             return {
@@ -269,7 +290,7 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
             }
         }, this.loadSimulation)
     }
-    handleModalCancel = (name:string) => {
+    handleModalCancel = (name: string) => {
         this.setState({
             [`modal${name}Visible`]: false,
             editableSource: {},
@@ -278,7 +299,7 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
     }
     render() {
         const { mods } = this.props
-        
+        const { chartData } = this.state
         const description = this.state.description.map((description, index) =>
             <Markdown key={index} source={description}/>
         )
@@ -299,7 +320,6 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
             const [arg_title, arg_sub] = name.split('_')
 
             const save = (value:string) => {
-
                 this.setState((prevState: State) => {
                     const floated = parseFloat(value)
                     prevState.args[name].value = isNaN(floated)
@@ -321,6 +341,87 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                 className={cnBlock('ArgumentInput')}
             />
         })
+
+        let simulationMaxTime = chartData.length > 0
+            ? chartData[chartData.length - 1].time
+            : 0.02
+        const simulationMarks: any = {}
+        
+        function getPrecision (num:number) {
+            var numAsStr = num.toFixed(10); //number can be presented in exponential format, avoid it
+            numAsStr = numAsStr.replace(/0+$/g, '');
+          
+            var precision = String(numAsStr).replace('.', '').length - String(numAsStr).replace('.', '').replace(/^0+/g, '').length
+            return precision;  
+          }
+          
+        const simulationTimeExponent = getPrecision(simulationMaxTime) * -1 
+        const simulationValueScale = Math.pow(10, simulationTimeExponent * -1) * 100
+
+        simulationMaxTime *= simulationValueScale
+        const simulationStartTime = this.state.simulationStartTime * simulationValueScale 
+        const simulationStopTime = this.state.simulationStopTime * simulationValueScale
+        // const siPrefix:{[name:string]: string} = {
+        //     '-24': 'y',
+        //     '-21': 'z',
+        //     '-18': 'a',
+        //     '-15': 'f',
+        //     '-12': 'p',
+        //     '-9': 'n',
+        //     '-6': 'μ',
+        //     '-3': 'm',
+        //     '-2': 'c',
+        //     '-1': 'd',
+        //     '0': '',
+        //     '1': 'da',
+        //     '2': 'h',
+        //     '3': 'k',
+        //     '6': 'M',
+        //     '9': 'G',
+        //     '12': 'T',
+        //     '15': 'P',
+        //     '18': 'E',
+        //     '21': 'Z',
+        //     '24': 'Y'
+        // }
+        const siPrefix:{[name:string]: string} = {
+            '-24': 'y',
+            '-21': 'z',
+            '-18': 'a',
+            '-15': 'f',
+            '-12': 'p',
+            '-9': 'n',
+            '-6': 'μ',
+            '-3': 'm',
+            '0': '',
+            '1': 'da',
+            '2': 'h',
+            '3': 'k',
+            '6': 'M',
+            '9': 'G',
+            '12': 'T',
+            '15': 'P',
+            '18': 'E',
+            '21': 'Z',
+            '24': 'Y'
+        }
+
+        for (let step = 0; step < simulationMaxTime; step = step + simulationMaxTime / 5) {
+            let exponent = simulationTimeExponent
+            let labelStep = step / 100
+
+            while (!siPrefix.hasOwnProperty(exponent) && exponent > -25) {
+                exponent = labelStep > 1000 ? exponent + 1 : exponent - 1
+                labelStep = step * Math.pow(10, (simulationTimeExponent - exponent) * -1) 
+            }
+            
+            const prefix:string = siPrefix.hasOwnProperty(exponent)
+                ? siPrefix[exponent]
+                : ''
+            
+            simulationMarks[step] = (labelStep.toString().length - 2 - getPrecision(labelStep) > 3 ? labelStep.toFixed(3) : labelStep) + ' ' + prefix + 's'
+        }
+
 
         const params = Object.keys(this.state.params).map((name, index) => {
             const isExists = this.state.params.hasOwnProperty(name)
@@ -398,7 +499,7 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                 <Tabs defaultActiveKey="1" onChange={(key) => key === '1' && this.loadBlock()} className={cnBlock('BlockTabs')}>
                     <TabPane tab="Simulation" key="1">
                         <Row>
-                            <Col span={16} className={cnBlock('Description')}>
+                            <Col span={15} className={cnBlock('Description')}>
                                 <Divider orientation="left">
                                     Description
                                 </Divider>
@@ -413,7 +514,7 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                                 </Row>
                                 
                             </Col>
-                            <Col span={8} className={cnBlock('Characteristics')}>
+                            <Col span={8} push={1} className={cnBlock('Characteristics')}>
                                 <Divider orientation="left">Characteristics</Divider>
                                 {attributes}
                                 {params}
@@ -508,15 +609,57 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                         </Row> 
                         
                         <Divider orientation="left">Waveforms</Divider>
+                        
                         <Chart
-                            chartData={this.state.chartData}
+                            chartData={chartData}
                             showLabels={this.state.showLabels}
+                            xRefStart={this.state.simulationStartTime}
+                            xRefStop={this.state.simulationStopTime}
                             onLegendClick={(e: any) => this.setState(({ showLabels }:State) => {
                                 showLabels[e.dataKey] = !showLabels[e.dataKey]
             
                                 return showLabels
                             })}
                         />
+                        <Row className={cnBlock('WaveformTimeInput')}>
+                            <Col push={1} span={22}>
+                                <Slider
+                                    range min={0} max={simulationMaxTime} defaultValue={[0, simulationMaxTime]}
+                                    value={[simulationStartTime, simulationStopTime]}
+                                    marks={simulationMarks}
+                                    onChange={(value: any) =>
+                                        this.setState({
+                                            simulationStartTime: parseFloat(value[0]) / simulationValueScale,
+                                            simulationStopTime: parseFloat(value[1]) / simulationValueScale
+                                        })}
+                                    onAfterChange={(value: any) => {
+                                        const { simulationStopTime, chartData } = this.state
+                                        if (chartData.length && simulationStopTime > chartData[chartData.length - 1].time) {
+                                            this.loadSimulation()
+                                        }
+                                    }}
+                                />
+                            </Col>
+                            {/* <Col span={5}></Col>
+                            <Col span={6}>
+                                <UnitInput
+                                    name='From'
+                                    suffix='s'
+                                    value={this.state.simulationStartTime}
+                                    onChange={(value:string) => this.setState({ simulationStartTime: parseFloat(value)})}
+                                />
+                            </Col>
+                            <Col span={1}></Col>
+                            <Col span={6}>
+                                <UnitInput
+                                    name='To'
+                                    suffix='s'
+                                    value={this.state.simulationStopTime}
+                                    onChange={(value:string) => this.setState({ simulationStopTime: parseFloat(value)})}
+                                />
+                            </Col>
+                            <Col span={6}></Col> */}
+                        </Row>
                         {/* <ResponsiveContainer width='100%' aspect={4.0/1.0}>
                             <LineChart data={this.state.chartData}>
                                 <Legend verticalAlign='top' onClick={(e: any) => this.setState(({ showLabels }:State) => {
@@ -531,7 +674,7 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                                 <Tooltip />
                                 {chartLabels.map(label => <Line type="monotone" strokeOpacity={this.state.showLabels[label.name] ? 1 : 0.1} key={label.name} dataKey={label.name} stroke={label.color} dot={false} unit={label.unit} yAxisId={label.axis} />)}
                             </LineChart>
-                        </ResponsiveContainer> */}
+                        </ResponsiveContainer> */}ha
                     </TabPane>
                     <TabPane tab="Code" key="2" className={cnBlock('Code')}>
                         <Tabs key={'dsad'} type="card">

@@ -124,7 +124,7 @@ export class Part extends React.Component<IProps, {}> {
                 pins: {}
             })
         } else {
-            const _mods: any = mods
+            const _mods: any = mods || {}
             const selectedMods = mods
                 ? Object.keys(mods).reduce((selected, type) =>
                     selected.concat(

@@ -40,6 +40,7 @@ class Modificator(Base):
 
     def test_load(self):
         load = super().test_load()
+        
         return load + [{
                 'name': 'Resistor',
                 'args': {

@@ -13,8 +13,13 @@ class Modificator(Base):
     def circuit(self):
         super().circuit()
         
-        signal = self.output
-        self.output = Net('SeriesInductorOutput')
+        signal = None
+        if not (self.input and self.output):
+            signal = self.input = Net('RLCInput')
+            self.output = Net('RLCOutput')
+        else:
+            signal = self.output
+            self.output = Net('SeriesInductorOutput')
 
         L = Build('Inductor').block
         

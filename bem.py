@@ -52,7 +52,7 @@ class Build:
                 else:
                     value = str(value)
                     self.mods[mod] = value.split(',')
-            
+
             for mod, value in self.base.mods.items():
                 if not self.mods.get(mod, None):
                     self.mods[mod] = value
@@ -99,17 +99,16 @@ class Build:
 
     @property
     def spice(self):
-        from skidl import SKIDL, SPICE, set_default_tool, SchLib, Net
+        from skidl import SKIDL, SPICE, set_default_tool, SchLib
         from skidl.tools.spice import set_net_bus_prefixes
-        from skidl.libs.pyspice_sklib import pyspice_lib
-        import sys
+        
+        
         set_default_tool(SPICE) 
         set_net_bus_prefixes('N', 'B')
         _splib = SchLib('pyspice', tool=SKIDL)
-        _this_module = sys.modules[__name__]
         
         for p in _splib.get_parts():
-            if self.name == p.name:
+            if self.name == p.name or (hasattr(p, 'aliases') and self.name in p.aliases):
                 return p
 
     @property
@@ -257,6 +256,13 @@ class Block:
                         'name': 'number'
                     }
                 }
+            elif type(default) == str:
+                arguments[arg] = {
+                    'value': default,
+                    'unit': {
+                        'name': 'string'
+                    }
+                }
             elif type(default) == type(None):
                 arguments[arg] = {
                     'unit': {
@@ -285,6 +291,13 @@ class Block:
                     'value': default,
                     'unit': {
                         'name': 'number'
+                    }
+                }
+            elif type(default) == str and param not in ['title', 'name', '__module__']:
+                params[param] = {
+                    'value': default,
+                    'unit': {
+                        'name': 'string'
                     }
                 }
         
@@ -338,8 +351,16 @@ class Block:
         
         for part in parts.get(self.name, []):
             for index, param in enumerate(params):
-                if part.get(param, None) and part[param] != values[index]:
+                if part.get(param, None):
+                    if type(values[index]) == list and part[param] in values[index]:
+                        continue
+                    if part[param] == type(part[param])(values[index]):
+                        continue
+
                     break
+                    
+
+                print(param, part[param], values[index])
             else:
                 available.append(part)
 
@@ -406,16 +427,20 @@ class Block:
     def log(self, message):
         logger.info(self.title + ' - ' + str(message))
 
-    def test(self):
+    def test(self, libs=[]):
         from skidl.pyspice import node
 
         # Simulate the circuit.
-        circuit = builtins.default_circuit.generate_netlist()  # Translate the SKiDL code into a PyCircuit Circuit object.
+        circuit = builtins.default_circuit.generate_netlist(libs=libs)  # Translate the SKiDL code into a PyCircuit Circuit object.
         print(circuit)
         self.simulation = circuit.simulator()  # Create a simulator for the Circuit object.
         self.node = node
 
     def test_sources(self):
+        gnd = ['gnd']
+        if len(self.test_load()) == 0:
+            gnd.append('output')
+
         return [{
                 'name': 'SINEV',
                 'args': {
@@ -427,7 +452,7 @@ class Block:
                         }
                     },
                     'frequency': {
-                        'value': 10,
+                        'value': 120,
                         'unit': {
                             'name': 'herz',
                             'suffix': 'Hz'
@@ -436,7 +461,7 @@ class Block:
                 },
                 'pins': {
                     'p': ['input'],
-                    'n': ['gnd']
+                    'n': gnd
                 }
         }]
     
@@ -444,7 +469,7 @@ class Block:
         return [{
                 'name': 'RLC',
                 'mods': {
-                    'series': 'R'
+                    'series': ['R']
                 },
                 'args': {
                     'R_series': {
@@ -501,8 +526,8 @@ class Block:
 
         plt.show()
 
-    def test_pins(self, step_time=0.5 @ u_ms, end_time=200 @ u_ms):
-        self.test()
+    def test_pins(self, libs=[], step_time=0.01 @ u_ms, end_time=200 @ u_ms):
+        self.test(libs)
 
         waveforms = self.simulation.transient(step_time=step_time, end_time=end_time)  # Run a transient simulation from 0 to 10 msec.
         time = waveforms.time  # Time values for each point on the waveforms.
@@ -526,7 +551,7 @@ class Block:
         data = []
         for index, time in enumerate(time):
             entry = {
-                'time': str(time.canonise()),
+                'time': time.value * time.scale,
                  'I_out': current[index].scale*current[index].value,
             }
             

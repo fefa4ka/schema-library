@@ -77,10 +77,10 @@ export class Diagram extends React.Component<IProps, {}> {
 
         
         const sourcesNet = sources.map(source => {
-            const name = source.description || source.name
+            const name = source.name
             const args = Object.keys(source.args).filter(arg => source.args[arg].value).map(arg => `${arg} = ${source.args[arg].value} ${source.args[arg].unit.suffix}`).join(';')
             
-            const diagram = [`[<source>${name}|${args}]`]
+            const diagram = [`[<source>${name}${source.description ? '|' + source.description : ''}|${args}]`]
             Object.keys(source.pins).forEach(pin => {
                 source.pins[pin].forEach((input:string) =>
                     diagram.push(`[${name}]${pin}-[${input}]`)

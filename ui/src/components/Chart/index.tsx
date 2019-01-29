@@ -9,6 +9,8 @@ export interface IProps extends IClassNameProps {
     showLabels: {
         [name: string]: boolean
     },
+    xRefStart: number,
+    xRefStop: number,
     onLegendClick: (event: React.SyntheticEvent) => void
 }
 

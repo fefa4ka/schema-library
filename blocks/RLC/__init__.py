@@ -6,9 +6,6 @@ available_parts = [1 @ u_Ohm, 1 @ u_F, 1 @ u_H]
 
 class Base(Block):
     def __init__(self, *args, **kwargs):
-        self.input = Net('RLCInput')
-        self.output = Net('RLCOutput')
-        self.input += self.output
         
         self.circuit(*args, **kwargs)
 
@@ -16,4 +13,3 @@ class Base(Block):
     def circuit(self):
         self.v_ref = Net('RLCV')
         self.gnd = Net()
-        

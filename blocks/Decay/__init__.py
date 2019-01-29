@@ -40,10 +40,10 @@ class Base(Block):
         if C_out_value and not R_in_value:
             self.R_in = (Time_to_V_out / (C_out_value * log(V_in / (V_in - V_out)))) @ u_Ohm
         
-        RLC = Build('RLC', series=['R'], parallel=['C']).block
+        RLC = Build('RLC', series=['R'], gnd=['C']).block
         rlc = RLC(
             R_series = self.R_in,
-            C_parallel = self.C_out
+            C_gnd = self.C_out
         )
         
         self.input = rlc.input

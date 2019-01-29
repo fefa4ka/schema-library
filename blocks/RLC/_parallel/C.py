@@ -7,17 +7,18 @@ class Modificator(Base):
 
     def __init__(self, C_parallel, *args, **kwargs):
         self.C_parallel = C_parallel
-        
+
         super().__init__(*args, **kwargs)
 
     def circuit(self):
         super().circuit()
         
-        signal = self.output
-        self.output = Net('ParallelCapacitorOutput')
-
+        if not (self.input and self.output):
+            self.input = Net('RLCInput')
+            self.output = Net('RLCOutput')
+            
         C = Build('Capacitor').block
         
         C_out = C(value=self.C_parallel, ref='C_p')
 
-        circuit = signal & self.output & C_out['+', '-'] & self.gnd
+        circuit = self.input & C_out['+', '-'] & self.output

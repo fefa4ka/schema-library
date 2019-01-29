@@ -63,14 +63,18 @@ export class Part extends React.Component<IProps, {}> {
     }
     getCurrentSource() {
         const { name } = this.state
-        const source = this.state.parts.find(item => item.name === name)
+        const source = this.state.parts.find(item => item.name === name.split('_')[0])
         const description = source 
             ? source.description
             : ''
         const args: TArgs = source
-            ? source.args
+            ? Object.assign({}, source.args)
             : {}
        
+        Object.keys(args).forEach(arg => {
+            args[arg] = Object.assign({}, args[arg])
+        })
+
         return {
             name,
             description,
@@ -89,10 +93,12 @@ export class Part extends React.Component<IProps, {}> {
                     pins: {}
                 }
             } else {
-                const partArgs: TArgs = parts.reduce((args, item) => item.name === name ? item.args : args, {})
+                const partArgs: TArgs = parts.reduce((args, item) => item.name === name.split('_')[0] ? item.args : args, {})
                 Object.keys(args).forEach(arg => {
                     const floated = parseFloat(args[arg].value.toString())
-                    partArgs[arg].value = isNaN(floated) ? '' : floated
+                    if(partArgs[arg]) {
+                        partArgs[arg].value = isNaN(floated) ? '' : floated
+                    }
                 })
 
                 return {
@@ -111,7 +117,11 @@ export class Part extends React.Component<IProps, {}> {
     }
     render() { 
         const { onChange } = this.props
-        const { parts, name } = this.state
+        const { parts } = this.state
+        const name = this.state.name 
+            ? this.state.name.split('_')[0]
+            : undefined
+        
         const current = parts.filter(part => part.description.toLowerCase().indexOf('current') !== -1)
         const voltage = parts.filter(part => part.description.toLowerCase().indexOf('current') === -1)
         const args:TArgs = this.state.parts.reduce((args, item) => item.name === name ? item.args : args, {})
@@ -131,15 +141,16 @@ export class Part extends React.Component<IProps, {}> {
                 ? args[name].value
                 : 0
    
-
             return <UnitInput
                 key={name}
                 name={name}
                 suffix={suffix}
                 value={value.toString()}
+                defaultValue={value.toString()}
                 onChange={(val: number) => {
                     this.setState(({ parts }: State) => {
-                        const part = parts.find(item => item.name === this.state.name)
+                        const part = parts.find(item => item.name === this.state.name.split('_')[0])
+
                         if (part) {
                             part.args[name].value = val
                         }
