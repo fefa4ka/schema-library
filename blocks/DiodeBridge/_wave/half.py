@@ -1,10 +1,10 @@
-from bem import Block, Build
+from bem import Block, Diode
 from skidl import Net, subcircuit
 
 
 class Modificator(Block):
     def create_bridge(self):
-        D = Build('Diode').block
+        D = Diode()
     
         circuit = self.input & D()['A,K'] & self.output
 

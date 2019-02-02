@@ -1,4 +1,5 @@
-from .. import Base, Build
+from .. import Base
+from bem import RLC
 from skidl import Net, subcircuit
 from PySpice.Unit import u_Ohm, u_mA, u_ms
 import numpy as np
@@ -37,8 +38,8 @@ class Modificator(Base):
         #rin = R(value = self.R_in, ref='R_in') 
         #rout = R(value=self.R_out, ref='R_out')
 		
-        RLC = Build('RLC', series=['R'], gnd=['R']).block
-        rlc = RLC(
+        # RLC = Build('RLC', series=['R'], gnd=['R']).block
+        rlc = RLC(series=['R'], gnd=['R'])(
             R_series = self.R_in,
             R_gnd = self.R_out
         )

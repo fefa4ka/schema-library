@@ -55,30 +55,45 @@ export class UnitInput extends React.Component<IProps, {}> {
                     this.setState({ exponenta: scale[unit][1] },
                         () => this.props.onChange(this.onChange(this.state.value.toString())))}>
                 {Object.keys(scale).map(unit => {
-                    const valueScale = parseInt(this.state.value.toString()) > 0 
+                    const value = this.state.value || 0
+                    const valueScale = parseInt(value.toString()) > 0 
                         ? 0
-                        : this.state.value.toString().length - 2
+                        : value.toString().length - 2
                     
                     
                     const exponenta = parseInt(scale[unit][1].toString(), 10)
 
-                    let fixed: string | number = parseFloat(this.state.value.toString()) * Math.pow(10, exponenta)
+                    let fixed: string | number = parseFloat(value.toString()) * Math.pow(10, exponenta)
                     
                     if (exponenta < 0) {
                         fixed = fixed.toFixed(Math.abs(exponenta - valueScale))
                     }
+
+                    let scalePrefix:any = scale[unit][0]
+                    if(suffix === '' && scale[unit][0] === '') {
+                        scalePrefix = <span>10<sup>0</sup></span>
+                    }
                     
                     return <Option value={unit} key={unit}>
-                        <Tooltip title={<span>{this.state.value} {suffix} × 10<sup>{scale[unit][1]}</sup><br/>{fixed.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} {suffix}</span>}>
-                            <span>{scale[unit][0]}{suffix}</span>
+                        <Tooltip title={<span>{value} {suffix} × 10<sup>{scale[unit][1]}</sup><br/>{fixed.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} {suffix}</span>}>
+                            <span>{scalePrefix}{suffix}</span>
                         </Tooltip>
                     </Option>
                 })}
             </Select>
         )
-
-        return (
-            <Input
+        
+        
+        const input = this.props.multiple
+            ? <Select
+                mode="tags"
+                style={{ width: '100%' }}
+                placeholder={name + ' in ' + suffix}
+                onChange={(value:string) => this.props.onChange(this.onChange(value))}
+            >
+                
+            </Select>
+            : <Input
                 key={name}
                 addonBefore={name}
                 addonAfter={selectAfter}
@@ -88,6 +103,7 @@ export class UnitInput extends React.Component<IProps, {}> {
                     const target = event.target as HTMLInputElement
                     this.props.onChange(this.onChange(target.value))
                 }}
-            />)
+            />
+        return input
     }
 }

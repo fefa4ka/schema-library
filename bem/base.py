@@ -1,120 +1,28 @@
-import importlib
 import inspect
 import logging
+import os
 from pathlib import Path
 
-from PySpice.Unit import PeriodValue, u_ms, FrequencyValue
+from PySpice.Unit import FrequencyValue, PeriodValue, u_ms
 from PySpice.Unit.Unit import UnitValue
 from skidl import TEMPLATE, Net, Network, Part, subcircuit
 from skidl.Net import Net as NetType
 
-from settings import BLOCKS_PATH, DEBUG, parts
+from .model import Part as PartModel
+from .model import Param, Mod
+
+from settings import BLOCKS_PATH, params_tolerance, parts, test_sources, test_load
 
 logger = logging.getLogger(__name__)
-
-try:
-    import __builtin__ as builtins
-except ImportError:
-    import builtins
-
+# logger = logging.getLogger('peewee')
+# logger.addHandler(logging.StreamHandler())
+# logger.setLevel(logging.DEBUG)
 def label_prepare(text):
     last_dash = text.rfind('_')
     if last_dash > 0:
         text = text[:last_dash] + '$_{' + text[last_dash + 1:] + '}$'
 
     return text
-    
-    
-class Build:
-    name = None
-    base = None
-    mods = {}
-    props = {}
-    models = {}
-    files = []
-
-    def __init__(self, name, **kwargs):
-        self.name = name
-        self.mods = {}
-        self.props = {}
-        self.models = []
-        self.files = []
-
-        base_file = Path(BLOCKS_PATH) / self.name / ('__init__.py')
-        self.base = base_file.exists() and importlib.import_module(BLOCKS_PATH + '.' + self.name).Base        
-
-        if self.base:
-            self.files.append(str(base_file))
-
-            for mod, value in kwargs.items():
-                if type(value) == list:
-                    self.mods[mod] = value
-                else:
-                    value = str(value)
-                    self.mods[mod] = value.split(',')
-
-            for mod, value in self.base.mods.items():
-                if not self.mods.get(mod, None):
-                    self.mods[mod] = value
-
-            for mod, values in self.mods.items():
-                if type(values) != list:
-                    values = [str(values)]
-
-                for value in values:
-                    module_file = Path(BLOCKS_PATH) / self.name / ('_' + mod) / (value + '.py')
-                    if module_file.exists():
-                        self.files.append(str(module_file))
-                        Module = importlib.import_module(BLOCKS_PATH + '.' + self.name + '._' + mod + '.' + value)
-                        self.models.append(Module.Modificator)
-                    
-                    else:
-                        self.props[mod] = value
-
-            for key, value in self.props.items():
-                del self.mods[key]
-
-    @property
-    def block(self):
-        if self.base:
-            Models = self.models
-            Models.reverse()
-            if self.base not in Models:
-                Models.append(self.base)
-            Models = tuple(self.models)
-        else:
-            Models = (Block,)
-
-        Block = type(self.name,
-                    Models,
-                    {
-                        'name': self.name,
-                        'mods': self.mods,
-                        'props': self.props,
-                        'DEBUG': DEBUG,
-                        'files': self.files
-                    })
-
-        return Block
-
-    @property
-    def spice(self):
-        from skidl import SKIDL, SPICE, set_default_tool, SchLib
-        from skidl.tools.spice import set_net_bus_prefixes
-        
-        
-        set_default_tool(SPICE) 
-        set_net_bus_prefixes('N', 'B')
-        _splib = SchLib('pyspice', tool=SKIDL)
-        
-        for p in _splib.get_parts():
-            if self.name == p.name or (hasattr(p, 'aliases') and self.name in p.aliases):
-                return p
-
-    @property
-    def element(self):
-        return self.block().element
-
 
 class Block:
     name = ''
@@ -136,6 +44,9 @@ class Block:
     ref = None
     files = []
     DEBUG = False
+
+    spice_params = {}
+    
 
     def __init__(self, circuit=True, *args, **kwargs):
         for prop in kwargs.keys():
@@ -175,13 +86,6 @@ class Block:
 
         self.connect_power_bus(instance)
 
-    def connect_power_bus(self, instance):
-        if self.gnd and instance.gnd:
-            self.gnd += instance.gnd
-        
-        if self.v_ref and instance.v_ref:
-            self.v_ref += instance.v_ref
-
     def __getitem__(self, *pin_ids, **criteria):
         return self.element.__getitem__(*pin_ids, **criteria)
 
@@ -219,6 +123,13 @@ class Block:
             self.output += ntwk[-1]
 
             return self
+
+    def connect_power_bus(self, instance):
+        if self.gnd and instance.gnd:
+            self.gnd += instance.gnd
+        
+        if self.v_ref and instance.v_ref:
+            self.v_ref += instance.v_ref
     
     def get_description(self):
         description = []
@@ -335,48 +246,197 @@ class Block:
         return self.part
 
     @property
+    def spice_model(self):
+        return self.get_spice_model(self.model)
+    
+    # def get_spice_model(self, model):
+    #     def parse_model(content):
+    #         without_comments = filter(lambda line: line[0] != '*', content)
+    #         replace_plus_joints = ''.join(without_comments).replace('+', ' ').replace('(', ' ').replace(')', ' ').replace(' =', '=').replace('= ', '=').upper()
+    #         reduce_double_spaces = ' '.join(replace_plus_joints.split())
+    #         spice_model = reduce_double_spaces.split(' ')
+
+    #         params = {}
+    #         if len(self.spice_params.keys()):
+    #             for param in spice_model[3:]:
+    #                 param, value = param.split('=')
+    #                 params[param] = self.spice_params.get(param, {})
+    #                 params[param]['value'] = float(value)
+
+    #         return params
+
+    #     def check_in_dir(path):
+    #         if not path.exists():
+    #             return None
+
+    #         for part in path.iterdir():
+    #             file_model = os.path.basename(part).split('.')[0].lower()
+    #             if model.lower() == file_model:
+    #                 file = open(part, 'r')
+    #                 params = parse_model(file.readlines())
+    #                 file.close()
+                    
+    #                 return params
+
+    #         return None
+                    
+    #     if model:
+    #         spice_lib_path = Path(BLOCKS_PATH) / self.name / ('spice')
+    #         part = check_in_dir(spice_lib_path)
+    #         if part:
+    #             return part
+
+    #         for mod in self.mods.keys():
+    #             spice_lib_path = Path(BLOCKS_PATH) / self.name / ('_' + mod) / ('spice')
+    #             part = check_in_dir(spice_lib_path)
+    #             if part:
+    #                 return part
+
+    #     return None
+
+    # def parse_spice_model(self, content):
+    #     without_comments = filter(lambda line: line[0] != '*', content)
+    #     replace_plus_joints = ''.join(without_comments).replace('+', ' ').replace('(', ' ').replace(')', ' ').replace(' =', '=').replace('= ', '=').upper()
+    #     reduce_double_spaces = ' '.join(replace_plus_joints.split())
+    #     spice_model = reduce_double_spaces.split(' ')
+
+    #     params = {}
+    #     if len(self.spice_params.keys()):
+    #         for param in spice_model[3:]:
+    #             param, value = param.split('=')
+    #             params[param] = self.spice_params.get(param, {})
+    #             params[param]['value'] = float(value)
+
+    #     return params
+        
+    @property
     def available_parts(self):
         """Available parts in stock 
-            from settings.py variable `parts`
-            filtered by Block modifications and properties.
+            # from settings.py variable `parts`
+            from Part model
+            filtered by Block modifications and params and spice model.
         
         Returns:
             list -- of parts with available values
         """
 
+        def is_tollerated(a, b, tollerance=params_tolerance):
+            if type(a) == list and b in a:
+                return True
+
+            if b == type(b)(a):
+                return True
+
+            try:
+                b = float(b)
+                a = float(a)
+                diff = abs(a - b)
+                if diff < a * tollerance:
+                    return True
+            except:
+                pass
+            
+            print('NOT TOLLERATE', a, b)
+            return False
+
         params = list(self.props.keys()) + list(self.mods.keys())
         values = list(self.props.values()) + list(self.mods.values())
 
         available = []
+
+        parts = PartModel.select().where(PartModel.block == self.name)
+        if hasattr(self, 'model') and self.model:
+            parts = parts.where(PartModel.model == self.model)
         
-        for part in parts.get(self.name, []):
+        for part in parts:
+            print(part.id, part.model)
             for index, param in enumerate(params):
-                if part.get(param, None):
-                    if type(values[index]) == list and part[param] in values[index]:
-                        continue
-                    if part[param] == type(part[param])(values[index]):
+                is_proper = True
+                value = values[index]
+                
+                part_params = part.params.where(Param.name == param)
+                if part_params.count():
+                    for part_param in part_params:
+                        print('prop', param, value, part_param.value)
+                        if is_tollerated(value, part_param.value):
+                            break
+                    else:
+                        print('false param')
+                        is_proper = False
+
+                part_mods = part.mods.where(Mod.name == param)
+                if part_mods.count():
+                    for part_mod in part_mods:
+                        print('mod', param, value, part_mod.value)
+                        if is_tollerated(value, part_mod.value):
+                            print('modOK', param, value, part_mod.value)
+                            break
+                    else:
+                        print('false mod')
+                        is_proper = False
+
+                spice_param = part.spice_params.get(param, None)
+                if spice_param:
+                    print('spice', param, value,  spice_param)
+                    if is_tollerated(value, spice_param):
                         continue
 
-                    break
-                    
+                    is_proper = False 
+                
+                if is_proper:
+                    continue
 
-                print(param, part[param], values[index])
+                break
             else:
                 available.append(part)
 
-            continue
-
         return available
+            
+        # for part in parts.get(self.name, []):
+        #     if part.get('model', None):
+        #         part['spice_model'] = self.get_spice_model(part['model'])
 
+        #     for index, param in enumerate(params):
+        #         if part.get(param, None):
+        #             if type(values[index]) == list and part[param] in values[index]:
+        #                 continue
+
+        #             if part[param] == type(part[param])(values[index]):
+        #                 continue
+
+        #             break
+                
+        #         if part.get('spice_model', None) and part['spice_model'].get(param, None):
+        #             value = float(values[index])
+        #             part_value = float(part['spice_model'][param]['value'])
+                    
+        #             diff = abs(value - part_value)
+        #             print(param, diff, value * params_tolerance, value, part_value)
+        #             if diff < value * params_tolerance:
+        #                 continue
+
+        #             break  
+        #     else:                   
+        #         available.append(part)
+
+        #     continue
+
+        # return available
+
+    @property
+    def selected_part(self):
+        available = list(self.available_parts)
+
+        return available[0] if len(available) > 0 else None
 
     @property
     def footprint(self):
         if self.props.get('footprint', None):
             return self.props['footprint']
 
-        block_parts = self.available_parts
-        if len(block_parts):
-            return block_parts[0]['footprint']
+        part = self.selected_part
+        if part:
+            return part.footprint
 
         return None
 
@@ -428,8 +488,16 @@ class Block:
         logger.info(self.title + ' - ' + str(message))
 
     def test(self, libs=[]):
-        from skidl.pyspice import node
+        from skidl.tools.spice import node
 
+        try:
+            import __builtin__ as builtins
+        except ImportError:
+            import builtins
+
+        print(libs)
+        libs = ['./spice/']
+       
         # Simulate the circuit.
         circuit = builtins.default_circuit.generate_netlist(libs=libs)  # Translate the SKiDL code into a PyCircuit Circuit object.
         print(circuit)
@@ -437,54 +505,52 @@ class Block:
         self.node = node
 
     def test_sources(self):
+        sources = test_sources
+        
         gnd = ['gnd']
         if len(self.test_load()) == 0:
             gnd.append('output')
 
-        return [{
-                'name': 'SINEV',
-                'args': {
-                    'amplitude': {
-                        'value': 10,
-                        'unit': {
-                            'name': 'volt',
-                            'suffix': 'V'
-                        }
-                    },
-                    'frequency': {
-                        'value': 120,
-                        'unit': {
-                            'name': 'herz',
-                            'suffix': 'Hz'
-                        }
-                    }
-                },
-                'pins': {
-                    'p': ['input'],
-                    'n': gnd
-                }
-        }]
+        sources[0]['pins']['n'] = gnd
+
+        return sources
     
     def test_load(self):
-        return [{
-                'name': 'RLC',
-                'mods': {
-                    'series': ['R']
-                },
-                'args': {
-                    'R_series': {
-                        'value': 1000,
-                        'unit': {
-                            'name': 'ohm',
-                            'suffix': 'Ω'
-                        }
-                    }
-                },
-                'pins': {
-                    'input': ['output'],
-                    'output': ['gnd']
-                }
-        }]
+        return test_load
+
+    def test_pins(self, libs=[], step_time=0.01 @ u_ms, end_time=200 @ u_ms):
+        self.test(libs)
+
+        waveforms = self.simulation.transient(step_time=step_time, end_time=end_time) 
+        time = waveforms.time  # Time values for each point on the waveforms.
+        
+        pins = self.get_pins().keys()
+
+        chart_data = {}
+        for pin in pins:
+            try: 
+                net = getattr(self, pin)
+                if net and pin != 'gnd' and net != self.gnd:
+                    node = self.node(net)
+                    chart_data['V_' + pin] = waveforms[node]
+            except:
+                pass
+
+        current = waveforms['VS']
+        
+        data = []
+        for index, time in enumerate(time):
+            entry = {
+                'time': time.value * time.scale,
+                 'I_out': current[index].scale*current[index].value,
+            }
+            
+            for key in chart_data.keys():
+                entry[key] = chart_data[key][index].scale * chart_data[key][index].value 
+
+            data.append(entry)
+
+        return data
 
     def test_plot(self, **kwargs):
         import matplotlib.pyplot as plt
@@ -526,53 +592,7 @@ class Block:
 
         plt.show()
 
-    def test_pins(self, libs=[], step_time=0.01 @ u_ms, end_time=200 @ u_ms):
-        self.test(libs)
-
-        waveforms = self.simulation.transient(step_time=step_time, end_time=end_time)  # Run a transient simulation from 0 to 10 msec.
-        time = waveforms.time  # Time values for each point on the waveforms.
-        
-        pins = self.get_pins().keys()
-
-        chart_data = {}
-        for pin in pins:
-            try: 
-                net = getattr(self, pin)
-                if net and pin != 'gnd' and net != self.gnd:
-                    node = self.node(net)
-                    chart_data['V_' + pin] = waveforms[node]
-            except:
-                pass
-
-        # input = waveforms[self.node(self.input)]  # Voltage on the positive terminal of the pulsed voltage source.
-        # output = waveforms[self.node(self.output)]  # Voltage on the capacitor.
-        current = waveforms['VS']
-        
-        data = []
-        for index, time in enumerate(time):
-            entry = {
-                'time': time.value * time.scale,
-                 'I_out': current[index].scale*current[index].value,
-            }
-            
-            for key in chart_data.keys():
-                entry[key] = chart_data[key][index].scale * chart_data[key][index].value 
-
-            data.append(entry)
-
-        return data
-
-    def test_voltage(self, step_time=0.5 @ u_ms, end_time=200 @ u_ms):
-        self.test()
-
-        waveforms = self.simulation.transient(step_time=step_time, end_time=end_time)  # Run a transient simulation from 0 to 10 msec.
-
-        # Get the simulation data.
-        time = waveforms.time                # Time values for each point on the waveforms.
-        input = waveforms[self.node(self.input)]  # Voltage on the positive terminal of the pulsed voltage source.
-        
-        output = waveforms[self.node(self.output)]  # Voltage on the capacitor.
-
-        self.test_plot(Time_ms=time.as_ndarray() * 1000, V_input=input.as_ndarray(), V_output=output.as_ndarray(),
-                       plots=[('Time_ms', 'V_input'), ('Time_ms', 'V_output')],
-                       table=False)
+        # Example: 
+        # self.test_plot(Time_ms=time.as_ndarray() * 1000, V_input=input.as_ndarray(), V_output=output.as_ndarray(),
+        #                plots=[('Time_ms', 'V_input'), ('Time_ms', 'V_output')],
+        #                table=False)

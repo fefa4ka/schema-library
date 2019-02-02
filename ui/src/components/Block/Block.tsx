@@ -7,7 +7,6 @@ import { Icon, Tabs, Row, Col, Modal } from 'antd'
 import Markdown from 'react-markdown'
 import { Source, TSource } from '../Source'
 import { Part } from '../Part'
-const { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceArea } = require('recharts')
 const TabPane = Tabs.TabPane;
 import { UnitInput } from '../UnitInput'
 import { Diagram } from './Diagram'
@@ -33,7 +32,6 @@ const initialState = {
     params: {},
     modalSourceVisible: false,
     modalLoadVisible: false,
-    chartData: [],
     modalConfirmLoading: false,
     editableSource: {
         name: '',
@@ -55,6 +53,7 @@ const initialState = {
     mods: {},
     example: '',
     files: [],
+    chartData: [],
     showLabels: {},
     simulationStartTime: 0,
     simulationStopTime: 0.01
@@ -94,9 +93,6 @@ type State = {
     editableSource: TSource,
     editableSourceType: string,
     sources: TSource[],
-    chartData: {
-        [name:string]: number
-    }[],
     modalSourceVisible: boolean,
     modalLoadVisible: boolean,
     modalConfirmLoading: boolean,
@@ -105,6 +101,9 @@ type State = {
     },
     example: string,
     files: string[],
+    chartData: {
+        [name:string]: number
+    }[],
     showLabels: {
         [name: string]: boolean
     },
@@ -199,17 +198,9 @@ export class Block extends React.Component<IProps, {}> {
                 const codeUnits = Object.keys(args).map(arg => args[arg].unit.suffix).filter((value, index, self) => self.indexOf(value) === index).map(item => 'u_' + item).join(', ')
                 const codeArgs = Object.keys(args).map(arg => arg + ' = ' + args[arg].value + (args[arg].unit.suffix ? ' @ u_' + args[arg].unit.suffix : '')).join(',\n\t')
                 const codeMods = Object.keys(mods).map((mod:string) => mod + "=['" + mods[mod].join("', '") + "']").join(', ')
-                const codeExample = `from bem import Build
-from PySpice.Unit import ${codeUnits}
+                const codeExample = `from bem import ${name}, ${codeUnits}
 
-# With variables
-${name} = Build('${name}'${codeMods ? ', ' + codeMods: ''}).block
-${name.toLowerCase()} = ${name}${codeArgs ? `(
-    ${codeArgs}
-)` : '()'}
-
-# Inline
-Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
+${name}(${codeMods})${codeArgs ? `(
     ${codeArgs}
 )` : '()'}`
 
@@ -303,6 +294,11 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
         const description = this.state.description.map((description, index) =>
             <Markdown key={index} source={description}/>
         )
+        function insertSpaces(string:string) {
+            string = string.replace(/([a-z])([A-Z])/g, '$1 $2');
+            string = string.replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+            return string
+          }
 
         const attributes = Object.keys(this.state.args).map(name => {
             const isExists = this.state.args.hasOwnProperty(name)
@@ -448,27 +444,12 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
             />
         })
 
-        // const chartLabels = this.state.chartData.length > 0
-        //     ? Object.keys(this.state.chartData[0]).filter(label => label !== 'time').map(label => {
-        //         return {
-        //             name: label,
-        //             color: label.includes('I_')
-        //                 ? 'red'
-        //                 : label.includes('input')
-        //                     ? "#1890ff"
-        //                     : "#000",
-        //             unit: label.includes('I_') ? 'A' : 'V',
-        //             axis: label.includes('I_') ? 'right' : 'left'
-        //         }
-        //     })
-        //     : []
-
         return (
             <div className={this.props.className || cnBlock()}>
                 <Row>
                     <Col span={12} className={cnBlock('Title')}>
                         <h1>
-                            {this.props.name}
+                            {insertSpaces(this.props.name || '')}
                         </h1>
                     </Col>
                         
@@ -640,41 +621,8 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                                     }}
                                 />
                             </Col>
-                            {/* <Col span={5}></Col>
-                            <Col span={6}>
-                                <UnitInput
-                                    name='From'
-                                    suffix='s'
-                                    value={this.state.simulationStartTime}
-                                    onChange={(value:string) => this.setState({ simulationStartTime: parseFloat(value)})}
-                                />
-                            </Col>
-                            <Col span={1}></Col>
-                            <Col span={6}>
-                                <UnitInput
-                                    name='To'
-                                    suffix='s'
-                                    value={this.state.simulationStopTime}
-                                    onChange={(value:string) => this.setState({ simulationStopTime: parseFloat(value)})}
-                                />
-                            </Col>
-                            <Col span={6}></Col> */}
                         </Row>
-                        {/* <ResponsiveContainer width='100%' aspect={4.0/1.0}>
-                            <LineChart data={this.state.chartData}>
-                                <Legend verticalAlign='top' onClick={(e: any) => this.setState(({ showLabels }:State) => {
-                                    showLabels[e.dataKey] = !showLabels[e.dataKey]
-
-                                    return showLabels
-                                })}/>
-                                <XAxis dataKey="time"/>
-                                <YAxis yAxisId="left" label='Volt' />
-                                <YAxis yAxisId="right" label='Ampere' orientation="right" />
-                                <CartesianGrid strokeDasharray="3 3"/>
-                                <Tooltip />
-                                {chartLabels.map(label => <Line type="monotone" strokeOpacity={this.state.showLabels[label.name] ? 1 : 0.1} key={label.name} dataKey={label.name} stroke={label.color} dot={false} unit={label.unit} yAxisId={label.axis} />)}
-                            </LineChart>
-                        </ResponsiveContainer> */}ha
+                        
                     </TabPane>
                     <TabPane tab="Code" key="2" className={cnBlock('Code')}>
                         <Tabs key={'dsad'} type="card">
@@ -682,6 +630,7 @@ Build('${name}'${codeMods ? ', ' + codeMods: ''}).block${codeArgs ? `(
                             <TabPane tab={file.replace('blocks/' + this.props.name + '/', '')} key={file}>
                                 <Code
                                     file={file}
+                                    onChange={(value:string) => axios.post('/api/files/', { name: file.replace('blocks/' + this.props.name + '/', ''), content: value})}
                                 />
                             </TabPane>
                         )}

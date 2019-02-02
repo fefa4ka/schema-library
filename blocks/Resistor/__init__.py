@@ -24,7 +24,7 @@ class Base(Block):
     ref = 'R'
 
     def __init__(self, value, V_in=None, R_load=None, ref=None):
-        if type(value) == str:
+        if type(value) in [str, int, float]:
             value = float(value) @ u_Ohm
 
         self.value = value.canonise()

@@ -1,4 +1,4 @@
-from bem import Block, Build
+from bem import Block, RLC
 from settings import parts
 from skidl import Net, subcircuit
 from PySpice.Unit import u_Ohm, u_V, u_F, u_A, u_s
@@ -40,8 +40,7 @@ class Base(Block):
         if C_out_value and not R_in_value:
             self.R_in = (Time_to_V_out / (C_out_value * log(V_in / (V_in - V_out)))) @ u_Ohm
         
-        RLC = Build('RLC', series=['R'], gnd=['C']).block
-        rlc = RLC(
+        rlc = RLC(series=['R'], gnd=['C'])(
             R_series = self.R_in,
             C_gnd = self.C_out
         )

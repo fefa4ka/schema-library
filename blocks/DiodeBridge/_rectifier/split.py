@@ -1,4 +1,5 @@
-from .. import Base, Build
+from .. import Base
+from bem import Capacitor
 from skidl import Net, subcircuit
 from PySpice.Unit import u_Ohm, u_V, u_F, u_ms, u_Hz, u_A
 
@@ -32,7 +33,7 @@ class Modificator(Base):
         self.output_inverse = self.output_n
         self.output_n = Net('BridgeOutputGround')
 
-        C = Build('Capacitor', **self.mods, **self.props).block
+        C = Capacitor(**self.mods, **self.props)
 
         self.C_ripple = C_value = self.I_load / (self.frequency * self.V_ripple) @ u_F
 

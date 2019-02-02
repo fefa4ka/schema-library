@@ -6,6 +6,7 @@ export interface IProps extends IClassNameProps {
     name: string,
     suffix: never,
     value: string | number,
+    multiple?: boolean,
     onChange: (value: number | string) => void
 }
 

@@ -1,4 +1,4 @@
-from bem import Block, Build
+from bem import Block, Signal, Capacitor
 from skidl import Net, subcircuit
 from PySpice.Unit import u_Ohm, u_F, u_H, u_Hz, u_s, u_us
 
@@ -19,9 +19,7 @@ class Base(Block):
         self.input = Net('AMRadioInput')
         self.output = Net('AMRadioOutput')
 
-        Signal = Build('Signal', filter=['bandpass'], clamp=['rectifier']).block
-
-        signal = Signal(
+        signal = Signal(filter=['bandpass'], clamp=['rectifier'])(
             f_0 = self.frequency,
             Q = 2,
             C_gnd = 0.000001 @ u_F,
@@ -34,7 +32,7 @@ class Base(Block):
         
         #RC= 300 @ u_us
         self.C_out = (RC.value * RC.scale) / (self.R_out.value * self.R_out.scale) @ u_F
-        C_out = Build('Capacitor').block(
+        C_out = Capacitor()(
             value = self.C_out,
             ref = 'C_out'
         )

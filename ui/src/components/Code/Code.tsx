@@ -28,20 +28,24 @@ export class Code extends React.Component<IProps, {}> {
     }
 
     componentDidMount() {
-        axios.get('/api/files/?name=' + this.props.file)
-            .then(res => {
-                this.setState({ value: res.data })
-            })
+        if (this.props.file) {
+            axios.get('/api/files/?name=' + this.props.file)
+                .then(res => {
+                    this.setState({ value: res.data })
+                })
+        }
     }
     render() { 
        return (<CodeMirror
             options={{
                 mode: 'python',
                 lineNumbers: true,
-                lint: true
+                indentWithTabs: false,
+                indentUnit: 4,
+                tabSize: 4
             }}
            value={this.state.value}
-           onBlur={() => axios.post('/api/files/', { name: this.props.file, content: this.state.edited }) }
+           onBlur={() => this.props.onChange(this.state.edited)}
            onChange={(editor, data, value) => {
                 this.setState({ edited: value })
            }}

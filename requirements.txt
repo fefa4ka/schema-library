@@ -6,3 +6,4 @@ PySpice==1.2.0
 
 # web backend
 flask-api
+peewee==3.8.2

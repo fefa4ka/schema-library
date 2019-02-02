@@ -1,4 +1,5 @@
-from bem import Block, Build
+from bem import Block
+from bem import DiodeBridge
 from skidl import Net, subcircuit
 from PySpice.Unit import u_ms, u_V, u_A, u_Hz, u_Ohm
 
@@ -23,7 +24,7 @@ class Base(Block):
         self.circuit()
 
     def circuit(self):
-        HalfBridge = Build('DiodeBridge', wave='half', rectifier='full').block
+        HalfBridge = DiodeBridge(wave='half', rectifier='full')
     
         self.input = Net()
         self.output = Net()

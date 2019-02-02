@@ -22,7 +22,52 @@ manage = {
 
 
 # Available parts
-from PySpice.Unit import u_pF, u_V, u_uF, u_Ohm, u_kOhm, u_MHz, u_mA
+from PySpice.Unit import u_pF, u_V, u_uF, u_Ohm, u_kOhm, u_MHz, u_mA, u_mW
+
+params_tolerance = 0.2
+test_sources =[{
+    'name': 'SINEV',
+    'args': {
+        'amplitude': {
+            'value': 10,
+            'unit': {
+                'name': 'volt',
+                'suffix': 'V'
+            }
+        },
+        'frequency': {
+            'value': 120,
+            'unit': {
+                'name': 'herz',
+                'suffix': 'Hz'
+            }
+        }
+    },
+    'pins': {
+        'p': ['input'],
+        'n': ['output', 'gnd']
+    }
+}]
+    
+test_load = [{
+    'name': 'RLC',
+    'mods': {
+        'series': ['R']
+    },
+    'args': {
+        'R_series': {
+            'value': 1000,
+            'unit': {
+                'name': 'ohm',
+                'suffix': 'Ω'
+            }
+        }
+    },
+    'pins': {
+        'input': ['output'],
+        'output': ['gnd']
+    }
+}]
 
 parts = {
     'Capacitor': [
@@ -73,26 +118,30 @@ parts = {
             'footprint': 'Diode_SMD:D_MiniMELF'
         }
     ],
+    # BC337 BC327 A1015 C1815 S8050 S8550 2N3906 2N2907 2N2222
+    # 20×BC337 Bipolar (BJT) Transistor NPN 45V 800mA 100MHz 625mW Through Hole TO-92-3
+    # 20×BC327 Bipolar (BJT) Transistor PNP 45V 800mA 100MHz 625mW Through Hole TO-92-3
+    # 20×2N2222 Bipolar (BJT) Transistor NPN 40V 600mA 200MHz 625mW Through Hole TO-92-3
+    # 20×2N2907 Bipolar (BJT) Transistor PNP 40V 600mA 200MHz 625mW Through Hole TO-92-3
+    # 20×2N3904 Bipolar (BJT) Transistor NPN 40V 200mA 200MHz 625mW Through Hole TO-92-3
+    # 20×2N3906 Bipolar (BJT) Transistor PNP 40V 200mA 200MHz 625mW Through Hole TO-92-3
+    # 20×S8050 Bipolar (BJT) Transistor NPN 25V 0.5A 100MHz 1W Through Hole TO-92-3
+    # 20×S8550 Bipolar (BJT) Transistor PNP 25V 0.5A 100MHz 1W Through Hole TO-92-3
+    # 20×A1015 Bipolar (BJT) Transistor PNP 50V 150mA 80MHz 400mW Through Hole TO-92-3
+    # 20×C1815 Bipolar (BJT) Transistor NPN 50V 150mA 80MHz 400mW Through Hole TO-92-3
     'Transistor': [
         {
             'mount': 'tht',
             'bipolar': 'npn',
             'model': '2n2222a',
             'footprint': 'Package_TO_SOT_THT:TO-92',
-            'h_fe': 100,
-            'V_ce': 40 @ u_V,
-            'I_c': 800 @ u_mA,
-            'f_T': 300 @ u_MHz
         },
         {
             'mount': 'tht',
             'bipolar': 'npn',
-            'model': '2n2222',
+            'model': 'bc327',
             'footprint': 'Package_TO_SOT_THT:TO-92',
-            'h_fe': 120,
-            'V_ce': 40 @ u_V,
-            'I_c': 800 @ u_mA,
-            'f_T': 300 @ u_MHz
+            'datasheet': 'https://www.onsemi.com/pub/Collateral/BC337-D.PDF'
         }
     ],
     'Transformer': [

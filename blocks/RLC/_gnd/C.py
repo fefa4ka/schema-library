@@ -1,4 +1,5 @@
-from .. import Base, Build
+from .. import Base
+from bem import Capacitor
 from skidl import Net
 from PySpice.Unit import u_F
 
@@ -21,7 +22,6 @@ class Modificator(Base):
             signal = self.output
             self.output = Net('ParallelCapacitorOutput')
 
-        C = Build('Capacitor').block
-        C_out = C(value=self.C_gnd, ref='C_g')
+        C_out = Capacitor()(value=self.C_gnd, ref='C_g')
 
         circuit = signal & self.output & C_out['+', '-'] & self.gnd

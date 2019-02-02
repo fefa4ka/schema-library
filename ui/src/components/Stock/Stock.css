@@ -1,0 +1,24 @@
+.Stock-AddFootprint {
+    width: 100%;
+}
+
+.Stock-AddParams .ant-input-group-wrapper {
+    margin-bottom: 4px;
+}
+
+.Stock-AddParams .ant-btn-dashed {
+    margin-bottom: 4px;
+    margin-right: 4px;
+}
+
+.Stock-AddParams .ant-select {
+    padding-bottom: 4px;
+    padding-right: 4px;
+}
+
+.Stock-AddForm .ant-form-item-control-wrapper {
+    width: 100%;
+}
+.Stock-AddFormStock .ant-form-item { 
+    width: 40%
+}
