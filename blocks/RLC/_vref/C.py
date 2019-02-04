@@ -4,10 +4,10 @@ from skidl import Net
 from PySpice.Unit import u_F
 
 class Modificator(Base):
-    C_gnd = 1 @ u_F
+    C_vref = 1 @ u_F
 
-    def __init__(self, C_gnd, *args, **kwargs):
-        self.C_gnd = C_gnd
+    def __init__(self, C_vref, *args, **kwargs):
+        self.C_vref = C_vref
         
         super().__init__(*args, **kwargs)
 
@@ -20,8 +20,8 @@ class Modificator(Base):
             self.output = Net('RLCOutput')
         else:
             signal = self.output
-            self.output = Net('GndCapacitorOutput')
+            self.output = Net('VrefCapacitorOutput')
 
-        C_out = Capacitor()(value=self.C_gnd, ref='C_g')
+        C_out = Capacitor()(value=self.C_vref, ref='C_g')
 
-        circuit = signal & self.output & C_out['+', '-'] & self.gnd
+        circuit = signal & self.output & C_out['+', '-'] & self.v_ref

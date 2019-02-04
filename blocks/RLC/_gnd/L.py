@@ -19,7 +19,7 @@ class Modificator(Base):
             self.output = Net('RLCOutput')
         else:
             signal = self.output
-            self.output = Net('ParallelCapacitorOutput')
+            self.output = Net('GndInductorOutput')
 
         L = Build('Inductor').block
         L_out = L(value=self.L_gnd, ref='L_g')

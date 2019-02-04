@@ -3,10 +3,10 @@ from skidl import Net
 from PySpice.Unit import u_Ohm
 
 class Modificator(Base):
-    R_gnd = 1 @ u_Ohm
+    R_vref = 1 @ u_Ohm
 
-    def __init__(self, R_gnd, *args, **kwargs):
-        self.R_gnd = R_gnd
+    def __init__(self, R_vref, *args, **kwargs):
+        self.R_vref = R_vref
 
         super().__init__(*args, **kwargs)
 
@@ -19,9 +19,9 @@ class Modificator(Base):
             self.output = Net('RLCOutput')
         else:
             signal = self.output
-            self.output = Net('GndResistorOutput')
+            self.output = Net('VrefResistorOutput')
 
         R = Build('Resistor').block
-        R_out = R(value=self.R_gnd, ref='R_g')
+        R_out = R(value=self.R_vref, ref='R_g')
 
-        circuit = signal & self.output & R_out['+,-'] & self.gnd
+        circuit = signal & self.output & R_out['+,-'] & self.v_ref

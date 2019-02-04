@@ -1,13 +1,13 @@
 from .. import Base, Build
 from skidl import Net
-from PySpice.Unit import u_Ohm
+from PySpice.Unit import u_H
 
 class Modificator(Base):
-    R_gnd = 1 @ u_Ohm
+    L_vref = 1 @ u_H
 
-    def __init__(self, R_gnd, *args, **kwargs):
-        self.R_gnd = R_gnd
-
+    def __init__(self, L_vref, *args, **kwargs):
+        self.L_vref = L_vref
+        
         super().__init__(*args, **kwargs)
 
     def circuit(self):
@@ -19,9 +19,9 @@ class Modificator(Base):
             self.output = Net('RLCOutput')
         else:
             signal = self.output
-            self.output = Net('GndResistorOutput')
+            self.output = Net('VrefInductorOutput')
 
-        R = Build('Resistor').block
-        R_out = R(value=self.R_gnd, ref='R_g')
+        L = Build('Inductor').block
+        L_out = L(value=self.L_vref, ref='L_g')
 
-        circuit = signal & self.output & R_out['+,-'] & self.gnd
+        circuit = signal & self.output & L_out['+,-'] & self.v_ref
