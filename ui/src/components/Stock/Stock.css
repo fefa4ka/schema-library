@@ -20,5 +20,13 @@
     width: 100%;
 }
 .Stock-AddFormStock .ant-form-item { 
-    width: 40%
+    width: 40%;
+}
+.Stock-PartDescription a {
+    display: block;
+}
+.Stock-PartDescriptionParam {
+    display: inline-block;
+    margin-right: 8px;
+
 }

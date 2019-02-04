@@ -12,7 +12,7 @@ from PySpice.Unit.Unit import UnitValue
 from skidl import Circuit, Net, subcircuit
 
 from bem import Build, get_bem_blocks
-from bem.model import Part, Param, Mod, Stock
+from bem.model import Part, Param, Mod, Prop, Stock
 
 try:
     import __builtin__ as builtins
@@ -345,8 +345,10 @@ def get_parts():
             'model': part.model,
             'footprint': part.footprint,
             'mods': [mod.name + '=' + mod.value for mod in part.mods],
+            'props': [prop.name + '=' + prop.value for prop in part.props],
             'params': params,
             'spice': part.spice,
+            'spice_params': part.spice_params,
             'description': part.description,
             'datasheet': part.datasheet,
             'stock': [{ 'quantity': stock.quantity, 'stock': stock.place } for stock in part.stock],
@@ -358,7 +360,6 @@ def get_parts():
 def add_part():
     data = request.data
 
-    print('add',data)
     if data.get('id', None):
         __stock_delete_part(data['id'])
 
@@ -373,11 +374,17 @@ def add_part():
     
     mods = []
     for mod in data.get('mods', []):
-        print('add', mod)
         name, value = mod.split('=')
         mod = Mod(name=name, value=value)
         mod.save()
         part.mods.add(mod)
+
+    props = []
+    for prop in data.get('props', []):
+        name, value = prop.split('=')
+        prop = Prop(name=name, value=value)
+        prop.save()
+        part.props.add(prop)
 
     params = []
     for name in data.get('params', {}).keys():
@@ -401,7 +408,6 @@ def __stock_delete_part(part_id):
     part = Part.get_or_none(id=part_id)
     
     if part:
-        print(part.id, part.model)
         part.params.clear()
         part.mods.clear()
         part.stock.clear()
@@ -459,7 +465,8 @@ def get_part_params(name):
     
     return {
         'spice': Block.spice_params,
-        'part': { **Block.get_arguments(Block), **Block.get_params(Block) }
+        'part': {**Block.get_arguments(Block), **Block.get_params(Block)},
+        'props': Build(name).base.props
     }
 
 if __name__ == "__main__":

@@ -163,7 +163,7 @@ export class Block extends React.Component<IProps, {}> {
     
                             return labels
                         }, {}),
-                        simulationStopTime: chartData[chartData.length - 1].time
+                        simulationStopTime: chartData.length ? chartData[chartData.length - 1].time : 0
                     }
                 })
             })

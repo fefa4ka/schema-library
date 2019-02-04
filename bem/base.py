@@ -9,7 +9,7 @@ from skidl import TEMPLATE, Net, Network, Part, subcircuit
 from skidl.Net import Net as NetType
 
 from .model import Part as PartModel
-from .model import Param, Mod
+from .model import Param, Mod, Prop
 
 from settings import BLOCKS_PATH, params_tolerance, parts, test_sources, test_load
 
@@ -67,7 +67,8 @@ class Block:
         
         return '\n'.join(body)
 
-    def  __series__(self, instance):
+    def __series__(self, instance):
+        print('seroes connect')
         if self.output and instance.input:
             self.output._name = instance.input._name = f'{self.name}{instance.name}_Net'
             self.output += instance.input
@@ -87,6 +88,9 @@ class Block:
         self.connect_power_bus(instance)
 
     def __getitem__(self, *pin_ids, **criteria):
+        if len(pin_ids) == 1 and hasattr(self, str(pin_ids[0])):
+            return getattr(self, pin_ids[0])
+
         return self.element.__getitem__(*pin_ids, **criteria)
 
     def __and__(self, instance):
@@ -125,10 +129,13 @@ class Block:
             return self
 
     def connect_power_bus(self, instance):
+        print('CONNECT POWER', self, instance)
         if self.gnd and instance.gnd:
+            print('connect gnd')
             self.gnd += instance.gnd
         
         if self.v_ref and instance.v_ref:
+            print('connect vref')
             self.v_ref += instance.v_ref
     
     def get_description(self):
@@ -336,7 +343,6 @@ class Block:
             except:
                 pass
             
-            print('NOT TOLLERATE', a, b)
             return False
 
         params = list(self.props.keys()) + list(self.mods.keys())
@@ -349,7 +355,6 @@ class Block:
             parts = parts.where(PartModel.model == self.model)
         
         for part in parts:
-            print(part.id, part.model)
             for index, param in enumerate(params):
                 is_proper = True
                 value = values[index]
@@ -357,27 +362,29 @@ class Block:
                 part_params = part.params.where(Param.name == param)
                 if part_params.count():
                     for part_param in part_params:
-                        print('prop', param, value, part_param.value)
                         if is_tollerated(value, part_param.value):
                             break
                     else:
-                        print('false param')
                         is_proper = False
 
                 part_mods = part.mods.where(Mod.name == param)
                 if part_mods.count():
                     for part_mod in part_mods:
-                        print('mod', param, value, part_mod.value)
                         if is_tollerated(value, part_mod.value):
-                            print('modOK', param, value, part_mod.value)
                             break
                     else:
-                        print('false mod')
+                        is_proper = False
+
+                part_props = part.props.where(Prop.name == param)
+                if part_props.count():
+                    for part_prop in part_props:
+                        if is_tollerated(value, part_prop.value):
+                            break
+                    else:
                         is_proper = False
 
                 spice_param = part.spice_params.get(param, None)
                 if spice_param:
-                    print('spice', param, value,  spice_param)
                     if is_tollerated(value, spice_param):
                         continue
 
@@ -466,6 +473,7 @@ class Block:
         self.output += self.element[2]
         
         # self.gnd == Net('0')
+        self.v_ref = Net()
         self.input_n = self.output_n = self.gnd = Net()
     
     def power(self):
@@ -495,7 +503,6 @@ class Block:
         except ImportError:
             import builtins
 
-        print(libs)
         libs = ['./spice/']
        
         # Simulate the circuit.

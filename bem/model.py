@@ -18,6 +18,10 @@ class Mod(BaseModel):
     name = CharField()
     value = CharField()
 
+class Prop(BaseModel):
+    name = CharField()
+    value = CharField()
+
 class Part(BaseModel):
     block = CharField()
     model = CharField()
@@ -27,13 +31,14 @@ class Part(BaseModel):
     params = ManyToManyField(Param, backref='parts_params')
     spice = TextField(default='')
     mods = ManyToManyField(Mod, backref='blocks')
+    props = ManyToManyField(Prop, backref='blocks')
     stock = ManyToManyField(Stock, backref='parts_stock')
 
     @property
     def spice_params(self):
         without_comments = filter(lambda line: line[0] != '*', self.spice)
-        replace_plus_joints = ''.join(without_comments).replace('+', ' ').replace('(', ' ').replace(')', ' ').replace(' =', '=').replace('= ', '=').upper()
-        reduce_double_spaces = ' '.join(replace_plus_joints.split())
+        replace_plus_joints = ''.join(without_comments).replace('+', ' ').replace('(', ' ').replace(')', ' ').upper()
+        reduce_double_spaces = ' '.join(replace_plus_joints.split()).replace(' =', '=').replace('= ', '=')
         spice_model = reduce_double_spaces.split(' ')
 
         params = {}
@@ -52,5 +57,5 @@ class Part(BaseModel):
 
         return params
 
-db.create_tables([Stock, Param, Mod, Part, Part.params.get_through_model(), Part.stock.get_through_model(), Part.mods.get_through_model()])
+db.create_tables([Stock, Param, Mod, Prop, Part, Part.params.get_through_model(), Part.stock.get_through_model(), Part.mods.get_through_model(), Part.props.get_through_model()])
 

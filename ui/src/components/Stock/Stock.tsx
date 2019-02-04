@@ -51,13 +51,15 @@ function hasErrors(fieldsError:any) {
 }  
 const initFormState = {
   selectedBlock: '',
+  selectedBlockProps: {},
   selectedMods: [],
+  selectedProps: [],
   footprint: '',
   footprints: {},
   params: {},
   paramsValue: {},
   spiceAttrs: {},
-  spice: ''
+  spice: '',
 }
 
 type Params = {
@@ -73,7 +75,11 @@ type Params = {
 
 type FormState = {
   selectedBlock: string,
+  selectedBlockProps: {
+    [name:string]: string[]
+  },
   selectedMods: string[],
+  selectedProps: string[],
   footprint: string,
   footprints: Blocks,
   params: Params,
@@ -110,6 +116,7 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
       this.setState({
         selectedBlock: data.block,
         selectedMods: data.mods || [],
+        selectedProps: data.props || [],
         footprint: data.footprint,
         paramsValue: data.params || {},
         spice: data.spice
@@ -126,18 +133,19 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
 
       return mods
     }, {})
+
     const {
       setFieldsValue
     } = this.props.form
     const modsUrlParam = Object.keys(selectedMods).map((mod: string) => mod + '=' + selectedMods[mod].join(','))
     axios.get('http://localhost:3000/api/blocks/' + this.state.selectedBlock + '/part_params/?' + modsUrlParam)
       .then(res => {
-        const { part, spice } = res.data
+        const { part, spice, props } = res.data
         const paramsValue = partData ? partData.params || {} : Object.keys(part).reduce((params:any, param) => {
           params[param] = []
           return params
         }, {})
-        this.setState({ params: part, spice, paramsValue }, () => {
+        this.setState({ params: part, spiceAttrs: spice, paramsValue, selectedBlockProps: props }, () => {
           
           const params = Object.keys(this.state.paramsValue).reduce((params:any, name) => {
             params[`params[${name}]`] = this.state.paramsValue[name]
@@ -177,6 +185,7 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
   render() {
     const blocks = Object.keys(this.props.blocks)
     const mods = this.props.blocks[this.state.selectedBlock]
+    const props = this.state.selectedBlockProps
     const footprints: any = this.state.footprints
     
     const {
@@ -271,6 +280,26 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
                   {Object.keys(mods).map(type =>
                       <TreeNode value={type} title={type} key={type}>
                           {mods[type].map(value => 
+                              <TreeNode value={type + '=' + value} title={value} key={type + '=' + value} />
+                          )}
+                      </TreeNode>
+                  )}
+              </TreeSelect>)
+                : ''}
+            {props && Object.keys(props).length 
+              ? getFieldDecorator('props', {})(
+                <TreeSelect
+                  showSearch
+                  style={{ width: '205px' }}
+                  placeholder="Properties"
+                  treeCheckable={true}
+                  multiple
+                  treeDefaultExpandAll
+                  onChange={selectedProps => this.setState({ selectedProps }, this.loadBlock)}
+              >
+                  {Object.keys(props).map(type =>
+                      <TreeNode value={type} title={type} key={type}>
+                          {props[type].map(value => 
                               <TreeNode value={type + '=' + value} title={value} key={type + '=' + value} />
                           )}
                       </TreeNode>
@@ -445,7 +474,7 @@ componentWillMount() {
     }
     render() {
       const blocks = Object.keys(this.state.blocks)
-        
+      
       
     // const dataSource = [{
     //     key: '1',
@@ -468,7 +497,11 @@ componentWillMount() {
         title: 'Description',
         dataIndex: 'description',
         key: 'description',
-        render: (text: string, record: any) => <a href={record.datasheet}>{text}</a>,
+          render: (text: string, record: any) => <div className={cnStock('PartDescription')}>
+            <a href={record.datasheet} target='_blank'>{text}</a>
+            {record.spice_params && Object.keys(record.spice_params).map(name => 
+              <span className={cnStock('PartDescriptionParam')}>{name[0]}<sub>{name.slice(1)}</sub> = {record.spice_params[name]}</span>)}
+          </div>,
       }, {
         title: 'Footprint',
         dataIndex: 'footprint',
