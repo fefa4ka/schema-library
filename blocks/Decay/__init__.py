@@ -5,7 +5,30 @@ from PySpice.Unit import u_Ohm, u_V, u_F, u_A, u_s
 from math import log
 
 class Base(Block):
-    # Props
+    """**Decay to equilibrium**
+    
+    The product RC is called the time constant of the circuit. For `R_s` in ohms and `C_g` in farads, the product RC is in seconds. A `C_g` microfarad across `R_s` 1.0k has a time constant `Time_to_V_out` of 1 ms; if the capacitor is initially charged to `V_out` 1.0 V, the initial current `I_out` is 1.0 mA.
+
+    At time t = 0, someone connects the battery. The equation for the circuit is then 
+    
+    `I = C * (dV / dT) = (V_in - V_out) / R_s` 
+    
+    with solution
+
+    `V_out = V_in + A * e ^ (-t / R_s * C_g)`
+
+    The constant `A` is determined by initial conditions: `V_out = 0` at `t = 0`; therefore, `A = −V_in`, and 
+    
+    `V_out = V_in * (1 − e ^ (−t / R * C))`
+
+    Once again there’s good intuition: as the capacitor charges up, the slope (which is proportional to current, because it’s a capacitor) is proportional to the remaining voltage (be- cause that’s what appears across the resistor, producing the current); so we have a waveform whose slope decreases proportionally to the vertical distance it has still to go – an exponential.
+
+    To figure out the time required to reach a voltage `V_out` on the way to the final voltage `V_in`: 
+    
+    `t = R * C * log(V_in / (V_in - V_out))`
+
+    * Paul Horowitz and Winfield Hill. "1.4.2 RC circuits: V and I versus time" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 21-23
+    """
     V_in = 10 @ u_V
     V_out = 5 @ u_V
     I_out = 0.5 @ u_A
@@ -45,7 +68,7 @@ class Base(Block):
             C_gnd = self.C_out
         )
         
-        self.input = rlc.input
+        self.input = self.v_ref = rlc.input
         self.output = rlc.output
         self.gnd = rlc.gnd
 

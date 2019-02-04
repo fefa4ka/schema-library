@@ -4,6 +4,15 @@ from skidl import Net, subcircuit
 from PySpice.Unit import u_ms, u_V, u_A, u_Hz, u_Ohm
 
 class Base(Block):
+    """**Voltage Double, Tripler, Quadrupler, etc**
+
+    Voltage doubler. Think of it as *two half-wave rectifier circuits* in series. Variations of this circuit exist for voltage triplers, quadruplers, etc.
+
+    You can extend this scheme as far as you want, producing what’s called a Cockcroft–Walton generator; these are used in arcane applications (such as particle accelerators) and in everyday applications (such as image intensifiers, air ionizers, laser copiers, and even bug zappers) that require a high dc voltage but hardly any current.
+
+        * Paul Horowitz and Winfield Hill. "1.6.4 Rectifier configurations for power supplies" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 33-35
+    """
+
     scale = 2
 
     V_out = 20 @ u_V
