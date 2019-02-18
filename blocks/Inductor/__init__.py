@@ -24,7 +24,7 @@ class Base(Block):
             return
 
         part = Part('Device', 'L', footprint=self.footprint, dest=TEMPLATE)
-        part.set_pin_alias('p', 1)
-        part.set_pin_alias('n', 2)
+        part.set_pin_alias('+', 1)
+        part.set_pin_alias('-', 2)
         
         return part

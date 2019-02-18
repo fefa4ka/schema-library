@@ -22,6 +22,6 @@ class Modificator(Base):
             signal = self.output
             self.output = Net('VrefCapacitorOutput')
 
-        C_out = Capacitor()(value=self.C_vref, ref='C_g')
+        C_out = Capacitor()(value=self.C_vref, ref='C_v')
 
         circuit = signal & self.output & C_out['+', '-'] & self.v_ref
