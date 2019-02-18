@@ -9,7 +9,7 @@ from flask_api import FlaskAPI
 
 from PySpice.Unit import u_A, u_Hz, u_ms, u_Ohm, u_s, u_V
 from PySpice.Unit.Unit import UnitValue
-from skidl import Circuit, Net, subcircuit
+from skidl import Circuit, Net, search, subcircuit, set_default_tool, KICAD, SPICE
 
 from bem import Build, get_bem_blocks
 from bem.model import Part, Param, Mod, Prop, Stock
@@ -21,6 +21,7 @@ except ImportError:
 
 app = FlaskAPI(__name__)
 
+builtins.DEBUG = True
 
 def get_arg_units(part, arg):
     description = getattr(part, 'description')
@@ -64,7 +65,51 @@ def get_minimum_period(sources):
                 if not min_period or min_period > time:
                     min_period = time
 
-    return period if period / min_period <= 20 else period / 5
+    return period if min_period and period / min_period <= 20 else period / 5 if period else 0.1
+
+
+
+@app.route('/api/devices/', methods=['GET'])
+def devices():
+    set_default_tool(KICAD)
+    builtins.DEBUG = False
+
+    import io
+    from contextlib import redirect_stdout
+
+    keyword = request.args.get('query', None)
+    name = request.args.get('name', None)
+    print(keyword, name)
+    if keyword:
+        f = io.StringIO()
+        with redirect_stdout(f):
+            search(keyword)
+
+        out = f.getvalue()
+        
+        devices = out[out.rfind('\r') + 2:].split('\n')
+        result = defaultdict(list)
+
+        for device in devices:
+            if device:
+                lib, device = device.split(':')
+                lib = lib.replace('.lib', '')
+                description_pos = device.find('(')
+                title = device[:description_pos].strip()
+                description = device[description_pos + 1: -2].strip()
+                result[lib].append([title, description])
+
+        return result
+
+    if name:
+        device = Build(name.replace('.lib', '')).element
+
+        return {
+            'library': device.lib,
+            'name': device.name,
+            'description': device.description,
+            'pins': [pin.name for pin in device.pins]
+        }
 
 
 @app.route('/api/sources/', methods=['GET'])
@@ -147,6 +192,9 @@ def get_arguments_values(Block, params):
 
 @app.route('/api/blocks/<name>/', methods=['GET'])
 def block(name):
+    set_default_tool(KICAD) 
+    builtins.DEBUG = False
+    
     builtins.default_circuit.reset(init=True)
     del builtins.default_circuit
     builtins.default_circuit = Circuit()
@@ -164,7 +212,11 @@ def block(name):
         nets = {}
 
         if Instance.input:
-            for part in Instance.input.circuit.parts:
+            if type(Instance.input) == list:
+                circuit = Instance.input[0].circuit
+            else:
+                circuit = Instance.input.circuit
+            for part in circuit.parts:
                 pins = [str(pin) for pin in part.get_pins()]
                 parts.append({
                     'name': part.name,
@@ -172,7 +224,7 @@ def block(name):
                     'pins': pins
                 })
 
-            for net in Instance.input.circuit.get_nets():
+            for net in circuit.get_nets():
                 pins = [str(pin) for pin in net.get_pins()]
                 nets[net.name] = pins
         
@@ -197,9 +249,31 @@ def block(name):
     params = build()
     return params
 
+@app.route('/api/blocks/<name>/netlist/', methods=['POST'])
+def netlist(name):
+    set_default_tool(KICAD) 
+    builtins.DEBUG = False
+    params = request.data
+    
+    scheme = Circuit()
+    builtins.default_circuit.reset(init=True)
+    del builtins.default_circuit
+    builtins.default_circuit = scheme
+    builtins.NC = scheme.NC
+    # scheme.backup_parts
+    
+    Block = Build(name, **params['mods']).block
+    props = get_arguments_values(Block, params['args'])
+    Instance = Block(**props)
+
+    scheme.ERC()
+    
+    return scheme.generate_netlist()
 
 @app.route('/api/blocks/<name>/simulate/', methods=['POST'])
 def simulate(name):
+    set_default_tool(SPICE) 
+    builtins.DEBUG = True
     builtins.default_circuit.reset(init=True)
     del builtins.default_circuit
     builtins.default_circuit = Circuit()
@@ -230,6 +304,7 @@ def simulate(name):
                 is_same_connection = True
                 for source_pin in pins:
                     for index, pin in enumerate(source['pins'][source_pin]):
+                        
                         if source_another['pins'][source_pin][index] != pin:
                             is_same_connection = False
                             break
@@ -239,6 +314,7 @@ def simulate(name):
                     series_sources[hash_name].append(source_another)
 
         
+        source_refs = []
         for series in series_sources.keys():
             last_source = None
 
@@ -249,9 +325,14 @@ def simulate(name):
                 args = {}
                 for arg in source['args'].keys():
                     if source['args'][arg]['value']:
-                        args[arg] = float(source['args'][arg]['value']) @ get_arg_units(part, arg)
+                        try: 
+                            args[arg] = float(source['args'][arg]['value']) @ get_arg_units(part, arg)
+                        except:
+                            args[arg] = source['args'][arg]['value']
 
-                signal = Build(part_name).spice(ref='VS', **args)
+                signal = Build(part_name).spice(ref='V' + source['name'], **args)
+                # print('source', args) 
+                source_refs.append('V' + source['name'])
 
                 if not last_source:
                     for pin in source['pins']['n']:
@@ -286,8 +367,8 @@ def simulate(name):
         step_time = period / 50
 
         spice_libs = list(set([os.path.dirname(file) for file in glob.glob('./blocks/*/*/spice/*.lib')]))
-        simulated_data = Instance.test_pins(libs=spice_libs, end_time=end_time @ u_s, step_time=step_time @ u_s)
-
+        simulated_data = Instance.test_pins(current_nodes=source_refs, libs=spice_libs, end_time=end_time @ u_s, step_time=step_time @ u_s)
+        
         return simulated_data
     
     simulated_data = build()
@@ -343,9 +424,10 @@ def get_parts():
             'id': part.id,
             'block': part.block,
             'model': part.model,
+            'scheme': part.scheme,
             'footprint': part.footprint,
-            'mods': [mod.name + '=' + mod.value for mod in part.mods],
-            'props': [prop.name + '=' + prop.value for prop in part.props],
+            'mods': [mod.name + ':' + mod.value for mod in part.mods],
+            'props': [prop.name + ':' + prop.value for prop in part.props],
             'params': params,
             'spice': part.spice,
             'spice_params': part.spice_params,
@@ -365,6 +447,7 @@ def add_part():
 
     part = Part(block=data['block'],
         model=data['model'],
+        scheme=data.get('scheme', ''),
         footprint=data['footprint'],
         datasheet=data.get('datasheet', ''),
         description=data.get('description', ''),
@@ -374,14 +457,14 @@ def add_part():
     
     mods = []
     for mod in data.get('mods', []):
-        name, value = mod.split('=')
+        name, value = mod.split(':')
         mod = Mod(name=name, value=value)
         mod.save()
         part.mods.add(mod)
 
     props = []
     for prop in data.get('props', []):
-        name, value = prop.split('=')
+        name, value = prop.split(':')
         prop = Prop(name=name, value=value)
         prop.save()
         part.props.add(prop)
@@ -410,6 +493,7 @@ def __stock_delete_part(part_id):
     if part:
         part.params.clear()
         part.mods.clear()
+        part.props.clear()
         part.stock.clear()
     
         part.delete_instance()
@@ -426,7 +510,7 @@ def delete_part():
 def get_footprint():
     name = request.args.get('name', None)
     if name:
-        folder, filename = name.split('=')
+        folder, filename = name.split(':')
         path = '/Users/fefa4ka/Development/_clone/kicad/kicad-footprints/' + folder + '.pretty/' + filename + '.kicad_mod'
         file = open(path, 'r')
         data = '\n'.join(file.readlines())
@@ -466,7 +550,7 @@ def get_part_params(name):
     return {
         'spice': Block.spice_params,
         'part': {**Block.get_arguments(Block), **Block.get_params(Block)},
-        'props': Build(name).base.props
+        'props': Build(name).base and Build(name).base.props
     }
 
 if __name__ == "__main__":

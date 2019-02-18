@@ -1,8 +1,12 @@
 import importlib
 import logging
 from pathlib import Path
+try:
+    import __builtin__ as builtins
+except ImportError:
+    import builtins
 
-from settings import BLOCKS_PATH, DEBUG
+from settings import BLOCKS_PATH
 from .base import Block as BaseBlock
 
 logger = logging.getLogger(__name__)
@@ -16,14 +20,18 @@ class Build:
     models = {}
     files = []
 
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, name, debug=None, *args, **kwargs):
         self.name = name
         self.mods = {}
         self.props = {}
         self.models = []
         self.files = []
 
-        base_file = Path(BLOCKS_PATH) / self.name / ('__init__.py')
+        self.debug = debug
+
+        block_dir = self.name.replace('.', '/')
+
+        base_file = Path(BLOCKS_PATH) / block_dir / ('__init__.py')
         self.base = base_file.exists() and importlib.import_module(BLOCKS_PATH + '.' + self.name).Base        
 
         if self.base:
@@ -35,7 +43,7 @@ class Build:
                 else:
                     value = str(value)
                     self.mods[mod] = value.split(',')
-
+            
             for mod, value in self.base.mods.items():
                 if not self.mods.get(mod, None):
                     self.mods[mod] = value
@@ -45,7 +53,7 @@ class Build:
                     values = [str(values)]
 
                 for value in values:
-                    module_file = Path(BLOCKS_PATH) / self.name / ('_' + mod) / (value + '.py')
+                    module_file = Path(BLOCKS_PATH) / block_dir / ('_' + mod) / (value + '.py')
                     if module_file.exists():
                         self.files.append(str(module_file))
                         Module = importlib.import_module(BLOCKS_PATH + '.' + self.name + '._' + mod + '.' + value)
@@ -74,7 +82,7 @@ class Build:
                         'name': self.name,
                         'mods': self.mods,
                         'props': self.props,
-                        'DEBUG': DEBUG,
+                        'DEBUG': self.debug if self.debug != None else builtins.DEBUG,
                         'files': self.files
                     })
 

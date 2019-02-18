@@ -25,6 +25,7 @@ class Prop(BaseModel):
 class Part(BaseModel):
     block = CharField()
     model = CharField()
+    scheme = CharField()
     datasheet = CharField()
     description = TextField(default='')
     footprint = CharField()

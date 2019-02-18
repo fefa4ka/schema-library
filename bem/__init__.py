@@ -8,25 +8,53 @@ from .base import Block
 from .builder import Build
 from PySpice.Unit import *
 
-def get_bem_blocks():
+def get_bem_blocks(parent=''):
     blocks = defaultdict()
-    for file in glob.glob('./blocks/*/__init__.py'):
-        block = file.split('/')[2]
-        # base = Path(file).exists() and importlib.import_module(file[2:].replace('/', '.')).Base
+    block = './blocks/' + parent
+
+    for file in glob.glob(block + '/*/__init__.py'):        
+        element = file.split('/')[-2]
         
-        blocks[block] = defaultdict(list)
+        blocks[element] = defaultdict(list)
         
-        for mod_type, mod_value in [(mod.split('/')[3], mod.split('/')[4]) for mod in glob.glob('./blocks/%s/_*/*.py' % block)]:
+        for mod_type, mod_value in [(mod.split('/')[-2], mod.split('/')[-1]) for mod in glob.glob(block + '/%s/_*/*.py' % element)]:
             mod_type = mod_type[1:]
             mod_value = mod_value.replace('.py', '')
-            blocks[block][mod_type].append(mod_value)
+            
+            blocks[element][mod_type].append(mod_value)
+        
+        
+        if not parent:
+            elements = get_bem_blocks(element)
+            if len(elements.keys()):
+                blocks[element + '.'] = elements
 
     return blocks
 
+
+def u(unit):
+    """Absolute float value of PySpice.Unit
+    """
+
+    return float(unit.convert_to_power())
+
 _self = sys.modules[__name__]
 
-for name in get_bem_blocks().keys():
-    def build(name=name, *arg, **kwarg):
-        return Build(name, *arg, **kwarg).block
+blocks = get_bem_blocks()
+for name in blocks.keys():
+    if name[-1] == '.':
+        for element in blocks[name].keys():
+            element = name + element
+            def build(name=element, *arg, **kwarg):
+                return Build(name, *arg, **kwarg).block
 
-    setattr(_self, name, build)
+            setattr(_self, element.replace('.', '_'), build)
+            
+    else:
+        def build(name=name, *arg, **kwarg):
+            return Build(name, *arg, **kwarg).block
+
+        setattr(_self, name, build)
+    
+    
+    

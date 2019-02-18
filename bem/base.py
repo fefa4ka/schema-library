@@ -7,6 +7,7 @@ from PySpice.Unit import FrequencyValue, PeriodValue, u_ms
 from PySpice.Unit.Unit import UnitValue
 from skidl import TEMPLATE, Net, Network, Part, subcircuit
 from skidl.Net import Net as NetType
+from skidl.NetPinList import NetPinList
 
 from .model import Part as PartModel
 from .model import Param, Mod, Prop
@@ -68,7 +69,6 @@ class Block:
         return '\n'.join(body)
 
     def __series__(self, instance):
-        print('seroes connect')
         if self.output and instance.input:
             self.output._name = instance.input._name = f'{self.name}{instance.name}_Net'
             self.output += instance.input
@@ -94,21 +94,28 @@ class Block:
         return self.element.__getitem__(*pin_ids, **criteria)
 
     def __and__(self, instance):
-        print(f'{self.title} series connect {instance.title if hasattr(instance, "title") else instance.name}')
-
         if issubclass(type(instance), Block):
+            print(f'{self.title} series connect {instance.title if hasattr(instance, "title") else instance.name}')
             self.__series__(instance)
 
             return instance
+        elif type(instance) == NetPinList:
+            return self.__and__(instance[0])
         else:
             try:
                 ntwk = instance.create_network()
             except AttributeError:
                 raise Exception
+            
+            self.output += ntwk[0]
 
-            return Network(self.input, ntwk[-1])
-    
+            return ntwk[-1]
+            # return Network(self.output, ntwk[-1])
+
+        raise Exception
+
     # def __rand__(self, instance):
+    #     print('RAND')
     #     return instance & self
 
     def __or__(self, instance):
@@ -116,7 +123,9 @@ class Block:
         if issubclass(type(instance), Block):
             self.__parallel__(instance)
 
-            return instance
+            return NetPinList([self, instance])
+        elif type(instance) == NetPinList:
+            return self.__and__(instance[0])
         else:
             try:
                 ntwk = instance.create_network()
@@ -129,13 +138,10 @@ class Block:
             return self
 
     def connect_power_bus(self, instance):
-        print('CONNECT POWER', self, instance)
         if self.gnd and instance.gnd:
-            print('connect gnd')
             self.gnd += instance.gnd
         
         if self.v_ref and instance.v_ref:
-            print('connect vref')
             self.v_ref += instance.v_ref
     
     def get_description(self):
@@ -352,7 +358,7 @@ class Block:
 
         parts = PartModel.select().where(PartModel.block == self.name)
         if hasattr(self, 'model') and self.model:
-            parts = parts.where(PartModel.model == self.model)
+            parts = parts.where(PartModel.model.contains(self.model))
         
         for part in parts:
             for index, param in enumerate(params):
@@ -443,7 +449,7 @@ class Block:
 
         part = self.selected_part
         if part:
-            return part.footprint
+            return part.footprint.replace('=', ':')
 
         return None
 
@@ -456,6 +462,9 @@ class Block:
 
         if not Model:
             return
+
+        if hasattr(self, 'model'):
+            kwargs['model'] = self.model
 
         element = Model(*args, **kwargs)
         element.ref = self.ref or element.ref 
@@ -525,7 +534,7 @@ class Block:
     def test_load(self):
         return test_load
 
-    def test_pins(self, libs=[], step_time=0.01 @ u_ms, end_time=200 @ u_ms):
+    def test_pins(self, current_nodes=[], libs=[], step_time=0.01 @ u_ms, end_time=200 @ u_ms):
         self.test(libs)
 
         waveforms = self.simulation.transient(step_time=step_time, end_time=end_time) 
@@ -543,15 +552,20 @@ class Block:
             except:
                 pass
 
-        current = waveforms['VS']
-        
+        current = {}
+        for node in current_nodes:
+            current[node] = -waveforms[node]
+            
+       
         data = []
         for index, time in enumerate(time):
             entry = {
-                'time': time.value * time.scale,
-                 'I_out': current[index].scale*current[index].value,
+                'time': time.value * time.scale
             }
             
+            for key in current.keys():
+                entry['I_' + key] = current[key][index].scale * current[key][index].value
+                
             for key in chart_data.keys():
                 entry[key] = chart_data[key][index].scale * chart_data[key][index].value 
 
