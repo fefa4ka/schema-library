@@ -1,5 +1,5 @@
 
-from blocks.Combination import Base as Block
+from blocks.Abstract.Combination import Base as Block
 from skidl import Part, Net, subcircuit, TEMPLATE
 from PySpice.Unit import u_Ohm, u_V, u_W, u_A
 import numpy as np
@@ -61,8 +61,8 @@ class Base(Block):
     def part(self):
         if not self.DEBUG:
             part = Part('Device', 'R', footprint=self.footprint, dest=TEMPLATE)
-            part.set_pin_alias('p', 1)
-            part.set_pin_alias('n', 2)
+            part.set_pin_alias('+', 1)
+            part.set_pin_alias('-', 2)
 
             return part
         else:
@@ -122,10 +122,10 @@ class Base(Block):
         rin += resistors[0][1]
         rout += resistors[-1][2]
         
-        self.input = self.v_ref = rin
+        self.input = rin
         self.output = rout
 
         self.input_n = self.output_n = self.gnd = Net()
-        
+        self.v_ref = Net()
        
         return 'Resistor'

@@ -64,6 +64,8 @@ class Build:
 
             for key, value in self.props.items():
                 del self.mods[key]
+        else:
+            self.props = kwargs
 
     @property
     def block(self):

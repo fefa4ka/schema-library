@@ -5,6 +5,7 @@ export type TDevice = {
     library: string,
     name: string,
     description: string,
+    footprint: string,
     pins: {
         [name: string]: string[]
     },

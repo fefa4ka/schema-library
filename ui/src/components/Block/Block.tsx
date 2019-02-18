@@ -48,6 +48,7 @@ const initialState = {
         library: '',
         name: '',
         description: '',
+        footprint: '',
         pins: {},
         index: -1
     },
@@ -140,6 +141,7 @@ export class Block extends React.Component<IProps, {}> {
                 args: {},
                 charData: [],
                 sources: [],
+                devices: [],
                 load: []
             }, this.loadBlock)
         }
@@ -203,7 +205,7 @@ export class Block extends React.Component<IProps, {}> {
             
         axios.get('http://localhost:3000/api/blocks/' + this.props.name + '/' + urlParams)
             .then(res => {
-                const { name, description, args, params, mods, pins, files, nets, sources, load } = res.data               
+                const { name, description, args, params, mods, pins, files, nets, sources, load, devices } = res.data               
                 
                 const selectedMods = Object.keys(mods).reduce((selected, type) =>
                     selected.concat(
@@ -227,6 +229,10 @@ ${name}(${codeMods})${codeArgs ? `(
 
                     if(prevState.load.length === 0) {
                         elements.load = load.map((item:any, index:number) => ({ ...item, description: '', index }))
+                    }
+
+                    if(prevState.devices.length === 0) {
+                        elements.devices = devices.map((item:any, index:number) => ({ ...item, description: '', index }))
                     }
 
                     return {
@@ -282,6 +288,7 @@ ${name}(${codeMods})${codeArgs ? `(
     handleDeviceOk = () => {
         this.setState(({ devices, editableDevice }: State) => {
             if (editableDevice.index >= 0) {
+                editableDevice.name += '_' + 1
                 devices[editableDevice.index] = editableDevice
             } else {
                 const lastId = devices.reduce((id, device) => {
@@ -305,9 +312,9 @@ ${name}(${codeMods})${codeArgs ? `(
                 modalConfirmLoading: false,
                 devices,
                 editableDevice: {},
-                modalSourceVisible: false,
+                modalDeviceVisible: false,
             }
-        }, this.loadSimulation)
+        })
     }
     handleLoadOk = () => {
         this.setState(({ load, editableLoad }: State) => {
@@ -329,8 +336,7 @@ ${name}(${codeMods})${codeArgs ? `(
     handleModalCancel = (name: string) => {
         this.setState({
             [`modal${name}Visible`]: false,
-            editableSource: {},
-            editableLoad: {}
+            [`editable${name}`]: {}
         })
     }
     downloadNetlist = () => {
@@ -585,7 +591,7 @@ ${name}(${codeMods})${codeArgs ? `(
                                                     source={this.state.editableSource}
                                                     pins={Object.keys(this.state.pins)}
                                                     onChange={(source:TSource) =>
-                                                        this.setState(({ editableSource }:State) => ({ editableSource: source }), () => console.log('change', this.state))
+                                                        this.setState({ editableSource: source }, () => console.log('change', this.state))
                                                     }
                                                 />
                                         </Modal>
@@ -639,7 +645,7 @@ ${name}(${codeMods})${codeArgs ? `(
                                                 <Part
                                                     source={this.state.editableLoad}
                                                     pins={Object.keys(this.state.pins)}
-                                                onChange={(load: TSource) =>
+                                                    onChange={(load: TSource) =>
                                                         this.setState({ editableLoad: load }, () => console.log('change', this.state))
                                                     }
                                                 />
@@ -655,12 +661,12 @@ ${name}(${codeMods})${codeArgs ? `(
                                     onOk={this.handleDeviceOk}
                                     onCancel={() => this.handleModalCancel('Device')}
                                     >
-                                        <Device
+                                        <Device 
                                             type={this.state.editableDeviceType}
                                             device={this.state.editableDevice}
                                             pins={Object.keys(this.state.pins)}
                                             onChange={(device:TDevice) =>
-                                                this.setState(({ editableDevice }:State) => ({ editableDevice: device }), () => console.log('change', this.state))
+                                                this.setState({ editableDevice: device }, () => console.log('change', this.state))
                                             }
                                         />
                                 </Modal>
@@ -670,19 +676,18 @@ ${name}(${codeMods})${codeArgs ? `(
                                         key={device.name + index.toString()}
                                         closable
                                         onClick={_ => {
-                                            this.setState({ editableSource: { ...this.state.devices[index], index } }, () => this.showModal('Device'))
+                                            this.setState({ editableDevice: { ...this.state.devices[index], index } }, () => this.showModal('Device'))
                                         }}
                                         onClose={() => {
                                             this.setState(({ devices }: State) => {
-                                                
                                                 devices.splice(index, 1)
                                                 
                                                 return { devices }
-                                            }, this.loadBlock)
+                                            })
                                     }}>
                                         {device.name}
                                     </Tag>
-                                )} <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableDeviceType: 'source', editableDevice: { index: -1 } }, () => this.showModal('Device'))}><Icon type="api" /> Add Device</Tag>
+                                )} <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableDeviceType: 'scheme', editableDevice: { index: -1 } }, () => this.showModal('Device'))}><Icon type="api" /> Add Device</Tag>
                         
                                 <Button type='default' onClick={this.downloadNetlist}>Download</Button>
 

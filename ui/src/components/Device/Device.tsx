@@ -2,17 +2,13 @@ import * as React from 'react'
 import { IProps, TDevice } from './index'
 import { cn } from '@bem-react/classname'
 import axios from 'axios'
-import { Button, Select, TreeSelect} from 'antd'
-import { Form, Divider, Tabs, Row, Col, Modal } from 'antd'
-import Markdown from 'react-markdown'
-const { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceArea } = require('recharts')
-const TabPane = Tabs.TabPane;
+import { Select, TreeSelect} from 'antd'
+import { Form, Divider } from 'antd'
 import './Device.css'
-import { UnitInput } from '../UnitInput'
 
 const nomnoml = require('nomnoml')
 const TreeNode = TreeSelect.TreeNode;
-const { Option, OptGroup } = Select
+const { Option } = Select
 
 const cnPart = cn('Device')
 
@@ -21,7 +17,6 @@ const initialState = {
     pins: {},
     parts: {},
     index: -1,
-    footprint: '',
     footprints: {}
 }
 
@@ -33,7 +28,6 @@ type State = {
     },
     device?: TDevice,
     index: number,
-    footprint: string,
     footprints: {
         [name: string]: {
             [mod: string]: string[] | {
@@ -53,21 +47,8 @@ export class Device extends React.Component<IProps, {}> {
             : -1
     }
 
-    componentWillMount() {
-        // this.loadParts()
-
-        return true
-    }
-    // loadParts() {
-    //     axios.get('http://localhost:3000/api/devices/')
-    //         .then(res => {
-    //             const parts = res.data
-    //             this.setState({ parts }, () => this.loadDevice(this.props.device))
-    //         })
-    // }
     getCurrentDevice() {
         const device = this.state.device
-
 
         return {
             ...device,
@@ -76,23 +57,41 @@ export class Device extends React.Component<IProps, {}> {
         }
         return {}
     }
-    loadDevice({ name, pins, index }: TDevice) {
-        this.setState(({ parts }: State) => {
-            if (index === -1 || index === undefined) {
+    loadDevice({ name, description, library, footprint, pins, index }: TDevice) {
+        if (index === -1 || index === undefined) {
+            this.setState(({ parts }: State) => {
                 return {
-                    name: undefined,
-                    index: -1,
+                    device: {
+                        name: undefined,
+                        library: undefined,
+                        description: undefined,
+                        footprint: undefined,
+                        index: -1,
+                        pins: []
+                    },
                     pins: {}
                 }
-            } else {
-                return {
-                    parts,
-                    name,
-                    index,
-                    pins
-                }
-            }
-        })
+            })
+        } else {
+            name = name.slice(0, name.lastIndexOf('_'))
+            axios.get('/api/devices?name=' + library + ':' + name).then((res: any) => {
+                this.setState(({ parts }: State) => {
+                    return {
+                        parts,
+                        device: {
+                            name,
+                            library,
+                            description,
+                            footprint,
+                            index,
+                            pins: res.data.pins
+                        },
+                        pins
+                    }
+                })
+            })
+        }
+        
     }
     componentDidUpdate(prevProps: IProps) {
         if (prevProps.device.index !== this.props.device.index) {
@@ -103,6 +102,7 @@ export class Device extends React.Component<IProps, {}> {
         const { onChange } = this.props
         const footprints: any = this.state.footprints
         const { parts } = this.state
+        const { device } = this.state
         const name = this.state.name 
             ? this.state.name.split('_')[0]
             : undefined
@@ -140,7 +140,6 @@ export class Device extends React.Component<IProps, {}> {
         
         return (
             <div className={cnPart()}>
-            
                 <TreeSelect
                     showSearch
                     style={{ width: 230 }}
@@ -148,11 +147,12 @@ export class Device extends React.Component<IProps, {}> {
                     placeholder="Device"
                     allowClear
                     treeDefaultExpandAll
+                    value={device && device.library ? device.library + ':' + device.name : ''}
                     onSearch={(value) => {
                         if (value.length >= 3) {
-                        axios.get('/api/devices/?query=' + value).then((res: any) => {
-                            this.setState({ parts: res.data })
-                        })
+                            axios.get('/api/devices/?query=' + value).then((res: any) => {
+                                this.setState({ parts: res.data })
+                            })
                         }
                     }}
                     onChange={(value) => {
@@ -162,7 +162,7 @@ export class Device extends React.Component<IProps, {}> {
                     }}>
                     
                     {Object.keys(parts).map((lib, index) => 
-                        <TreeNode title={lib} key={lib + index}>
+                        <TreeNode value={lib} title={lib} key={lib + index}>
                             {parts[lib].map(item =>
                                 <TreeNode value={lib + ':' + item[0]} title={item[0]} key={lib + ':' + item[0]}  />
                             )}
@@ -173,7 +173,7 @@ export class Device extends React.Component<IProps, {}> {
                 <TreeSelect
                   showSearch
                   style={{ width: 230 }}
-                  
+                  value={device ? device.footprint : ''}
                   dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
                   placeholder="Footprint"
                   allowClear
@@ -186,14 +186,16 @@ export class Device extends React.Component<IProps, {}> {
                     }
                   }}
                   onChange={(value) => {
-                    axios.get('/api/parts/footprint?name=' + value).then((data: any) => {
-
+                      axios.get('/api/parts/footprint?name=' + value).then((data: any) => {
+                          this.setState(({ device }: any) => {
+                            return ({ device: { ...device || {}, footprint: value } })
+                        })
                     //   this.kicadviewer.render(data.data)
                     })
                   }}>
                 
                 {Object.keys(this.state.footprints).map((type:string) =>
-                  <TreeNode title={type} key={type}>
+                  <TreeNode value={type} title={type} key={type}>
                       {footprints[type].map((value:string) => 
                           <TreeNode value={type + ':' + value} title={value} key={type + ':' + value} />
                       )}

@@ -79,7 +79,7 @@ def devices():
 
     keyword = request.args.get('query', None)
     name = request.args.get('name', None)
-    print(keyword, name)
+    
     if keyword:
         f = io.StringIO()
         with redirect_stdout(f):
@@ -241,6 +241,7 @@ def block(name):
             'nets': nets,
             'sources': params.get('sources', Instance.test_sources()),
             'load': params.get('load', Instance.test_load()),
+            'devices': params.get('devices', Instance.test_devices()),
             'available': available
         }
         
@@ -265,6 +266,17 @@ def netlist(name):
     Block = Build(name, **params['mods']).block
     props = get_arguments_values(Block, params['args'])
     Instance = Block(**props)
+
+    for device in params.get('devices', []):
+        device_name = device['library'] + ':' + device['name'][:device['name'].rfind('_')]
+        print(device_name, device['footprint'])
+        DeviceBlock = Build(device_name, footprint=device['footprint']).element
+        
+        for device_pin_name in device['pins'].keys():
+            for pin in device['pins'][device_pin_name]:
+                print(device_pin_name, pin)
+                device_pin = getattr(DeviceBlock, device_pin_name)
+                device_pin += getattr(Instance, pin)
 
     scheme.ERC()
     
