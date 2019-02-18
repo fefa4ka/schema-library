@@ -133,7 +133,7 @@ export class Diagram extends React.Component<IProps, {}> {
         // const ids = ['#label: stroke=#000001']
         const settings = ['#font: ISOCPEUR', '#stroke: #000000', '#direction: down', '#fill: #ffffff', '#lineWidth: 1', '#.unwired: stroke=red visual=none bold', '#.unwiredgnd: stroke=red visual=end empty', '#.label: visual=none align=center'].join('\n')
         const graph = settings + '\n' + [network, `[<${connectedPins.includes('gnd') ? 'end' : 'unwiredgnd'}>gnd]`, pinsNet, sourcesNet].filter(_ => _).join(';')
-        console.log(graph)
+
         return (
             <div
                 dangerouslySetInnerHTML={{ __html: nomnoml.renderSvg(graph) }}

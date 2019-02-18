@@ -1,11 +1,15 @@
 
 
-export const KiCad = function(canvas, options) {
+export const KiCad = function (canvas, options) {
+    function Exception(message) {
+        this.message = message;
+    }
+    
   // check if canvas is usable
   if (canvas.getContext) {
       var context = canvas.getContext('2d');
   } else {
-      throw 'Can\'t get context of canvas.';
+      throw new Exception("Can't get context of canvas")
   }
 
   // create empty options if not given as param
@@ -312,7 +316,7 @@ export const KiCad = function(canvas, options) {
           }
 
           // check if current line is a text
-          var regex_fptext = /\(fp_text\ (reference|value|user)\ (.)+\ \(at\ ([-.\d]+)\ ([-.\d]+)(\ [-.\d]+)?\)\ \(layer\ ([.\w\d])+\)/g;
+          var regex_fptext = /\(fp_text (reference|value|user) (.)+ \(at ([-.\d]+) ([-.\d]+)( [-.\d]+)?\) \(layer ([.\w\d])+\)/g;
           while ((m = regex_fptext.exec(line)) !== null) {
               if (m.index === regex_fptext.lastIndex) {
                   regex_fptext.lastIndex++;
@@ -338,7 +342,7 @@ export const KiCad = function(canvas, options) {
           }
 
           // check if current line is a text effect
-          var regex_fptext_efx = /\(effects\ \(font\ \(size\ ([.\d]+)\ ([.\d]+)\)\ \(thickness\ ([.\d]+)\)\)\)/g;
+          var regex_fptext_efx = /\(effects \(font \(size ([.\d]+) ([.\d]+)\) \(thickness ([.\d]+)\)\)\)/g;
           while ((m = regex_fptext_efx.exec(line)) !== null) {
               if (m.index === regex_fptext_efx.lastIndex) {
                   regex_fptext_efx.lastIndex++;

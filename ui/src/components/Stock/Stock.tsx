@@ -22,7 +22,7 @@ const initState = {
 }
 type Blocks = {
   [name: string]: {
-      [mod:string]: string[]
+      [mod:string]: string[] | { [block: string]: string[] }
   }
 }
 type State = {
@@ -60,6 +60,7 @@ const initFormState = {
   paramsValue: {},
   spiceAttrs: {},
   spice: '',
+  spiceParams: {}
 }
 
 type Params = {
@@ -85,7 +86,8 @@ type FormState = {
   params: Params,
   paramsValue: any,
   spiceAttrs: Params,
-  spice: string
+  spice: string,
+  spiceParams: { [name: string]: number }
 }
 
 
@@ -112,14 +114,15 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
         ...this.props.data.stock[0] || {}
       } || {} 
 
-      console.log(partData)
+
       this.setState({
         selectedBlock: data.block,
         selectedMods: data.mods || [],
         selectedProps: data.props || [],
         footprint: data.footprint,
         paramsValue: data.params || {},
-        spice: data.spice
+        spice: data.spice,
+        spiceParams: data.spice_params
       }, () => this.loadBlock(partData) )   
        
     }
@@ -184,7 +187,7 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
   
   render() {
     const blocks = Object.keys(this.props.blocks)
-    const mods = this.props.blocks[this.state.selectedBlock]
+    const mods:any = this.props.blocks[this.state.selectedBlock]
     const props = this.state.selectedBlockProps
     const footprints: any = this.state.footprints
     
@@ -245,7 +248,7 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
           ? args[name].unit.suffix || 'Number'
           : 'Number'
 
-      return <Tooltip title={args[name].description + ` (${suffix})`} key={name}><Button type='dashed' onClick={() => this.addToSpiceModel(name)}><span>{name[0]}<sub>{name.slice(1)}</sub></span></Button></Tooltip>
+      return <Tooltip title={<span>{this.state.spiceParams && this.state.spiceParams[name] + ' ' + suffix}<br />{args[name].description + ` (${suffix})`}</span>} key={name}><Button type='dashed' onClick={() => this.addToSpiceModel(name)}><span>{name[0]}<sub>{name.slice(1)}</sub></span></Button></Tooltip>
     })
     
     // Only show error after a field is touched.
@@ -279,8 +282,8 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
               >
                   {Object.keys(mods).map(type =>
                       <TreeNode value={type} title={type} key={type}>
-                          {mods[type].map(value => 
-                              <TreeNode value={type + '=' + value} title={value} key={type + '=' + value} />
+                          {mods[type].map((value: string) => 
+                              <TreeNode value={type + ':' + value} title={value} key={type + ':' + value} />
                           )}
                       </TreeNode>
                   )}
@@ -300,7 +303,7 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
                   {Object.keys(props).map(type =>
                       <TreeNode value={type} title={type} key={type}>
                           {props[type].map(value => 
-                              <TreeNode value={type + '=' + value} title={value} key={type + '=' + value} />
+                              <TreeNode value={type + ':' + value} title={value} key={type + ':' + value} />
                           )}
                       </TreeNode>
                   )}
@@ -335,6 +338,13 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
 
           <Col span={12}>
             <Form.Item>
+              {getFieldDecorator('scheme', {
+                rules: [{ required: true, message: 'Please input KICAD device name' }],
+              })(
+                <Input placeholder="KICAD Device" style={{ width: '230px' }} />
+              )}
+            </Form.Item>
+            <Form.Item>
               {getFieldDecorator('footprint', {
                 rules: [{ required: true, message: 'Please select footprint' }],
               })(
@@ -363,7 +373,7 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
                 {Object.keys(this.state.footprints).map((type:string) =>
                   <TreeNode title={type} key={type}>
                       {footprints[type].map((value:string) => 
-                          <TreeNode value={type + '=' + value} title={value} key={type + '=' + value} />
+                          <TreeNode value={type + ':' + value} title={value} key={type + ':' + value} />
                       )}
                   </TreeNode>
                 )}
@@ -412,12 +422,22 @@ export class Stock extends Component {
   formRef: any 
 
 componentWillMount() {    
-    axios.get('http://localhost:3000/api/blocks/')
-        .then(res => {
-            this.setState({
-                blocks: res.data
-            })
-        })
+  axios.get('http://localhost:3000/api/blocks/')
+  .then(res => {
+      const blocks: Blocks = {}
+      const { data } = res
+      Object.keys(data).forEach(block => {
+          if (block[block.length - 1] === '.') {
+              Object.keys(data[block]).forEach(element =>
+                  blocks[block + element] = data[block][element]
+              )
+          } else {
+              blocks[block] = data[block]
+          }
+      })
+      
+      this.setState({ blocks })
+  })
   
   this.loadStock()
     
@@ -439,7 +459,6 @@ componentWillMount() {
     }
 
     handleAddPartOk = (e:any) => {
-      console.log(e)
       const form = this.formRef.props.form
       form.validateFields((err:any, values:any) => {
         if (err) {
@@ -464,7 +483,6 @@ componentWillMount() {
       this.formRef = formRef
     }
     handleAddPartCancel = (e:any) => {
-      console.log(e)
       const form = this.formRef.props.form
       form.resetFields()
         this.setState({
@@ -491,16 +509,15 @@ componentWillMount() {
       const columns = [{
         title: 'Model',
         dataIndex: 'model',
-        key: 'model',
-        render: (text: string, record: any) => <Button type='dashed' onClick={() => this.showAddPartModal(record)}>{text}</Button>,
+        key: 'model'
       }, {
         title: 'Description',
         dataIndex: 'description',
         key: 'description',
           render: (text: string, record: any) => <div className={cnStock('PartDescription')}>
             <a href={record.datasheet} target='_blank'>{text}</a>
-            {record.spice_params && Object.keys(record.spice_params).map(name => 
-              <span className={cnStock('PartDescriptionParam')}>{name[0]}<sub>{name.slice(1)}</sub> = {record.spice_params[name]}</span>)}
+            {record.spice_params && Object.keys(record.spice_params).map((name, index) => 
+              <span className={cnStock('PartDescriptionParam')} key={index}>{name[0]}<sub>{name.slice(1)}</sub> = {record.spice_params[name]}</span>)}
           </div>,
       }, {
         title: 'Footprint',
@@ -510,9 +527,11 @@ componentWillMount() {
         title: 'Delete',
         dataIndex: 'id',
         key: 'id',
-          render: (text: string, record: any) => <Button type='dashed' onClick={() => {
-          axios.delete('/api/parts/?id=' + record.id).then(() => this.loadStock())
-        }}>Delete</Button>,
+          render: (text: string, record: any) => [
+            <Button key='edit' type='dashed' onClick={() => this.showAddPartModal(record)}>Edit</Button>,
+            <Button key='delete' type='dashed' onClick={() => {
+              axios.delete('/api/parts/?id=' + record.id).then(() => this.loadStock())
+            }}>Delete</Button>],
       }]
    
 

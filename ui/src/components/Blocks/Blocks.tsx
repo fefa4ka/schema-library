@@ -3,6 +3,7 @@ import { Block } from '../Block'
 import { Layout, Menu } from 'antd';
 import axios from 'axios'
 
+
 const {
   Header, Footer, Sider, Content,
 } = Layout;
@@ -33,7 +34,8 @@ export class Blocks extends Component {
         })
   }
   render() {
-    const blocks = Object.keys(this.state.blocks)
+    const blocks = Object.keys(this.state.blocks).filter(block => block[block.length - 1] !== '.')
+
     const { selectedBlock } = this.state
     
     function insertSpaces(string:string) {
@@ -53,13 +55,33 @@ export class Blocks extends Component {
                 onClick={param => {
                   this.setState({ selectedBlock: param.key })
                 }}
-              >
-                {blocks.map((block, index) =>
-                  <Menu.Item key={block}>{insertSpaces(block)}</Menu.Item>)}
+                onOpenChange={openKeys => {
+                  if (openKeys.length) {
+                    this.setState({ selectedBlock: openKeys[openKeys.length - 1] })
+                  }
+                }}
+          >
+
+            {blocks.map((block, index) =>
+            
+              this.state.blocks[block + '.']
+                ? <SubMenu key={block} title={<span>{block}</span>}>
+                  {Object.keys(this.state.blocks[block + '.']).map((element, index) =>
+                    <Menu.Item key={block + '.' + element}>{insertSpaces(element)}</Menu.Item>
+                  )}
+              </SubMenu>
+              : <Menu.Item key={block}>{insertSpaces(block)}</Menu.Item>
+            
+              )}
               </Menu>
             </Sider>
             <Content>
-              {selectedBlock && <Block name={selectedBlock} mods={this.state.blocks[selectedBlock]} />}
+          {selectedBlock &&
+            <Block
+              name={selectedBlock}
+              mods={selectedBlock.includes('.')
+                ? this.state.blocks[selectedBlock.split('.')[0] + '.'][selectedBlock.split('.')[1]]
+                : this.state.blocks[selectedBlock] } />}
             </Content>
           </Layout>
 

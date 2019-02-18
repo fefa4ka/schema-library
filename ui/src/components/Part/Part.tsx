@@ -30,7 +30,7 @@ const initialState = {
 
 type TPartList = {
     [name: string]: {
-        [name: string]: string[]
+        [name: string]: string[] | { [name: string]: string[] }
     }
 }
 type State = {
@@ -65,13 +65,23 @@ export class Part extends React.Component<IProps, {}> {
     loadParts() {
         axios.get('http://localhost:3000/api/blocks/')
             .then(res => {
-                const parts = res.data
-                this.setState({ parts })
+                const blocks: TPartList = {}
+                const { data } = res
+                Object.keys(data).forEach(block => {
+                    if (block[block.length - 1] === '.') {
+                        Object.keys(data[block]).forEach(element =>
+                            blocks[block + element] = data[block][element]
+                        )
+                    } else {
+                        blocks[block] = data[block]
+                    }
+                })
+                this.setState({ parts: blocks })
             })
     }
     loadPart(callback?: any) {
         const selectedMods: { [name:string]: string[] } = this.state.selectedMods.reduce((mods: { [name:string]: string[] }, mod) => {
-            const [type, value] = mod.split('=')
+            const [type, value] = mod.split(':')
             mods[type] = mods[type] || []
             mods[type].push(value)
 
@@ -91,7 +101,7 @@ export class Part extends React.Component<IProps, {}> {
                 const part = res.data
                 const selectedMods = Object.keys(part.mods).reduce((selected, type) =>
                     selected.concat(
-                        part.mods[type].map((value: string) => type + '=' + value)
+                        part.mods[type].map((value: string) => type + ':' + value)
                     ), [])
                         
                 this.setState({
@@ -128,7 +138,7 @@ export class Part extends React.Component<IProps, {}> {
             const selectedMods = mods
                 ? Object.keys(mods).reduce((selected, type) =>
                     selected.concat(
-                        _mods[type].map((value: string) => type + '=' + value)
+                        _mods[type].map((value: string) => type + ':' + value)
                     ), [])
             : []
             this.setState({
@@ -236,7 +246,7 @@ export class Part extends React.Component<IProps, {}> {
         const description = part && part.description.map((description, index) =>
             <Markdown key={index} source={description}/>
         )
-        const mods = this.state.parts[name]
+        const mods:any = this.state.parts[name]
 
         return (
             <div className={cnPart()}>
@@ -273,8 +283,8 @@ export class Part extends React.Component<IProps, {}> {
                             >
                                 {Object.keys(mods).map(type =>
                                     <TreeNode value={type} title={type} key={type}>
-                                        {mods[type].map(value => 
-                                            <TreeNode value={type + '=' + value} title={value} key={type + '=' + value} />
+                                        {mods[type].map((value:any) => 
+                                            <TreeNode value={type + ':' + value} title={value} key={type + ':' + value} />
                                         )}
                                     </TreeNode>
                                 )}

@@ -6,6 +6,7 @@ import { Slider, Divider, Tag, Button, Input, TreeSelect} from 'antd'
 import { Icon, Tabs, Row, Col, Modal } from 'antd'
 import Markdown from 'react-markdown'
 import { Source, TSource } from '../Source'
+import { Device, TDevice } from '../Device'
 import { Part } from '../Part'
 const TabPane = Tabs.TabPane;
 import { UnitInput } from '../UnitInput'
@@ -32,6 +33,7 @@ const initialState = {
     params: {},
     modalSourceVisible: false,
     modalLoadVisible: false,
+    modalDeviceVisible: false,
     modalConfirmLoading: false,
     editableSource: {
         name: '',
@@ -42,6 +44,15 @@ const initialState = {
     },
     editableSourceType: '',
     sources: [],
+    editableDevice: {
+        library: '',
+        name: '',
+        description: '',
+        pins: {},
+        index: -1
+    },
+    editableDeviceType: '',
+    devices: [],
     editableLoad: {
         name: '',
         description: '',
@@ -93,8 +104,12 @@ type State = {
     editableSource: TSource,
     editableSourceType: string,
     sources: TSource[],
+    editableDevice: TDevice,
+    editableDeviceType: string,
+    devices: TDevice[],
     modalSourceVisible: boolean,
     modalLoadVisible: boolean,
+    modalDeviceVisible: boolean,
     modalConfirmLoading: boolean,
     mods?: {
         [name:string]: string[]
@@ -170,7 +185,7 @@ export class Block extends React.Component<IProps, {}> {
     }
     loadBlock() {
         const selectedMods: { [name:string]: string[] } = this.state.selectedMods.reduce((mods: { [name:string]: string[] }, mod) => {
-            const [type, value] = mod.split('=')
+            const [type, value] = mod.split(':')
             mods[type] = mods[type] || []
             mods[type].push(value)
 
@@ -192,7 +207,7 @@ export class Block extends React.Component<IProps, {}> {
                 
                 const selectedMods = Object.keys(mods).reduce((selected, type) =>
                     selected.concat(
-                        mods[type].map((value: string) => type + '=' + value)
+                        mods[type].map((value: string) => type + ':' + value)
                     ), [])
                 
                 const codeUnits = Object.keys(args).map(arg => args[arg].unit.suffix).filter((value, index, self) => self.indexOf(value) === index).map(item => 'u_' + item).join(', ')
@@ -264,6 +279,36 @@ ${name}(${codeMods})${codeArgs ? `(
             }
         }, this.loadSimulation)
     }
+    handleDeviceOk = () => {
+        this.setState(({ devices, editableDevice }: State) => {
+            if (editableDevice.index >= 0) {
+                devices[editableDevice.index] = editableDevice
+            } else {
+                const lastId = devices.reduce((id, device) => {
+                    if (device.name.includes(editableDevice.name)) {
+                        let [name, number] = device.name.split('_')
+                        if (number && parseInt(number) > id) {
+                            id = parseInt(number)
+                        }
+                    }
+
+                    return id
+                }, 0)
+                editableDevice.name += '_' + (lastId + 1)
+                devices = devices.concat([{
+                    ...editableDevice,
+                    index: devices.length
+                }])
+            }
+
+            return {
+                modalConfirmLoading: false,
+                devices,
+                editableDevice: {},
+                modalSourceVisible: false,
+            }
+        }, this.loadSimulation)
+    }
     handleLoadOk = () => {
         this.setState(({ load, editableLoad }: State) => {
             
@@ -287,6 +332,30 @@ ${name}(${codeMods})${codeArgs ? `(
             editableSource: {},
             editableLoad: {}
         })
+    }
+    downloadNetlist = () => {
+        const { args, devices } = this.state
+        const filename = this.props.name + '.net'
+
+        axios.post('http://localhost:3000/api/blocks/' + this.props.name + '/netlist/',
+        {
+            mods: this.state.mods,
+            args: Object.keys(args).reduce((result: { [name:string]: string | number }, arg) => {
+                result[arg] = args[arg].value
+                
+                return result
+            }, {}),
+            devices
+        })
+            .then(response => {
+                const url = window.URL.createObjectURL(new Blob([response.data]))
+                const link = document.createElement('a')
+                link.href = url
+                link.setAttribute('download', filename)
+                document.body.appendChild(link)
+                link.click()
+            })
+        
     }
     render() {
         const { mods } = this.props
@@ -468,7 +537,7 @@ ${name}(${codeMods})${codeArgs ? `(
                                 {Object.keys(mods).map(type =>
                                     <TreeNode value={type} title={type} key={type}>
                                         {mods[type].map(value => 
-                                            <TreeNode value={type + '=' + value} title={value} key={type + '=' + value} />
+                                            <TreeNode value={type + ':' + value} title={value} key={type + ':' + value} />
                                         )}
                                     </TreeNode>
                                 )}
@@ -578,6 +647,45 @@ ${name}(${codeMods})${codeArgs ? `(
                                         
                                     </Col>
                                 </Row>
+
+                                <Divider orientation="left">Netlist</Divider>
+                                <Modal
+                                    title="Add Device"
+                                    visible={this.state.modalDeviceVisible}
+                                    onOk={this.handleDeviceOk}
+                                    onCancel={() => this.handleModalCancel('Device')}
+                                    >
+                                        <Device
+                                            type={this.state.editableDeviceType}
+                                            device={this.state.editableDevice}
+                                            pins={Object.keys(this.state.pins)}
+                                            onChange={(device:TDevice) =>
+                                                this.setState(({ editableDevice }:State) => ({ editableDevice: device }), () => console.log('change', this.state))
+                                            }
+                                        />
+                                </Modal>
+
+                                {this.state.devices.map((device, index) => 
+                                    <Tag
+                                        key={device.name + index.toString()}
+                                        closable
+                                        onClick={_ => {
+                                            this.setState({ editableSource: { ...this.state.devices[index], index } }, () => this.showModal('Device'))
+                                        }}
+                                        onClose={() => {
+                                            this.setState(({ devices }: State) => {
+                                                
+                                                devices.splice(index, 1)
+                                                
+                                                return { devices }
+                                            }, this.loadBlock)
+                                    }}>
+                                        {device.name}
+                                    </Tag>
+                                )} <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableDeviceType: 'source', editableDevice: { index: -1 } }, () => this.showModal('Device'))}><Icon type="api" /> Add Device</Tag>
+                        
+                                <Button type='default' onClick={this.downloadNetlist}>Download</Button>
+
                                 <Divider orientation="left">Code Examples</Divider>
                                 {this.state.example && <CodeMirror
                                     className={cnBlock('CodeExample')}

@@ -45,8 +45,7 @@ export class Part extends React.Component<IProps, {}> {
         name: this.props.source.name,
         index: this.props.source.index >= 0
             ? this.props.source.index 
-            : -1,
-        pins: this.props.source.pins
+            : -1
     }
 
     componentWillMount() {
