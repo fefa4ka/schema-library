@@ -1,54 +1,31 @@
-from bem import Block, Resistor
-from skidl import Net, subcircuit
-from PySpice.Unit import u_Ohm, u_A, u_V
+from bem import Block, u_s
+from skidl import Net
 
 class Base(Block):
-    """***Switch**
-    
-    Switch connected series to the signal.
+    """**Pulser**
+
+    Pulse triggered when some event occur.
     """
 
-    V_ref = 0 @ u_V
-    V_input = 0 @ u_V
-    I_load = 0 @ u_A
+    mods = {
+        'onHigh': ['fixed']
+    }
 
-    load = None
+    width = 0.03 @ u_s
 
-    def __init__(self, V_ref=None, V_input=None, I_load=None, load=None, *args, **kwargs):
-        if not self.gnd:
-            self.gnd = Net()
+    def __init__(self, width=None, input=None):
+        self.input = input
 
-        if self.DEBUG:
-            self.load = Resistor()(value = 330, ref = 'R_switch_load')
-        else:
-            self.load = load
-        
-        self.input = Net('SwitchController')
-        self.output = Net('SwitchLoadP')
-        self.output_n = Net('SwitchLoadN')
-        self.v_ref = Net() # ?
-        
-        self.circuit(*args, **kwargs)
+        self.circuit()
 
-    # @property
-    # def part(self):
-    #     if self.DEBUG:
-    #         return
-
-    #     return Part('Switch', 'SW_DPST', footprint=self.footprint, dest=TEMPLATE)
-
-        # self.output += self.load.input
-        # self.output_n += self.load.output
-
-        # attach_load = self.output & self.load & self.output_n & self.gnd
-
-        # if not self.DEBUG:
-        #     switch = self.part()
-            
-        #     self.input += switch['1,3']
-        #     self.output += switch['2,4']
     
-            
+    def circuit(self):
+        self.input = self.output = self.input or Net('PulseGeneratorInput')
+
+        self.v_ref = Net()
+        self.gnd = Net()
+
+
     def test_sources(self):
         return [{
             'name': 'PULSEV',
@@ -91,7 +68,7 @@ class Base(Block):
                 'name': 'V',
                 'args': {
                     'value': {
-                        'value': 15,
+                        'value': 10,
                         'unit': {
                             'name': 'volt',
                             'suffix': 'V'
@@ -103,9 +80,3 @@ class Base(Block):
                     'n': ['gnd']
                 }
         }]
-    
-    def test_load(self):
-        return []
-            
-            
-            

@@ -1,54 +1,34 @@
-from bem import Block, Resistor
+from bem import Block, Build
 from skidl import Net, subcircuit
-from PySpice.Unit import u_Ohm, u_A, u_V
+
 
 class Base(Block):
-    """***Switch**
-    
-    Switch connected series to the signal.
-    """
+    inputs = []
+    outputs = []
 
-    V_ref = 0 @ u_V
-    V_input = 0 @ u_V
-    I_load = 0 @ u_A
-
-    load = None
-
-    def __init__(self, V_ref=None, V_input=None, I_load=None, load=None, *args, **kwargs):
-        if not self.gnd:
-            self.gnd = Net()
-
+    def __init__(self, inputs=None):
+        default_input = [Net()]
         if self.DEBUG:
-            self.load = Resistor()(value = 330, ref = 'R_switch_load')
-        else:
-            self.load = load
+            self.input_b = Net()
+            default_input = [Net(), self.input_b]
+
+        self.inputs = self.outputs = inputs or default_input
+
+        self.circuit()
+
+    def circuit(self):
         
-        self.input = Net('SwitchController')
-        self.output = Net('SwitchLoadP')
-        self.output_n = Net('SwitchLoadN')
-        self.v_ref = Net() # ?
-        
-        self.circuit(*args, **kwargs)
+        self.v_ref = Net()
+        self.gnd = Net()
 
-    # @property
-    # def part(self):
-    #     if self.DEBUG:
-    #         return
+    @property
+    def input(self):
+        return self.inputs[0]
 
-    #     return Part('Switch', 'SW_DPST', footprint=self.footprint, dest=TEMPLATE)
+    @property
+    def output(self):
+        return self.outputs[0]
 
-        # self.output += self.load.input
-        # self.output_n += self.load.output
-
-        # attach_load = self.output & self.load & self.output_n & self.gnd
-
-        # if not self.DEBUG:
-        #     switch = self.part()
-            
-        #     self.input += switch['1,3']
-        #     self.output += switch['2,4']
-    
-            
     def test_sources(self):
         return [{
             'name': 'PULSEV',
@@ -103,9 +83,3 @@ class Base(Block):
                     'n': ['gnd']
                 }
         }]
-    
-    def test_load(self):
-        return []
-            
-            
-            
