@@ -10,7 +10,6 @@ const TabPane = Tabs.TabPane;
 import './Part.css'
 import { UnitInput } from '../UnitInput'
 
-const nomnoml = require('nomnoml')
 const TreeNode = TreeSelect.TreeNode;
 const { Option, OptGroup } = Select
 

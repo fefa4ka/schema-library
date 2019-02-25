@@ -6,7 +6,6 @@ import { Select, TreeSelect} from 'antd'
 import { Form, Divider } from 'antd'
 import './Device.css'
 
-const nomnoml = require('nomnoml')
 const TreeNode = TreeSelect.TreeNode;
 const { Option } = Select
 

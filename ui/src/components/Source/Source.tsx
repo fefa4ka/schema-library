@@ -10,7 +10,12 @@ const TabPane = Tabs.TabPane;
 import './Source.css'
 import { UnitInput } from '../UnitInput'
 
-const nomnoml = require('nomnoml')
+import { Radio } from 'antd';
+
+const RadioButton = Radio.Button;
+const RadioGroup = Radio.Group;
+
+
 const TreeNode = TreeSelect.TreeNode;
 const { Option, OptGroup } = Select
 
@@ -20,6 +25,8 @@ const initialState = {
     name: '',
     pins: {},
     parts: [],
+    port: '',
+    channel: 0,
     index: -1
 }
 
@@ -35,6 +42,8 @@ type State = {
     name: string,
     pins: TSource['pins'],
     parts: TPart[],
+    port: string,
+    channel: number,
     index: number
 }
 
@@ -61,7 +70,7 @@ export class Part extends React.Component<IProps, {}> {
             })
     }
     getCurrentSource() {
-        const { name } = this.state
+        const { name, port, channel } = this.state
         const source = this.state.parts.find(item => item.name === name.split('_')[0])
         const description = source 
             ? source.description
@@ -79,17 +88,20 @@ export class Part extends React.Component<IProps, {}> {
             description,
             args,
             pins: Object.assign({}, this.state.pins),
-            index: this.state.index
+            port,
+            channel,
+            index: this.state.index,
         }
 
     }
-    loadSource({ name, args, pins, index }: TSource) {
+    loadSource({ name, args, pins, index, port, channel }: TSource) {
         this.setState(({ parts }: State) => {
             if (index === -1 || index === undefined) {
                 return {
                     name: undefined,
                     index: -1,
-                    pins: {}
+                    pins: {},
+                    channel: 0
                 }
             } else {
                 const partArgs: TArgs = parts.reduce((args, item) => item.name === name.split('_')[0] ? item.args : args, {})
@@ -104,7 +116,9 @@ export class Part extends React.Component<IProps, {}> {
                     parts,
                     name,
                     index,
-                    pins
+                    pins,
+                    port,
+                    channel
                 }
             }
         })
@@ -204,12 +218,30 @@ export class Part extends React.Component<IProps, {}> {
                         {current.map(item => <Option value={item.name} key={item.name}>{item.description}</Option>)}
                     </OptGroup>
                 </Select>
+
                 <Divider orientation="left">Properties</Divider>
                 <div className={cnPart('Attributes')}>
                     {attributes}
                 </div>
+
                 <Divider orientation="left">Pins</Divider>
                 {Pins}
+                
+                <Divider orientation="left">Signal Generator Channel</Divider>
+                <Select
+                    value={this.state.port}
+                    style={{ width: 120 }}
+                    onChange={port => this.setState({ port }, () => onChange(this.getCurrentSource()))}
+                >
+                    <Option value="jack">usbserial1410</Option>
+                    <Option value="/dev/tty.wchusbserial1410">wchusbserial1410</Option>
+                    <Option value="disabled" disabled>Bluetooth-Incoming-port</Option>
+                </Select>
+                <RadioGroup onChange={e => this.setState({ channel: e.target.value }, () => onChange(this.getCurrentSource()))} defaultValue="0">
+                    <RadioButton value="0">None</RadioButton>
+                    <RadioButton value="1">CH1</RadioButton>
+                    <RadioButton value="2">CH2</RadioButton>
+                </RadioGroup>
             </div>
         )
     }

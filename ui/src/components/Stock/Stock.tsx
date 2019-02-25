@@ -338,9 +338,7 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
 
           <Col span={12}>
             <Form.Item>
-              {getFieldDecorator('scheme', {
-                rules: [{ required: true, message: 'Please input KICAD device name' }],
-              })(
+              {getFieldDecorator('scheme', {})(
                 <Input placeholder="KICAD Device" style={{ width: '230px' }} />
               )}
             </Form.Item>

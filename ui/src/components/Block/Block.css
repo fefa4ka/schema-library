@@ -4,6 +4,7 @@
 
 .Block-Characteristics .ant-input-group-wrapper {
     margin-bottom: 4px;
+    padding: 0 4px;
 }
 .Block-Characteristics .ant-input-group-addon:first-child {
     min-width: 60px;
@@ -12,6 +13,9 @@
     margin-top: 8px;
 }
 
+.Block-Characteristics .ant-tag {
+    margin-bottom: 8px;
+}
 
 .Block-Pins button {
     display: block;
@@ -25,10 +29,23 @@
 
 .Block-CodeExample {
     font-size: 11px;
-    height: auto;
+    padding: 0 10px;
 }
+.Block-TestAction {
+    height: 100%;
+    z-index: 10;
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    padding-top: 10%;
+}
+.Block-TestAction_checked {
+    padding-top: 0;
+    height: auto;
+    width: auto;
 
-
+    margin-top: -17px;
+}
 .Block-Code .CodeMirror {
     height: 100vh;
 }

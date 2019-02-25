@@ -50,7 +50,6 @@ export class UnitInput extends React.Component<IProps, {}> {
         const selectAfter = (
             <Select
                 defaultValue="base"
-                style={{ width: 80 }}
                 onChange={unit =>
                     this.setState({ exponenta: scale[unit][1] },
                         () => this.props.onChange(this.onChange(this.state.value.toString())))}>
@@ -96,7 +95,7 @@ export class UnitInput extends React.Component<IProps, {}> {
             : <Input
                 key={name}
                 addonBefore={name}
-                addonAfter={selectAfter}
+                addonAfter={suffix ? selectAfter : ''}
                 defaultValue={value.toString()}
                 onBlur={event => this.props.onChange(this.onChange(event.target.value))}
                 onPressEnter={(event: React.SyntheticEvent) => {

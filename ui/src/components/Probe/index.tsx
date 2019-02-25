@@ -1,5 +1,5 @@
 import { compose, IClassNameProps } from '@bem-react/core';
-import { Part  as  Base } from './Source';
+import { Part  as  Base } from './Probe';
 
 export type TArgs = {
     [name:string]: {
@@ -10,7 +10,7 @@ export type TArgs = {
         }
     }
 }
-export type TSource = {
+export type TProbe = {
     name: string,
     description: string,
     args: TArgs,
@@ -22,11 +22,19 @@ export type TSource = {
     index: number
 }
 
+type TProbePin = {
+    name: string,
+    channel: string
+}
+type TProbePins = {
+    [name:string]: TProbePin
+}
 export interface IProps extends IClassNameProps {
     type: string,
     pins: string[],
-    source: TSource,
-    onChange(source:TSource): void
+    probe: TProbePins,
+    loading: boolean,
+    onChange(probe:any): void
 }
 
-export const Source = compose()(Base);
+export const Probe = compose()(Base);

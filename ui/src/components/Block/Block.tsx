@@ -7,6 +7,7 @@ import { Icon, Tabs, Row, Col, Modal } from 'antd'
 import Markdown from 'react-markdown'
 import { Source, TSource } from '../Source'
 import { Device, TDevice } from '../Device'
+import { Probe, TProbe } from '../Probe'
 import { Part } from '../Part'
 const TabPane = Tabs.TabPane;
 import { UnitInput } from '../UnitInput'
@@ -34,16 +35,22 @@ const initialState = {
     modalSourceVisible: false,
     modalLoadVisible: false,
     modalDeviceVisible: false,
+    modalTestVisible: false,
     modalConfirmLoading: false,
     editableSource: {
         name: '',
         description: '',
         args: {},
         pins: {},
+        port: '',
+        channel: 0,
         index: -1
     },
     editableSourceType: '',
+    parts: [],
     sources: [],
+    probeLoading: false,
+    probes: {},
     editableDevice: {
         library: '',
         name: '',
@@ -59,13 +66,16 @@ const initialState = {
         description: '',
         args: {},
         pins: {},
+        port: '',
+        channel: 0,
         index: -1
     },
     load: [],
     mods: {},
     example: '',
     files: [],
-    chartData: [],
+    simulationData: [],
+    probeData: [],
     showLabels: {},
     simulationStartTime: 0,
     simulationStopTime: 0.01
@@ -104,20 +114,32 @@ type State = {
     editableLoad: TSource,
     editableSource: TSource,
     editableSourceType: string,
+    parts : TSource[],
     sources: TSource[],
+    probes: {
+        [name: string]: {
+            name: string,
+            channel: string
+        }
+    },
     editableDevice: TDevice,
     editableDeviceType: string,
     devices: TDevice[],
     modalSourceVisible: boolean,
     modalLoadVisible: boolean,
     modalDeviceVisible: boolean,
+    modalTestVisible: boolean,
     modalConfirmLoading: boolean,
     mods?: {
         [name:string]: string[]
     },
     example: string,
     files: string[],
-    chartData: {
+    simulationData: {
+        [name:string]: number
+    }[],
+    probeLoading: boolean,
+    probeData: {
         [name:string]: number
     }[],
     showLabels: {
@@ -141,6 +163,7 @@ export class Block extends React.Component<IProps, {}> {
                 args: {},
                 charData: [],
                 sources: [],
+                parts: [],
                 devices: [],
                 load: []
             }, this.loadBlock)
@@ -164,7 +187,7 @@ export class Block extends React.Component<IProps, {}> {
             simulationTime: simulationStopTime
         })
             .then(res => {
-                const chartData = res.data
+                const simulationData = res.data
                 const labels = res.data && res.data.length > 0
                     ? Object.keys(res.data[0]).filter(label => label !== 'time')
                     : []
@@ -172,7 +195,7 @@ export class Block extends React.Component<IProps, {}> {
                 
                 this.setState(({ showLabels }:State) => {
                     return {
-                        chartData,
+                        simulationData,
                         showLabels: labels.reduce((labels: any, label) => {
                             labels[label] = showLabels[label] === false 
                                 ? false 
@@ -180,7 +203,42 @@ export class Block extends React.Component<IProps, {}> {
     
                             return labels
                         }, {}),
-                        simulationStopTime: chartData.length ? chartData[chartData.length - 1].time : 0
+                        simulationStopTime: simulationData.length ? simulationData[simulationData.length - 1].time : 0
+                    }
+                })
+            })
+    }
+    loadProbes() {
+        const { sources, probes, simulationStopTime } = this.state
+        this.setState({
+            probeLoading: true,
+        })
+        axios.post('http://localhost:3000/api/probes/',
+        {
+            sources,
+            probes,
+            simulationTime: simulationStopTime
+        })
+            .then(res => {
+                const probeData = res.data
+                const labels = res.data && res.data.length > 0
+                    ? Object.keys(res.data[0]).filter(label => label !== 'time')
+                    : []
+                
+                
+                this.setState(({ showLabels }:State) => {
+                    return {
+                        probeData,
+                        probeLoading: false,
+                        showLabels: labels.reduce((labels: any, label) => {
+                            labels[label] = showLabels[label] === false 
+                                ? false 
+                                : true
+    
+                            return labels
+                        }, {}),
+                        modalTestVisible: false,
+                        simulationStopTime: probeData.length ? probeData[probeData.length - 1].time : 0
                     }
                 })
             })
@@ -205,7 +263,7 @@ export class Block extends React.Component<IProps, {}> {
             
         axios.get('http://localhost:3000/api/blocks/' + this.props.name + '/' + urlParams)
             .then(res => {
-                const { name, description, args, params, mods, pins, files, nets, sources, load, devices } = res.data               
+                const { name, description, args, params, mods, pins, files, nets, sources, parts, load, devices } = res.data               
                 
                 const selectedMods = Object.keys(mods).reduce((selected, type) =>
                     selected.concat(
@@ -215,10 +273,12 @@ export class Block extends React.Component<IProps, {}> {
                 const codeUnits = Object.keys(args).map(arg => args[arg].unit.suffix).filter((value, index, self) => self.indexOf(value) === index).map(item => 'u_' + item).join(', ')
                 const codeArgs = Object.keys(args).map(arg => arg + ' = ' + args[arg].value + (args[arg].unit.suffix ? ' @ u_' + args[arg].unit.suffix : '')).join(',\n\t')
                 const codeMods = Object.keys(mods).map((mod:string) => mod + "=['" + mods[mod].join("', '") + "']").join(', ')
-                const codeExample = `from bem import ${name}, ${codeUnits}
+                
+                const blockImportName = name.replace('.', '_')
+                const codeExample = `from bem import ${blockImportName}${codeUnits ? ', ' + codeUnits : ''}
 
-${name}(${codeMods})${codeArgs ? `(
-    ${codeArgs}
+${blockImportName}(${codeMods})${codeArgs ? `(
+	${codeArgs}
 )` : '()'}`
 
                 this.setState((prevState:State) => {
@@ -242,6 +302,7 @@ ${name}(${codeMods})${codeArgs ? `(
                         params, 
                         nets,
                         pins,
+                        parts,
                         example: codeExample,
                         files,
                         selectedMods,
@@ -333,6 +394,9 @@ ${name}(${codeMods})${codeArgs ? `(
             }
         }, this.loadSimulation)
     }
+    handleTestOk = () => {
+        this.loadProbes()
+    }
     handleModalCancel = (name: string) => {
         this.setState({
             [`modal${name}Visible`]: false,
@@ -365,7 +429,7 @@ ${name}(${codeMods})${codeArgs ? `(
     }
     render() {
         const { mods } = this.props
-        const { chartData } = this.state
+        const { simulationData } = this.state
         const description = this.state.description.map((description, index) =>
             <Markdown key={index} source={description}/>
         )
@@ -413,8 +477,8 @@ ${name}(${codeMods})${codeArgs ? `(
             />
         })
 
-        let simulationMaxTime = chartData.length > 0
-            ? chartData[chartData.length - 1].time
+        let simulationMaxTime = simulationData.length > 0
+            ? simulationData[simulationData.length - 1].time
             : 0.02
         const simulationMarks: any = {}
         
@@ -554,107 +618,113 @@ ${name}(${codeMods})${codeArgs ? `(
             
                 <Tabs defaultActiveKey="1" onChange={(key) => key === '1' && this.loadBlock()} className={cnBlock('BlockTabs')}>
                     <TabPane tab="Simulation" key="1">
+                        <Divider orientation="left">
+                            Description
+                        </Divider>
                         <Row>
-                            <Col span={15} className={cnBlock('Description')}>
-                                <Divider orientation="left">
-                                    Description
-                                </Divider>
+                            <Col span={16}>
                                 {description}
-                                <Row className={cnBlock('Pins')}>
-                                    
-                                    <Col span={24}>
-                                        <Divider orientation="left">
-                                            Schematics
-                                        </Divider>
-                                        <Diagram pins={this.state.pins} nets={this.state.nets} sources={this.state.sources} load={this.state.load}/></Col>
-                                </Row>
+                            </Col>
+                            <Col span={8}>
+                                <Markdown
+                                    className={cnBlock('CodeExample')}
+                                    source={'```\n# Code Example\n\n' + this.state.example + '\n````'}
+                                />
+                            </Col>
+                        </Row>
+                        
+   
+                        <Row className={cnBlock('Characteristics')}>
+                            <Col span={5}>
+                                <Divider orientation="left">Attributes</Divider>
+                                {attributes}
+                            </Col>
+                            <Col span={5}>
+                                <Divider orientation="left">Characteristics</Divider>
+                                {params}
+                            </Col>
+                            <Col span={6} push={1}>
+                                <Divider orientation="left">
+                                    Signal Sources 
+                                </Divider>
+                                
+                                <Modal
+                                    title="Add Signal Source"
+                                    visible={this.state.modalSourceVisible}
+                                    onOk={this.handleSourceOk}
+                                    onCancel={() => this.handleModalCancel('Source')}
+                                    >
+                                        <Source
+                                            type={this.state.editableSourceType}
+                                            source={this.state.editableSource}
+                                            pins={Object.keys(this.state.pins)}
+                                            onChange={(source:TSource) =>
+                                                this.setState({ editableSource: source }, () => console.log('change', this.state))
+                                            }
+                                        />
+                                </Modal>
+
+                                {this.state.sources.map((source, index) => 
+                                    <Tag
+                                        key={source.name + index.toString()}
+                                        closable
+                                        onClick={_ => {
+                                            this.setState({ editableSource: { ...this.state.sources[index], index } }, () => this.showModal('Source'))
+                                        }}
+                                        onClose={() => {
+                                            this.setState(({ sources }: State) => {
+                                                
+                                                sources.splice(index, 1)
+                                                
+                                                return { sources }
+                                            }, this.loadBlock)
+                                    }}>
+                                        {source.name}
+                                    </Tag>
+                                )} <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableSourceType: 'source', editableSource: { index: -1 } }, () => this.showModal('Source'))}><Icon type="api" /> Add</Tag>
+
+                                <Divider orientation="left">Load</Divider>
+                                {this.state.load.map((source, index) => 
+                                    <Tag
+                                        key={source.name + index.toString()}
+                                        closable
+                                        onClick={_ => {
+                                            this.setState({ editableLoad: this.state.load[index] }, () => this.showModal('Load'))
+                                        }}
+                                        onClose={() => {
+                                            this.setState(({ load }: State) => {
+                                                
+                                                load.splice(index, 1)
+                                                
+                                                return { load }
+                                            }, this.loadBlock)
+                                    }}>
+                                        {source.name}
+                                    </Tag>
+                                )}<Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableLoad: { index: -1 } }, () => this.showModal('Load'))}><Icon type="api" /> Add</Tag>
+
+                                <Modal
+                                    title="Add Load"
+                                    visible={this.state.modalLoadVisible}
+                                    onOk={this.handleLoadOk}
+                                    onCancel={() => this.handleModalCancel('Load')}
+                                    >
+                                        <Part
+                                            source={this.state.editableLoad}
+                                            pins={Object.keys(this.state.pins)}
+                                            onChange={(load: TSource) =>
+                                                this.setState({ editableLoad: load }, () => console.log('change', this.state))
+                                            }
+                                        />
+                                </Modal>
+
+                                <br />
+                                
                                 
                             </Col>
-                            <Col span={8} push={1} className={cnBlock('Characteristics')}>
-                                <Divider orientation="left">Characteristics</Divider>
-                                {attributes}
-                                {params}
-                                <Row>
-                                <Col span={12}>
-                                        <Divider orientation="left">
-                                            Sources 
-                                        </Divider>
-                                        
-                                        <Modal
-                                            title="Add Power Source"
-                                            visible={this.state.modalSourceVisible}
-                                            onOk={this.handleSourceOk}
-                                            onCancel={() => this.handleModalCancel('Source')}
-                                            >
-                                                <Source
-                                                    type={this.state.editableSourceType}
-                                                    source={this.state.editableSource}
-                                                    pins={Object.keys(this.state.pins)}
-                                                    onChange={(source:TSource) =>
-                                                        this.setState({ editableSource: source }, () => console.log('change', this.state))
-                                                    }
-                                                />
-                                        </Modal>
-
-                                        {this.state.sources.map((source, index) => 
-                                            <Tag
-                                                key={source.name + index.toString()}
-                                                closable
-                                                onClick={_ => {
-                                                    this.setState({ editableSource: { ...this.state.sources[index], index } }, () => this.showModal('Source'))
-                                                }}
-                                                onClose={() => {
-                                                    this.setState(({ sources }: State) => {
-                                                        
-                                                        sources.splice(index, 1)
-                                                        
-                                                        return { sources }
-                                                    }, this.loadBlock)
-                                            }}>
-                                                {source.name}
-                                            </Tag>
-                                        )} <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableSourceType: 'source', editableSource: { index: -1} }, () => this.showModal('Source')) }><Icon type="api" /> Add</Tag>
-                                    </Col>
-                                    <Col span={12}>
-                                        <Divider orientation="left">Load</Divider>
-                                        {this.state.load.map((source, index) => 
-                                            <Tag
-                                                key={source.name + index.toString()}
-                                                closable
-                                                onClick={_ => {
-                                                    this.setState({ editableLoad: this.state.load[index] }, () => this.showModal('Load'))
-                                                }}
-                                                onClose={() => {
-                                                    this.setState(({ load }: State) => {
-                                                        
-                                                        load.splice(index, 1)
-                                                        
-                                                        return { load }
-                                                    }, this.loadBlock)
-                                            }}>
-                                                {source.name}
-                                            </Tag>
-                                        )}<Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableLoad: { index: -1 } }, () => this.showModal('Load'))}><Icon type="api" /> Add</Tag>
-                                        
-                                        <Modal
-                                            title="Add Load"
-                                            visible={this.state.modalLoadVisible}
-                                            onOk={this.handleLoadOk}
-                                            onCancel={() => this.handleModalCancel('Load')}
-                                            >
-                                                <Part
-                                                    source={this.state.editableLoad}
-                                                    pins={Object.keys(this.state.pins)}
-                                                    onChange={(load: TSource) =>
-                                                        this.setState({ editableLoad: load }, () => console.log('change', this.state))
-                                                    }
-                                                />
-                                        </Modal>
-                                        
-                                    </Col>
-                                </Row>
-
-                                <Divider orientation="left">Netlist</Divider>
+                       
+                            <Col span={6}>
+                                <Divider orientation="left">PCB Parts</Divider>
                                 <Modal
                                     title="Add Device"
                                     visible={this.state.modalDeviceVisible}
@@ -687,34 +757,65 @@ ${name}(${codeMods})${codeArgs ? `(
                                     }}>
                                         {device.name}
                                     </Tag>
-                                )} <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableDeviceType: 'scheme', editableDevice: { index: -1 } }, () => this.showModal('Device'))}><Icon type="api" /> Add Device</Tag>
-                        
-                                <Button type='default' onClick={this.downloadNetlist}>Download</Button>
+                                )} <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableDeviceType: 'scheme', editableDevice: { index: -1 } }, () => this.showModal('Device'))}><Icon type="api" /> Add</Tag>
 
-                                <Divider orientation="left">Code Examples</Divider>
-                                {this.state.example && <CodeMirror
-                                    className={cnBlock('CodeExample')}
-                                    options={{
-                                        mode: 'python',
-                                    }}
-                                    value={this.state.example}
-                                />}
+                                <br />
+                                
+                                <Button type='default' onClick={this.downloadNetlist}>Download Netlist</Button>
                             </Col>
-                        </Row> 
-                        
-                        <Divider orientation="left">Waveforms</Divider>
-                        
-                        <Chart
-                            chartData={chartData}
-                            showLabels={this.state.showLabels}
-                            xRefStart={this.state.simulationStartTime}
-                            xRefStop={this.state.simulationStopTime}
-                            onLegendClick={(e: any) => this.setState(({ showLabels }:State) => {
-                                showLabels[e.dataKey] = !showLabels[e.dataKey]
-            
-                                return showLabels
-                            })}
-                        />
+                        </Row>
+                
+                        <Row>
+                            <Col span={12} style={{ height: '200px' }}>
+                                <Divider orientation="left">Simulation</Divider>
+                                <Chart
+                                    chartData={simulationData}
+                                    showLabels={this.state.showLabels}
+                                    xRefStart={this.state.simulationStartTime}
+                                    xRefStop={this.state.simulationStopTime}
+                                    onLegendClick={(e: any) => this.setState(({ showLabels }:State) => {
+                                        showLabels[e.dataKey] = !showLabels[e.dataKey]
+                    
+                                        return showLabels
+                                    })}
+                                />
+                            </Col>
+                            <Col span={12} style={{ height: '200px' }}>
+                                <Divider orientation="left">Probes</Divider>
+                                <div className={cnBlock('TestAction', { checked: this.state.probeData.length > 1 })}>
+                                    <Button type='default' onClick={() => this.showModal('Test')}>Test Citcuit</Button>
+                                    <Modal
+                                        title="Circuit Test"
+                                        visible={this.state.modalTestVisible}
+                                        onOk={this.handleTestOk}
+                                        onCancel={() => this.handleModalCancel('Test')}
+                                        >
+                                            <Probe
+                                                // type={this.state.probesType}
+                                                probe={this.state.probes}
+                                                pins={Object.keys(this.state.pins)}
+                                                loading={this.state.probeLoading}
+                                                onChange={(probe:any) =>
+                                                    this.setState(probe)
+                                                }
+                                            />
+                                            
+                                    </Modal>
+                                </div>
+                                <Chart
+                                    chartData={this.state.probeData}
+                                    showLabels={this.state.showLabels}
+                                    xRefStart={this.state.simulationStartTime}
+                                    xRefStop={this.state.simulationStopTime}
+                                    onLegendClick={(e: any) => this.setState(({ showLabels }:State) => {
+                                        showLabels[e.dataKey] = !showLabels[e.dataKey]
+                    
+                                        return showLabels
+                                    })}
+                                />
+                            </Col>
+                        </Row>
+                        <br/><br/>
                         <Row className={cnBlock('WaveformTimeInput')}>
                             <Col push={1} span={22}>
                                 <Slider
@@ -727,14 +828,26 @@ ${name}(${codeMods})${codeArgs ? `(
                                             simulationStopTime: parseFloat(value[1]) / simulationValueScale
                                         })}
                                     onAfterChange={(value: any) => {
-                                        const { simulationStopTime, chartData } = this.state
-                                        if (chartData.length && simulationStopTime > chartData[chartData.length - 1].time) {
+                                        const { simulationStopTime, simulationData } = this.state
+                                        if (simulationData.length && simulationStopTime > simulationData[simulationData.length - 1].time) {
                                             this.loadSimulation()
                                         }
                                     }}
                                 />
                             </Col>
                         </Row>
+
+                        <Divider orientation="left">
+                            Schematics
+                        </Divider>
+
+                        <Diagram
+                            pins={this.state.pins}
+                            nets={this.state.nets}
+                            sources={this.state.sources}
+                            load={this.state.load}
+                            parts={this.state.parts}
+                        />
                         
                     </TabPane>
                     <TabPane tab="Code" key="2" className={cnBlock('Code')}>

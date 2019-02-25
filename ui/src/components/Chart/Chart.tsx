@@ -84,7 +84,7 @@ export class Chart extends React.Component<IProps, {}> {
         : []
 // console.log({this.props.xRefStart,- {this.props.xRefStop})
     
-       return  <ResponsiveContainer width='100%' height='auto' aspect={4.0/1.0} className={cnChart()}>
+       return  <ResponsiveContainer width='100%' height='auto' aspect={2.5/1.0} className={cnChart()}>
             <LineChart data={chartData}>
                <Legend verticalAlign='top' onClick={this.props.onLegendClick}/>
                <XAxis dataKey="time" allowDataOverflow={true} domain={[this.props.xRefStart, this.props.xRefStop]} type='number'/>
