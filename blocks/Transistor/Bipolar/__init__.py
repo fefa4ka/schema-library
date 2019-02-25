@@ -11,9 +11,11 @@ class Base(Block):
     Voltage gain|High|Low|Medium
     Current gain|Low|High|Medium
     Power gain|Low|Medium|High
-    Input / output phase relationship|0°|0°|180°
+    Phase shift|0°|0°|180°
     Input resistance|Low|High|Medium
     Output resistance|High|Low|Medium
+
+    https://www.electronics-notes.com/articles/analogue_circuits/transistor/transistor-circuit-configurations.php
     """
 
     emitter = None

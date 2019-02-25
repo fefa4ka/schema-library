@@ -10,7 +10,7 @@ class Base(Block):
         if type(value) in [float, int]:
             value = float(value) @ u_H
 
-        self.value = value.canonise()
+        self.value = value
         self.ref = ref
         self.circuit(value=value)
 

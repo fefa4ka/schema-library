@@ -42,34 +42,3 @@ class Base(Block):
         part.set_pin_alias('K', 2)
         
         return part
-
-
-# from bem import Block, Build
-# from skidl import Part, TEMPLATE
-
-
-# class Base(Block):
-#     props = {
-#         'type': ['zener', 'shockley', 'led', 'photo']
-#     }
-    
-#     def __init__(self):
-#         self.model = self.selected_part.model if self.selected_part and self.selected_part.model else 'D'
-
-#         super().__init__()
-
-#     @property
-#     def spice_part(self):
-#         print(self.model)
-#         return Build(self.model).spice
-
-#     @property
-#     def part(self):
-#         if self.DEBUG:
-#             return self.spice_model
-
-#         part = Part('Device', self.model, footprint=self.footprint, dest=TEMPLATE)
-#         part.set_pin_alias('A', 1)
-#         part.set_pin_alias('K', 2)
-        
-#         return part

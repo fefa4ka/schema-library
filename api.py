@@ -13,6 +13,9 @@ from skidl import Circuit, Net, search, subcircuit, set_default_tool, KICAD, SPI
 
 from bem import Build, get_bem_blocks
 from bem.model import Part, Param, Mod, Prop, Stock
+from test import get_arg_units, get_minimum_period
+from test.source import JDS6600, simulation_sources
+from test.probe import get_la_samples
 
 try:
     import __builtin__ as builtins
@@ -22,51 +25,6 @@ except ImportError:
 app = FlaskAPI(__name__)
 
 builtins.DEBUG = True
-
-def get_arg_units(part, arg):
-    description = getattr(part, 'description')
-    part_type = 'current' if description.lower().find('current') != -1 else 'voltage'
-
-    unit = None
-    if arg.find('time') != -1 or arg.find('delay') != -1 or arg in ['pulse_width', 'period', 'duration']:
-        unit = u_s
-    
-    if arg.find('frequency') != -1:
-        unit = u_Hz
-    
-    if arg.find('amplitude') != -1 or arg.find('value') != -1 or arg.find('offset') != -1:
-        if part_type == 'current':
-            unit = u_A
-        else:
-            unit = u_V
-    
-    return unit
-
-def get_minimum_period(sources):
-    period = 0 # Default 100 ms
-    min_period = None
-
-    for source in sources:
-        for arg in source['args'].keys():
-            if arg.find('time') != -1 or arg in ['pulse_width', 'period', 'duration']:
-                if source['args'][arg]['value']:
-                    time = float(source['args'][arg]['value'])
-                    if period < time:
-                        period = time
-                    
-                    if not min_period or min_period > time:
-                        min_period = time
-            
-            if arg.find('frequency') != -1:
-                time = 1 / float(source['args'][arg]['value'])
-                if period < time:
-                    period = time
-                
-                if not min_period or min_period > time:
-                    min_period = time
-
-    return period if min_period and period / min_period <= 20 else period / 5 if period else 0.1
-
 
 
 @app.route('/api/devices/', methods=['GET'])
@@ -114,57 +72,13 @@ def devices():
 
 @app.route('/api/sources/', methods=['GET'])
 def sources():
-    from skidl.libs.pyspice_sklib import pyspice_lib
-
-    sources = []
-    for part in pyspice_lib.parts:
-        name = getattr(part, 'name', '')
-        description = getattr(part, 'description')
-        pins = [p.name for p in part.pins]
-        if description.lower().find('source') != -1:
-            args = {}
-            part_type = 'current' if description.lower().find('current') != -1 else 'voltage'
-
-            for arg in list(part.pyspice.get('pos', [])) + list(part.pyspice.get('kw', [])):
-                unit = get_arg_units(part, arg)
-
-                if arg in pins:
-                    unit = 'network'
-                if unit == None:
-                    unit = {
-                        'name': 'number',
-                        'suffix': ''
-                    }
-                elif unit == 'network':
-                    unit = {
-                        'name': 'network',
-                        'suffix': ''
-                    }
-                else:
-                    unit = {
-                        'name': unit._prefixed_unit.unit.unit_name,
-                        'suffix': unit._prefixed_unit.unit.unit_suffix
-                    }
-
-                args[arg] = {
-                    'value': '',
-                    'unit': unit
-                }
-
-            sources.append({
-                'name': name,
-                'description': description,
-                'pins': pins,
-                'args': args
-            })
-    
+    sources = simulation_sources()
     return sources
 
 
 @app.route('/api/blocks/', methods=['GET'])
 def blocks():
     blocks = get_bem_blocks()
-
 
     return blocks
 
@@ -269,12 +183,10 @@ def netlist(name):
 
     for device in params.get('devices', []):
         device_name = device['library'] + ':' + device['name'][:device['name'].rfind('_')]
-        print(device_name, device['footprint'])
         DeviceBlock = Build(device_name, footprint=device['footprint']).element
         
         for device_pin_name in device['pins'].keys():
             for pin in device['pins'][device_pin_name]:
-                print(device_pin_name, pin)
                 device_pin = getattr(DeviceBlock, device_pin_name)
                 device_pin += getattr(Instance, pin)
 
@@ -517,6 +429,83 @@ def delete_part():
     __stock_delete_part(data.get('id', None))
     
     return {}
+
+@app.route('/api/probes/', methods=['GET'])
+def get_analys_devices():
+    import subprocess
+    la = 'sigrok-cli'
+    # devices = [device.split(' - ') for device in subprocess.getoutput(la + ' --scan').split('\n')[1:]]
+    # devices = [{
+    #     'name': device[0],
+    #     'description': device[1].split(':')[0].strip(),
+    #     'pins': device[1].split(':')[1].strip().split(' ')
+    # } for device in devices]p
+
+    devices = [{
+        'name': 'fx2lafw',
+        'description': 'Logic Analyzer - 8 channel',
+        'pins': ['D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7']
+    }, {
+        'name': 'rigol-ds',
+        'description': 'Oscilloscope - 2 channel',
+        'pins': ['CH1', 'CH2']
+    }, {
+        'name': 'demo',
+        'description': 'Demo',
+        'pins': ['D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'A0', 'A1', 'A2', 'A3']
+    }]
+    return devices
+
+@app.route('/api/probes/', methods=['POST'])
+def get_probes():
+    req = request.data
+    sources = req.get('sources', [])
+    for source in sources:
+        if source.get('port', None):
+            args = {}
+            part_name = source['name'].split('_')[0]
+            part = Build(part_name).spice
+            
+            for arg in source['args'].keys():
+                if source['args'][arg]['value']:
+                    try: 
+                        args[arg] = float(source['args'][arg]['value']) @ get_arg_units(part, arg)
+                    except:
+                        args[arg] = source['args'][arg]['value']
+                        
+            device = JDS6600(port='/dev/tty.wchusbserial14120')
+            if hasattr(device, source['name']):
+                generator = getattr(device, source['name'])
+                generator(
+                    channel=source.get('channel', 1),
+                    **args)
+
+    probes = req.get('probes', [])
+    
+    period = get_minimum_period(sources)
+    end_time = period * 10
+    step_time = period / 50
+    
+    devices = defaultdict(list)
+    pins = {}
+    for probe in probes:
+        pins[probes[probe]['name'] + probes[probe]['channel']] = probe
+        devices[probes[probe]['name']].append(probes[probe]['channel'])
+    
+    data = {}
+    for device in devices.keys():
+        device_data = get_la_samples(device, ','.join(devices[device]), step_time @ u_s, end_time @ u_s)
+        for ch in device_data.keys():
+            probe = pins[device + ch]
+            data[probe] = device_data[ch]
+
+    chartData = [{'time':step * step_time} for step in range(int(end_time / step_time))]
+    print(data.keys())
+    for index, entity in enumerate(chartData):
+        for probe in data.keys():
+            chartData[index]['V_' + probe] = data[probe][index]
+        
+    return chartData
 
 @app.route('/api/parts/footprint/', methods=['GET'])
 def get_footprint():

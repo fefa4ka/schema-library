@@ -42,7 +42,7 @@ class Base(Block):
                     }
                 },
                 'pulsed_value': {
-                    'value': 10,
+                    'value': 5, 
                     'unit': {
                         'name': 'volt',
                         'suffix': 'V'

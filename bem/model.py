@@ -43,14 +43,11 @@ class Part(BaseModel):
         spice_model = reduce_double_spaces.split(' ')
 
         params = {}
-        # if len(self.spice_params.keys()):
-        # print(spice)
         for param in spice_model:
             if param.find('=') == -1:
                 continue
 
             param, value = param.split('=')
-            # params[param] = self.spice_params.get(param, {})
             try:
                 params[param] = float(value)
             except:

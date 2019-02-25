@@ -18,12 +18,50 @@ logger = logging.getLogger(__name__)
 # logger = logging.getLogger('peewee')
 # logger.addHandler(logging.StreamHandler())
 # logger.setLevel(logging.DEBUG)
+def u(unit):
+    """Absolute float value of PySpice.Unit
+    """
+
+    return float(unit.convert_to_power())
+
+
 def label_prepare(text):
     last_dash = text.rfind('_')
     if last_dash > 0:
         text = text[:last_dash] + '$_{' + text[last_dash + 1:] + '}$'
 
     return text
+
+def is_tolerated(a, b, tollerance=params_tolerance):
+    if type(a) == list and b in a:
+        return True
+
+    if type(a) not in [int, float]:
+        try:
+            a = u(a)
+        except:
+            pass
+   
+    if type(b) not in [int, float]:
+        try:
+            b = u(b)
+        except:
+            pass
+
+    if b == type(b)(a):
+        return True
+
+    try:
+        b = float(b)
+        a = float(a)
+        diff = abs(a - b)
+        if diff < a * tollerance:
+            return True
+    except:
+        pass
+    
+    return False
+    
 
 class Block:
     name = ''
@@ -42,7 +80,7 @@ class Block:
     element = None
     simulation = None
 
-    ref = None
+    ref = ''
     files = []
     DEBUG = False
 
@@ -187,6 +225,14 @@ class Block:
                         'name': 'string'
                     }
                 }
+            elif type(default) == list:
+                arguments[arg] = {
+                    'value': default.value * default.scale,
+                    'unit': {
+                        'name': default.unit.unit_name,
+                        'suffix': default.unit.unit_suffix
+                    }
+                }
             elif type(default) == type(None):
                 arguments[arg] = {
                     'unit': {
@@ -201,13 +247,14 @@ class Block:
         for param, default in inspect.getmembers(self, lambda a:not(inspect.isroutine(a))):
             if param in inspect.getargspec(self.__init__).args:
                 continue
-
+            
             if type(default) in [UnitValue, PeriodValue, FrequencyValue]:
+                default = default.canonise()
                 params[param] = {
-                    'value': default.value * default.scale,
+                    'value': default.value,
                     'unit': {
                         'name': default.unit.unit_name,
-                        'suffix': default.unit.unit_suffix
+                        'suffix': default.prefixed_unit.str() #unit.unit_suffix
                     }
                 }
             elif type(default) in [int, float]:
@@ -333,23 +380,6 @@ class Block:
             list -- of parts with available values
         """
 
-        def is_tollerated(a, b, tollerance=params_tolerance):
-            if type(a) == list and b in a:
-                return True
-
-            if b == type(b)(a):
-                return True
-
-            try:
-                b = float(b)
-                a = float(a)
-                diff = abs(a - b)
-                if diff < a * tollerance:
-                    return True
-            except:
-                pass
-            
-            return False
 
         params = list(self.props.keys()) + list(self.mods.keys())
         values = list(self.props.values()) + list(self.mods.values())
@@ -362,40 +392,43 @@ class Block:
         
         for part in parts:
             for index, param in enumerate(params):
+                if param == 'value':
+                    continue
+
                 is_proper = True
                 value = values[index]
                 
                 part_params = part.params.where(Param.name == param)
                 if part_params.count():
                     for part_param in part_params:
-                        if is_tollerated(value, part_param.value):
+                        if is_tolerated(value, part_param.value):
                             break
                     else:
                         is_proper = False
-
+                
                 part_mods = part.mods.where(Mod.name == param)
                 if part_mods.count():
                     for part_mod in part_mods:
-                        if is_tollerated(value, part_mod.value):
+                        if is_tolerated(value, part_mod.value):
                             break
                     else:
                         is_proper = False
-
+                
                 part_props = part.props.where(Prop.name == param)
                 if part_props.count():
                     for part_prop in part_props:
-                        if is_tollerated(value, part_prop.value):
+                        if is_tolerated(value, part_prop.value):
                             break
                     else:
                         is_proper = False
-
+                
                 spice_param = part.spice_params.get(param, None)
                 if spice_param:
-                    if is_tollerated(value, spice_param):
+                    if is_tolerated(value, spice_param):
                         continue
 
                     is_proper = False 
-                
+                             
                 if is_proper:
                     continue
 
@@ -515,9 +548,17 @@ class Block:
         libs = ['./spice/']
        
         # Simulate the circuit.
+        import io
+        from contextlib import redirect_stdout
+
+        # f = io.StringIO()
+        # with redirect_stdout(f):
         circuit = builtins.default_circuit.generate_netlist(libs=libs)  # Translate the SKiDL code into a PyCircuit Circuit object.
-        print(circuit)
         self.simulation = circuit.simulator()  # Create a simulator for the Circuit object.
+
+        # out = f.getvalue()
+        print(circuit)
+        
         self.node = node
 
     def test_sources(self):
@@ -595,6 +636,8 @@ class Block:
 
         return devices
         
+    def test_cases(self, probes):
+        return True
 
     def test_pins(self, current_nodes=[], libs=[], step_time=0.01 @ u_ms, end_time=200 @ u_ms):
         self.test(libs)
@@ -620,6 +663,7 @@ class Block:
             
        
         data = []
+        errors = []
         for index, time in enumerate(time):
             entry = {
                 'time': time.value * time.scale
@@ -630,6 +674,8 @@ class Block:
                 
             for key in chart_data.keys():
                 entry[key] = chart_data[key][index].scale * chart_data[key][index].value 
+
+            entry['error'] = self.test_cases(entry)
 
             data.append(entry)
 

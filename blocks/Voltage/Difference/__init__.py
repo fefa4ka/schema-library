@@ -92,7 +92,7 @@ class Base(Block):
                     'n': ['gnd']
                 }
         },{
-                'name': 'V',
+                'name': 'V_1',
                 'args': {
                     'value': {
                         'value': 1.6,
@@ -107,7 +107,7 @@ class Base(Block):
                     'n': ['gnd']
                 }
         }, {
-                'name': 'V',
+                'name': 'V_2',
                 'args': {
                     'value': {
                         'value': 10,
@@ -122,7 +122,7 @@ class Base(Block):
                     'n': ['gnd']
                 }
         }, {
-                'name': 'V',
+                'name': 'V_3',
                 'args': {
                     'value': {
                         'value': -10,

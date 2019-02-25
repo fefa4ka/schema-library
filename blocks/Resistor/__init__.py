@@ -23,11 +23,11 @@ class Base(Block):
 
     ref = 'R'
 
-    def __init__(self, value, V_in=None, R_load=None, ref=None):
+    def __init__(self, value, V_in=None, R_load=None, ref=''):
         if type(value) in [str, int, float]:
             value = float(value) @ u_Ohm
 
-        self.value = value.canonise()
+        self.value = value
         
         if ref:
             self.ref = ref

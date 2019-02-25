@@ -4,7 +4,7 @@ import importlib
 from pathlib import Path
 from collections import defaultdict
 
-from .base import Block
+from .base import Block, u, is_tolerated
 from .builder import Build
 from PySpice.Unit import *
 
@@ -32,11 +32,11 @@ def get_bem_blocks(parent=''):
     return blocks
 
 
-def u(unit):
-    """Absolute float value of PySpice.Unit
-    """
+# def u(unit):
+#     """Absolute float value of PySpice.Unit
+#     """
 
-    return float(unit.convert_to_power())
+#     return float(unit.convert_to_power())
 
 _self = sys.modules[__name__]
 

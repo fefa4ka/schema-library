@@ -1,4 +1,6 @@
-from bem import Block, Build, Diode, Resistor, u, u_ms, u_Ohm, u_A, u_V, u
+from bem import Block, Build, Diode, Resistor
+from bem import u, u_s, u_ms, u_Ohm, u_A, u_V
+from bem import is_tolerated
 from skidl import Net, subcircuit
 from settings import params_tolerance
 
@@ -47,3 +49,12 @@ class Base(Block):
         sources[0]['args']['amplitude']['value'] = 25
 
         return sources
+
+    def test_cases(self, probes):
+        V_input = (probes['V_input'] @ u_V).canonise()
+        V_output = (probes['V_output'] @ u_V).canonise()
+
+        if V_input >= self.V_out and is_tolerated(V_output, self.V_out) == False:
+            return 'V_out should be near %s, but %s' % (str(self.V_out), str(V_output))
+        
+        
