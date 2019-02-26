@@ -46,24 +46,3 @@ class Modificator(Base):
 
         clamp = self.v_ref & Rref & Diode()()['K', 'A'] & self.output
         signal_input = signal & Resistor()(self.R_load, ref='R_load') & self.output
-        
-    def test_sources(self):
-        return super().test_sources() + [{
-                'name': 'V',
-                'args': {
-                    'value': {
-                        'value': 3,
-                        'unit': {
-                            'name': 'volt',
-                            'suffix': 'V'
-                        }
-                    }
-                },
-                'pins': {
-                    'p': ['v_ref'],
-                    'n': ['gnd']
-                }
-        }]
-
-    # def test_load(self):
-    #     return []

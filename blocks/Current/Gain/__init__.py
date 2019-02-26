@@ -8,9 +8,6 @@ class Base(Block):
 
     * Paul Scherz. “Practical Electronics for Inventors, Fourth Edition
     """
-
-    
-    
     
     V_ref = 15 @ u_V
     V_in = 10 @ u_V
@@ -97,58 +94,3 @@ class Base(Block):
         gain = self.output & amplifier & amplified 
 
         self.output = amplified
-
-    def test_sources(self):
-        return [{
-            'name': 'PULSEV',
-            'description': "Pulsed voltage source",
-            'args': {
-                'initial_value': {
-                    'value': 0.1,
-                    'unit': {
-                        'name': 'volt',
-                        'suffix': 'V'
-                    }
-                },
-                'pulsed_value': {
-                    'value': 10,
-                    'unit': {
-                        'name': 'volt',
-                        'suffix': 'V'
-                    }
-                },
-                'pulse_width': {
-                    'value': 0.01,
-                    'unit': {
-                        'name': 'sec',
-                        'suffix': 's'
-                    }
-                },
-                'period': {
-                    'value': 0.02,
-                    'unit': {
-                        'name': 'sec',
-                        'suffix': 's'
-                    }
-                }
-            },
-            'pins': {
-                'p': ['input'],
-                'n': ['gnd']
-            }
-        }, {
-                'name': 'V',
-                'args': {
-                    'value': {
-                        'value': 15,
-                        'unit': {
-                            'name': 'volt',
-                            'suffix': 'V'
-                        }
-                    }
-                },
-                'pins': {
-                    'p': ['v_ref'],
-                    'n': ['gnd']
-                }
-        }]

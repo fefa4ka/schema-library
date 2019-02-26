@@ -6,6 +6,10 @@ from PySpice.Unit import u_Ohm, u_uF, u_H, u_kHz
 class Base(Block):
     """**Bipolar Transistor**
     
+    When designing or looking at a transistor circuit there are three different circuit configurations that can be used.
+
+    The three different transistor circuit configurations are: common emitter, common base and common collector (emitter follower), these three circuit configurations have different characteristics and one type will be chosen for a circuit dependent upon what is required.
+
     **TRANSISTOR CONFIGURATION**|**COMMON BASE**|**COMMON COLLECTOR**|**COMMON EMITTER**
     -----|-----|-----|-----
     Voltage gain|High|Low|Medium
@@ -15,7 +19,15 @@ class Base(Block):
     Input resistance|Low|High|Medium
     Output resistance|High|Low|Medium
 
-    https://www.electronics-notes.com/articles/analogue_circuits/transistor/transistor-circuit-configurations.php
+    You can choose `props`:
+    * common: emitter | base | collector
+    * follow: emitter | base | collector
+
+    ```
+    Transistor_Bipolar(follow='collector', common='emitter')()
+    ```
+
+    * Transistor Configurations: circuit configurations / https://www.electronics-notes.com/articles/analogue_circuits/transistor/transistor-circuit-configurations.php
     """
 
     emitter = None
@@ -115,7 +127,7 @@ class Base(Block):
         
         transistor = self.part(model=self.model)
 
-        common = self.props.get('common', None)
+        common = self.props.get('common', 'emitter') 
         follow = self.props.get('follow', 'collector')
 
         common_end = self.gnd

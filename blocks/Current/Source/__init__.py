@@ -67,8 +67,4 @@ class Base(Block):
         controller.input += self.v_ref
         controller.gnd += self.gnd
 
-        soruce = controller.output & generator & Resistor()(self.R_e) & self.gnd
-
-
-    # def test_load(self):
-    #     return []
+        source = controller.output & generator & Resistor()(self.R_e) & self.gnd

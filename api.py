@@ -13,6 +13,8 @@ from skidl import Circuit, Net, search, subcircuit, set_default_tool, KICAD, SPI
 
 from bem import Build, get_bem_blocks
 from bem.model import Part, Param, Mod, Prop, Stock
+from bem.printer import Print
+from bem.simulator import Simulate
 from test import get_arg_units, get_minimum_period
 from test.source import JDS6600, simulation_sources
 from test.probe import get_la_samples
@@ -107,7 +109,7 @@ def get_arguments_values(Block, params):
 @app.route('/api/blocks/<name>/', methods=['GET'])
 def block(name):
     set_default_tool(KICAD) 
-    builtins.DEBUG = False
+    builtins.DEBUG = True
     
     builtins.default_circuit.reset(init=True)
     del builtins.default_circuit
@@ -153,9 +155,9 @@ def block(name):
             'files': Block.files,
             'parts': parts,
             'nets': nets,
-            'sources': params.get('sources', Instance.test_sources()),
-            'load': params.get('load', Instance.test_load()),
-            'devices': params.get('devices', Instance.test_devices()),
+            'sources': params.get('sources', Block.test(Instance).sources()),
+            'load': params.get('load', Block.test(Instance).load()),
+            'devices': params.get('devices', Print.additional_devices(Instance)),
             'available': available
         }
         
@@ -166,33 +168,24 @@ def block(name):
 
 @app.route('/api/blocks/<name>/netlist/', methods=['POST'])
 def netlist(name):
-    set_default_tool(KICAD) 
-    builtins.DEBUG = False
+    # set_default_tool(KICAD) 
+    # builtins.DEBUG = False
     params = request.data
     
-    scheme = Circuit()
-    builtins.default_circuit.reset(init=True)
-    del builtins.default_circuit
-    builtins.default_circuit = scheme
-    builtins.NC = scheme.NC
+    # scheme = Circuit()
+    # builtins.default_circuit.reset(init=True)
+    # del builtins.default_circuit
+    # builtins.default_circuit = scheme
+    # builtins.NC = scheme.NC
     # scheme.backup_parts
     
     Block = Build(name, **params['mods']).block
     props = get_arguments_values(Block, params['args'])
-    Instance = Block(**props)
-
-    for device in params.get('devices', []):
-        device_name = device['library'] + ':' + device['name'][:device['name'].rfind('_')]
-        DeviceBlock = Build(device_name, footprint=device['footprint']).element
-        
-        for device_pin_name in device['pins'].keys():
-            for pin in device['pins'][device_pin_name]:
-                device_pin = getattr(DeviceBlock, device_pin_name)
-                device_pin += getattr(Instance, pin)
-
-    scheme.ERC()
+    kit = params.get('devices', [])
     
-    return scheme.generate_netlist()
+    netlist = Print(Block, props, kit).netlist()
+
+    return netlist
 
 @app.route('/api/blocks/<name>/simulate/', methods=['POST'])
 def simulate(name):
@@ -290,8 +283,8 @@ def simulate(name):
         end_time = period * 10
         step_time = period / 50
 
-        spice_libs = list(set([os.path.dirname(file) for file in glob.glob('./blocks/*/*/spice/*.lib')]))
-        simulated_data = Instance.test_pins(current_nodes=source_refs, libs=spice_libs, end_time=end_time @ u_s, step_time=step_time @ u_s)
+        # spice_libs = list(set([os.path.dirname(file) for file in glob.glob('./blocks/*/*/spice/*.lib')]))
+        simulated_data = Simulate(Instance).pins(end_time=end_time @ u_s, step_time=step_time @ u_s, current_nodes=source_refs)
         
         return simulated_data
     

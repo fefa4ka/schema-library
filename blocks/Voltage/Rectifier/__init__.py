@@ -26,7 +26,6 @@ class Base(Block):
         if self.v_ref and instance.v_ref:
             self.v_ref += instance.v_ref
 
-    #@subcircuit
     def circuit(self, **kwargs):
         self.input = Net("BridgeVoltage")
         self.gnd = Net()
@@ -35,6 +34,3 @@ class Base(Block):
         self.output_n = Net()
         
         self.create_bridge()
-
-    def test_load(self):
-        return []

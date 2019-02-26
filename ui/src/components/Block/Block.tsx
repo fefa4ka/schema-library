@@ -253,7 +253,7 @@ export class Block extends React.Component<IProps, {}> {
         }, {})
 
         const modsUrlParam = Object.keys(selectedMods).map((mod:string) => mod + '=' + selectedMods[mod].join(','))
-        const argsUrlParam = Object.keys(this.state.args).map(arg => arg + '=' + this.state.args[arg].value)
+        const argsUrlParam = Object.keys(this.state.args).filter(arg => this.state.args[arg].value).map(arg => arg + '=' + this.state.args[arg].value)
         
         let urlParams = '?' + modsUrlParam.concat(argsUrlParam).join('&')
         // if (argsUrlParam.length === 0) {
@@ -289,7 +289,10 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
 
                     if(prevState.load.length === 0) {
                         elements.load = load.map((item:any, index:number) => ({ ...item, description: '', index }))
+                    } else {
+                        elements.load = []
                     }
+
 
                     if(prevState.devices.length === 0) {
                         elements.devices = devices.map((item:any, index:number) => ({ ...item, description: '', index }))
@@ -766,7 +769,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                         </Row>
                 
                         <Row>
-                            <Col span={12} style={{ height: '200px' }}>
+                            <Col span={12}>
                                 <Divider orientation="left">Simulation</Divider>
                                 <Chart
                                     chartData={simulationData}
@@ -780,7 +783,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                     })}
                                 />
                             </Col>
-                            <Col span={12} style={{ height: '200px' }}>
+                            <Col span={12}>
                                 <Divider orientation="left">Probes</Divider>
                                 <div className={cnBlock('TestAction', { checked: this.state.probeData.length > 1 })}>
                                     <Button type='default' onClick={() => this.showModal('Test')}>Test Citcuit</Button>
@@ -815,7 +818,6 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                 />
                             </Col>
                         </Row>
-                        <br/><br/>
                         <Row className={cnBlock('WaveformTimeInput')}>
                             <Col push={1} span={22}>
                                 <Slider

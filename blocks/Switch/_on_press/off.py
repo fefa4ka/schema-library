@@ -11,9 +11,12 @@ class Modificator(Base):
     def circuit(self):
         super().circuit()
         
-        rc = self & Resistor()(value = 10000) & Transistor_Bipolar(
-            type='pnp', common='collector', follow='collector'
-        )(
-            collector = self.load
-        )
-        self.output = self.load.output
+        rc = self \
+            & Resistor()(10000) \
+                & Transistor_Bipolar(
+                    type='pnp',
+                    common='collector',
+                    follow='collector'
+                )(collector = self.load)
+
+        self.output = self.load.input

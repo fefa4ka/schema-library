@@ -3,6 +3,9 @@ from skidl import Net, subcircuit
 # from PySpice.Unit import u_Ohm, u_V, u_A
 
 class Base(Block):
+    mods = {
+        'split': ['unity']
+    }
     
     def __init__(self):
         # self.input = input

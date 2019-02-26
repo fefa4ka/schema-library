@@ -3,14 +3,14 @@ from skidl import Net, subcircuit
 from PySpice.Unit import u_Ohm, u_A, u_V
 
 class Base(Block):
-    """***Switch**
+    """**Switch**
     
     Switch connected series to the signal.
     """
 
-    V_ref = 0 @ u_V
-    V_input = 0 @ u_V
-    I_load = 0 @ u_A
+    V_ref = 15 @ u_V
+    V_input = 10 @ u_V
+    I_load = 0.015 @ u_A
 
     load = None
 
@@ -47,65 +47,4 @@ class Base(Block):
             
         #     self.input += switch['1,3']
         #     self.output += switch['2,4']
-    
-            
-    def test_sources(self):
-        return [{
-            'name': 'PULSEV',
-            'description': "Pulsed voltage source",
-            'args': {
-                'initial_value': {
-                    'value': 0.1,
-                    'unit': {
-                        'name': 'volt',
-                        'suffix': 'V'
-                    }
-                },
-                'pulsed_value': {
-                    'value': 10,
-                    'unit': {
-                        'name': 'volt',
-                        'suffix': 'V'
-                    }
-                },
-                'pulse_width': {
-                    'value': 0.01,
-                    'unit': {
-                        'name': 'sec',
-                        'suffix': 's'
-                    }
-                },
-                'period': {
-                    'value': 0.02,
-                    'unit': {
-                        'name': 'sec',
-                        'suffix': 's'
-                    }
-                }
-            },
-            'pins': {
-                'p': ['input'],
-                'n': ['gnd']
-            }
-        }, {
-                'name': 'V',
-                'args': {
-                    'value': {
-                        'value': 15,
-                        'unit': {
-                            'name': 'volt',
-                            'suffix': 'V'
-                        }
-                    }
-                },
-                'pins': {
-                    'p': ['v_ref'],
-                    'n': ['gnd']
-                }
-        }]
-    
-    def test_load(self):
-        return []
-            
-            
-            
+   

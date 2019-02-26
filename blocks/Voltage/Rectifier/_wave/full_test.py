@@ -1,0 +1,48 @@
+from bem.tester import Test
+
+class Case(Test):
+    def sources(self):
+        return [{
+                'name': 'SINEV',
+                'args': {
+                    'amplitude': {
+                        'value': 10,
+                        'unit': {
+                            'name': 'volt',
+                            'suffix': 'V'
+                        }
+                    },
+                    'frequency': {
+                        'value': 10,
+                        'unit': {
+                            'name': 'herz',
+                            'suffix': 'Hz'
+                        }
+                    }
+                },
+                'pins': {
+                    'p': ['input'],
+                    'n': ['input_n']
+                }
+        }]
+    
+    def load(self):
+        return [{
+                'name': 'RLC',
+                'mods': {
+                    'series': ['R']
+                },
+                'args': {
+                    'R_series': {
+                        'value': 1000,
+                        'unit': {
+                            'name': 'ohm',
+                            'suffix': 'Ω'
+                        }
+                    }
+                },
+                'pins': {
+                    'input': ['output'],
+                    'output': ['output_n', 'gnd']
+                }
+        }]

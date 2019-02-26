@@ -58,7 +58,7 @@ class App extends Component {
             </Menu>
           </Header>
           {PageContent}
-          <Footer><strong>⏚ Circuits</strong> builds by <strong>B</strong>locks with <strong>E</strong>lements and <strong>M</strong>odificators</Footer>
+          <Footer><strong>⏚ Circuits</strong> builds by <strong>B</strong>locks with <strong>E</strong>lements and <strong>M</strong>odificators</Footer>
         </Layout>
       </div>
       

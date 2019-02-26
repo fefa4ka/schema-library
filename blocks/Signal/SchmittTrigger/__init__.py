@@ -40,21 +40,3 @@ class Base(Block):
         self.gnd += hysteresis.gnd  
         self.v_ref += regenerative.v_ref, hysteresis.v_ref
 
-
-    def test_sources(self):
-        return super().test_sources() + [{
-                'name': 'V',
-                'args': {
-                    'value': {
-                        'value': 15,
-                        'unit': {
-                            'name': 'volt',
-                            'suffix': 'V'
-                        }
-                    }
-                },
-                'pins': {
-                    'p': ['v_ref'],
-                    'n': ['gnd']
-                }
-        }]

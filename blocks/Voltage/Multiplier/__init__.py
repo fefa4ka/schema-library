@@ -56,29 +56,3 @@ class Base(Block):
             sections.append((half.input, half.output))
 
         self.output += sections[-1][1]
-        
-
-    def test_sources(self):
-        return [{
-                'name': 'SINEV',
-                'args': {
-                    'amplitude': {
-                        'value': 10,
-                        'unit': {
-                            'name': 'volt',
-                            'suffix': 'V'
-                        }
-                    },
-                    'frequency': {
-                        'value': 120,
-                        'unit': {
-                            'name': 'herz',
-                            'suffix': 'Hz'
-                        }
-                    }
-                },
-                'pins': {
-                    'p': ['input'],
-                    'n': ['gnd']
-                }
-        }]

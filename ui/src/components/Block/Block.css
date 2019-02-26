@@ -28,11 +28,10 @@
 }
 
 .Block-CodeExample {
-    font-size: 11px;
+    font-size: 12px;
     padding: 0 10px;
 }
 .Block-TestAction {
-    height: 100%;
     z-index: 10;
     position: absolute;
     width: 100%;

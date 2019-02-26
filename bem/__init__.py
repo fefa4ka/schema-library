@@ -18,6 +18,9 @@ def get_bem_blocks(parent=''):
         blocks[element] = defaultdict(list)
         
         for mod_type, mod_value in [(mod.split('/')[-2], mod.split('/')[-1]) for mod in glob.glob(block + '/%s/_*/*.py' % element)]:
+            if mod_value.find('_test.py') != -1:
+                continue
+
             mod_type = mod_type[1:]
             mod_value = mod_value.replace('.py', '')
             

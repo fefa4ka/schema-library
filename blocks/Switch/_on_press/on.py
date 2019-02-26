@@ -13,8 +13,9 @@ class Modificator(Base):
     
         rc = self \
             & Resistor()(value=10000) \
-            & Transistor_Bipolar(type='npn', common='emitter')(
-                collector=self.load
-            )
+                & Transistor_Bipolar(
+                    type='npn',
+                    common='emitter'
+                )(collector=self.load)
 
         self.output = self.load.output

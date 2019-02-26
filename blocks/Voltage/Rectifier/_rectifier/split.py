@@ -16,7 +16,6 @@ class Modificator(Base):
 
     def __init__(self, V_out=None, V_ripple=None, frequency=None, R_load=None, I_load=None):
         self.V_out = V_out
-        self.V_out = V_out
         self.V_ripple = V_ripple
         self.R_load = R_load
         self.I_load = I_load
@@ -38,23 +37,3 @@ class Modificator(Base):
         self.C_ripple = C_value = self.I_load / (self.frequency * self.V_ripple) @ u_F
 
         circuit = self.output & C(value=self.C_ripple)['+', '-'] & self.output_n & C(value=self.C_ripple)['+', '-'] & self.output_inverse
-
-    def test_load(self):
-        load = super().test_load()
-        
-        return load + [{
-                'name': 'Resistor',
-                'args': {
-                    'value': {
-                        'value': 1000,
-                        'unit': {
-                            'name': 'ohm',
-                            'suffix': 'Ω'
-                        }
-                    }
-                },
-                'pins': {
-                    'input': ['output_inverse'],
-                    'output': ['gnd']
-                }
-        }]

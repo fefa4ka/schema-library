@@ -4,7 +4,7 @@ from PySpice.Unit import u_Ohm, u_A, u_V
 
 
 class Modificator(Base):
-    """***Physical Switch Input**
+    """**Physical Switch Input**
     
     Switch connected series to the signal.
     """
