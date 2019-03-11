@@ -9,7 +9,7 @@ class Base(Block):
     
     V_in = 5 @ u_V
     I_in = 0.5 @ u_A
-    def __init__(self, V_in=None, I_in=None):
+    def __init__(self, V_in=None, I_in=None, *args, **kwargs):
         self.V_in = V_in or self.V_in
         self.I_in = I_in or self.I_in
 
@@ -21,7 +21,7 @@ class Base(Block):
         else:  
             self.model = 'D'
         
-        super().__init__()
+        super().__init__(*args, **kwargs)
 
     @property
     def spice_part(self):

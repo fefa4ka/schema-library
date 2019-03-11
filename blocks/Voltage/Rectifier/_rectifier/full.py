@@ -4,35 +4,57 @@ from skidl import Net, subcircuit
 from PySpice.Unit import u_Ohm, u_V, u_F, u_ms, u_Hz, u_A
 
 class Modificator(Base):
+    """
+        **Power-supply filtering**
+
+        The preceding rectified waveforms aren’t good for much as
+        they stand. They’re “dc” only in the sense that they don’t
+        change polarity. But they still have a lot of “ripple” 
+        (periodic variations in voltage about the steady value) that has
+        to be smoothed out in order to generate genuine dc. This
+        we do by attaching a relatively large value capacitor; 
+        it charges up to the peak output voltage during
+        the diode conduction, and its stored charge (`Q = CV`) 
+        provides the output current in between charging cycles. Note
+        that the diodes prevent the capacitor from discharging back
+        through the ac source. 
+
+        If you assume that the load current stays constant (it will, for small ripple), you have
+        `ΔV = I_(load)/(fC_(rippl\e))`
+
+        The capacitor value is chosen so that `R_(load)C_(rippl\e) ≫ 1/f`
+
+        * Paul Horowitz and Winfield Hill. "1.6.3 Power-supply filtering" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 32-33
+    """
     C_ripple = 0.01 @ u_F
 
     V_out = 10 @ u_V
     V_ripple = 1 @ u_V
 
-    R_load = 1000 @ u_Ohm
-    I_load = 0 @ u_A
-    frequency = 10 @ u_Hz
+    frequency = 120 @ u_Hz
 
-    def __init__(self, V_out=None, V_ripple=None, frequency=None, R_load=None, I_load=None):
-        self.V_out = V_out
+    def __init__(self, V_out=None, V_ripple=None, frequency=None, Load=None):
+        """
+            V_ripple -- Periodic variations in voltage about the steady value
+            frequency -- Input signal frequency
+            C_ripple -- A relatively large value capacitor; it charges up to the peak output voltage during the diode conduction
+        """
         self.V_out = V_out
         self.V_ripple = V_ripple
-        self.R_load = R_load
-        self.I_load = I_load
+        self.Load = Load
         self.frequency = frequency
-
-        if self.R_load and self.V_out:
-            self.I_load = self.V_out / self.R_load
-        
+        self.load(self.V_out) 
         self.circuit()
     
     def circuit(self):
         super().circuit()
 
+        is_full_wave = 'full' in self.mods['wave']
         bridge_output = self.output
         self.output = Net('BridgeOutput')
 
         C = Capacitor(**self.mods, **self.props)
-        self.C_ripple = self.I_load / (self.frequency * self.V_ripple)  @ u_F
+        
+        self.C_ripple = (self.I_load / (self.frequency * self.V_ripple * (2 if is_full_wave else 1))) @ u_F
 
-        circuit = bridge_output & self.output & C(value=self.C_ripple)['+', '-'] & self.output_n
+        circuit = bridge_output & self.output & C(value=self.C_ripple, ref='C_ripple')['+', '-'] & self.output_n

@@ -27,7 +27,8 @@ const initialState = {
     parts: [],
     port: '',
     channel: 0,
-    index: -1
+    index: -1,
+    serial: []
 }
 
 // type State = typeof initialState
@@ -44,7 +45,11 @@ type State = {
     parts: TPart[],
     port: string,
     channel: number,
-    index: number
+    index: number,
+    serial: {
+        port: string,
+        desc: string
+    }[]
 }
 
 
@@ -68,6 +73,9 @@ export class Part extends React.Component<IProps, {}> {
                 const parts = res.data
                 this.setState({ parts }, () => this.loadSource(this.props.source))
             })
+            
+        axios.get('http://localhost:3000/api/serial/')
+            .then(res => this.setState({ serial: res.data }))
     }
     getCurrentSource() {
         const { name, port, channel } = this.state
@@ -229,13 +237,13 @@ export class Part extends React.Component<IProps, {}> {
                 
                 <Divider orientation="left">Signal Generator Channel</Divider>
                 <Select
+                    className={cnPart('SerialPort')}
                     value={this.state.port}
-                    style={{ width: 120 }}
+                    style={{ width: '100%' }}
                     onChange={port => this.setState({ port }, () => onChange(this.getCurrentSource()))}
                 >
-                    <Option value="jack">usbserial1410</Option>
-                    <Option value="/dev/tty.wchusbserial1410">wchusbserial1410</Option>
-                    <Option value="disabled" disabled>Bluetooth-Incoming-port</Option>
+                    {this.state.serial.map(item => <Option value={item.port} key={item.port}>{item.port} {item.desc}</Option>)}
+                    
                 </Select>
                 <RadioGroup onChange={e => this.setState({ channel: e.target.value }, () => onChange(this.getCurrentSource()))} defaultValue="0">
                     <RadioButton value="0">None</RadioButton>

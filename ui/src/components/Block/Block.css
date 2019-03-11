@@ -6,9 +6,7 @@
     margin-bottom: 4px;
     padding: 0 4px;
 }
-.Block-Characteristics .ant-input-group-addon:first-child {
-    min-width: 60px;
-}
+
 .Block-Characteristics h2 {
     margin-top: 8px;
 }
@@ -17,14 +15,41 @@
     margin-bottom: 8px;
 }
 
+.Block #react-mathjax-preview {
+    display: inline-block;
+}
+
+.Block-ParamTooltip .ant-tooltip-inner {
+    padding-top: 1em;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+
 .Block-Pins button {
     display: block;
     margin-bottom: 8px;
 }
 
+.Block-InlineParams {
+    margin-left: -5px;
+}
+
+.Block-InlineParams .Block-ParamInput {
+    display: inline-block;
+    width: 50%;
+}
+
 .Block-AddPart {
     background: #ffffff;
     border-style: dashed;
+}
+
+.Block-Description table td, .Block-Description table th {
+    padding: 4px;
+}
+
+.Block-Description table {
+    margin-bottom: 10px;
 }
 
 .Block-CodeExample {

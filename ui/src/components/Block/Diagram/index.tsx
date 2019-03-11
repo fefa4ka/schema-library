@@ -13,6 +13,7 @@ export interface IProps extends IClassNameProps {
     },
     sources: TSource[],
     load: TSource[]
+    parts: TSource[]
 }
 
 export const Diagram = compose()(Base);

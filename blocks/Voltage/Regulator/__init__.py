@@ -1,6 +1,6 @@
 from skidl import Net, subcircuit
 
-from bem import (Block, Build, Diode, Resistor, is_tolerated, u, u_A, u_ms,
+from bem import (Block, Build, Diode, Resistor, is_tolerated, u, u_A, u_ms, u_W,
                  u_Ohm, u_s, u_V)
 from settings import params_tolerance
 
@@ -16,20 +16,23 @@ class Base(Block):
 
     V_in = 25 @ u_V
     V_out = 10 @ u_V
-    I_out = 0.01 @ u_A
+    P_zener = 0 @ u_W
+    R_in = 0 @ u_Ohm
 
-    R_load = 0 @ u_Ohm
-
-    def __init__(self, V_in=None, V_out=None, I_out=None):
+    def __init__(self, V_in=None, V_out=None, Load=None):
+        """
+            P_zener -- The zener must be able to dissipate `P_(zen\er) =  ((V_(i\\n) - V_(out))/R_(i\\n) - I_(out)) * V_(out)`
+            R_in -- Some current must flow through the zener, so you choose `(V_(i\\n)(min) - V_(out))/R_(i\\n) > I_(load)(max)`
+        """
         self.V_in = V_in
         self.V_out = V_out
-        self.I_out = I_out
-
-        self.R_load = (
+        self.Load = Load 
+        self.load(V_out)
+        self.R_in = (
             u(self.V_in - self.V_out)
-            / u(self.I_out) * (1 + params_tolerance)
+            / u(self.I_load) / 2
         ) @ u_Ohm
-
+        self.P_zener = ((self.V_in - self.V_out) / self.R_in - self.I_load) * self.V_out
         self.circuit()
     
     def circuit(self, **kwargs):
@@ -40,7 +43,7 @@ class Base(Block):
         self.gnd = Net()
 
         regulator = self.input \
-                        & Resistor()(self.R_load) \
+                        & Resistor()(self.R_in) \
                             & self.output \
                         & Diode(
                             type='zener',

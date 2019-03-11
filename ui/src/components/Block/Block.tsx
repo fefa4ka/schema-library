@@ -2,8 +2,8 @@ import * as React from 'react'
 import { IProps } from './index'
 import { cn } from '@bem-react/classname'
 import axios from 'axios'
-import { Slider, Divider, Tag, Button, Input, TreeSelect} from 'antd'
-import { Icon, Tabs, Row, Col, Modal } from 'antd'
+import { Slider, Divider, Tag, Button, Input, TreeSelect,} from 'antd'
+import { Icon, Tabs, Row, Col, Modal, Tooltip } from 'antd'
 import Markdown from 'react-markdown'
 import { Source, TSource } from '../Source'
 import { Device, TDevice } from '../Device'
@@ -16,6 +16,7 @@ import { Code } from '../Code'
 import { Chart } from '../Chart'
 const TreeNode = TreeSelect.TreeNode;
 import {UnControlled as CodeMirror} from 'react-codemirror2'
+import { MathMarkdown } from './Mathdown'
 
 import './Block.css'
 require('codemirror/lib/codemirror.css')
@@ -27,6 +28,7 @@ const cnBlock = cn('Block')
 const initialState = {
     name: '',
     description: [''],
+    params_description: {},
     selectedMods: [],
     args: {},
     nets: {},
@@ -85,6 +87,9 @@ const initialState = {
 type State = {
     name: string,
     description: string[],
+    params_description: {
+        [name:string]: string
+    },
     selectedMods: string[],
     nets: {
         [name:string]: string[]
@@ -173,7 +178,7 @@ export class Block extends React.Component<IProps, {}> {
     }
     loadSimulation() {
         const { args, sources, load, simulationStopTime } = this.state
-
+        
         axios.post('http://localhost:3000/api/blocks/' + this.props.name + '/simulate/',
         {
             mods: this.state.mods,
@@ -263,7 +268,7 @@ export class Block extends React.Component<IProps, {}> {
             
         axios.get('http://localhost:3000/api/blocks/' + this.props.name + '/' + urlParams)
             .then(res => {
-                const { name, description, args, params, mods, pins, files, nets, sources, parts, load, devices } = res.data               
+                const { name, description, params_description, args, params, mods, pins, files, nets, sources, parts, load, devices } = res.data               
                 
                 const selectedMods = Object.keys(mods).reduce((selected, type) =>
                     selected.concat(
@@ -283,23 +288,22 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
 
                 this.setState((prevState:State) => {
                     const elements:any = {}
-                    if (prevState.sources.length === 0) {
+                    if (prevState.sources.length === 0 && sources.length) {
                         elements.sources = sources.map((item:any, index:number) => ({ ...item, description: '', index }))
                     }
 
-                    if(prevState.load.length === 0) {
+                    if(prevState.load.length === 0 && load.length) {
                         elements.load = load.map((item:any, index:number) => ({ ...item, description: '', index }))
-                    } else {
-                        elements.load = []
                     }
 
 
-                    if(prevState.devices.length === 0) {
+                    if(prevState.devices.length === 0 && devices.length) {
                         elements.devices = devices.map((item:any, index:number) => ({ ...item, description: '', index }))
                     }
-
+                   
                     return {
                         description,
+                        params_description,
                         mods,
                         args,
                         params, 
@@ -433,9 +437,18 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
     render() {
         const { mods } = this.props
         const { simulationData } = this.state
-        const description = this.state.description.map((description, index) =>
-            <Markdown key={index} source={description}/>
-        )
+        const description = this.state.description.join('\n\n')
+        // const description = this.state.description.map((description, index) =>
+        //         <Markdown
+        //             key={index}
+        //             source={description}
+        //             renderers={{
+        //                 inlineCode: (props: { value: string }) =>
+        //                     <MathJax math={'`' + props.value + '`'}/>
+        //             }}
+        //         />
+        // )
+        
         function insertSpaces(string:string) {
             string = string.replace(/([a-z])([A-Z])/g, '$1 $2');
             string = string.replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
@@ -470,14 +483,22 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                 })
             }
 
-            return <UnitInput
-                key={name}
-                name={[arg_title, <sub key='s'>{arg_sub}</sub>]}
-                suffix={suffix}
-                value={value.toString()}
-                onChange={save}
-                className={cnBlock('ArgumentInput')}
-            />
+            return (
+                <UnitInput
+                    key={name}
+                    name={<Tooltip
+                            overlayClassName={cnBlock('ParamTooltip')}
+                            title={<MathMarkdown value={this.state.params_description[name] || name} />}
+                        >
+                            {arg_title}<sub key='s'>{arg_sub}</sub>
+                        </Tooltip>
+                    }
+                    suffix={suffix}
+                    value={value.toString()}
+                    onChange={save}
+                    className={cnBlock('ArgumentInput')}
+                />
+            )
         })
 
         let simulationMaxTime = simulationData.length > 0
@@ -560,31 +581,40 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
             simulationMarks[step] = (labelStep.toString().length - 2 - getPrecision(labelStep) > 3 ? labelStep.toFixed(3) : labelStep) + ' ' + prefix + 's'
         }
 
+        
+        const Params = ({ include, exclude }:{ include?:string[], exclude?: string[]}):any =>
+            Object.keys(this.state.params).filter(name => include ? include.includes(name) : true)
+                .filter(name => exclude ? exclude.includes(name) === false : true)
+                .map((name, index) => {
+                    const isExists = this.state.params.hasOwnProperty(name)
 
-        const params = Object.keys(this.state.params).map((name, index) => {
-            const isExists = this.state.params.hasOwnProperty(name)
+                    if (isExists && this.state.params[name].unit.name === 'network') {
+                        return null
+                    }
 
-            if (isExists && this.state.params[name].unit.name === 'network') {
-                return null
-            }
-
-            const suffix = isExists
-                ? this.state.params[name].unit.suffix
-                : ''
-            const value = isExists
-                ? this.state.params[name].value
-                : 0
-            const [arg_title, arg_sub] = name.split('_')
-            
-            return <Input
-                key={name + index}
-                addonBefore={[arg_title, <sub key='s'>{arg_sub}</sub>]}
-                addonAfter={suffix}
-                value={value.toString()}
-                disabled={true}
-                className={cnBlock('ParamInput')}
-            />
-        })
+                    const suffix = isExists
+                        ? this.state.params[name].unit.suffix
+                        : ''
+                    const value = isExists
+                        ? this.state.params[name].value
+                        : 0
+                    const [arg_title, arg_sub] = name.split('_')
+                    
+                    return <Input
+                        key={name + index}
+                        addonBefore={
+                            <Tooltip
+                                overlayClassName={cnBlock('ParamTooltip')}
+                                title={<MathMarkdown value={this.state.params_description[name] || name} />}
+                            >
+                                {arg_title}<sub key='s'>{arg_sub}</sub>
+                            </Tooltip>}
+                        addonAfter={suffix}
+                        value={value.toString()}
+                        disabled={true}
+                        className={cnBlock('ParamInput')}
+                    />
+            })
 
         return (
             <div className={this.props.className || cnBlock()}>
@@ -625,8 +655,8 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                             Description
                         </Divider>
                         <Row>
-                            <Col span={16}>
-                                {description}
+                            <Col span={16} className={cnBlock('Description')}>
+                                <MathMarkdown value={description}/>
                             </Col>
                             <Col span={8}>
                                 <Markdown
@@ -642,11 +672,11 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                 <Divider orientation="left">Attributes</Divider>
                                 {attributes}
                             </Col>
-                            <Col span={5}>
+                            <Col span={4}>
                                 <Divider orientation="left">Characteristics</Divider>
-                                {params}
+                                <Params exclude={['Load', 'R_load', 'I_load', 'P_load', 'ref', 'footprint']}/>
                             </Col>
-                            <Col span={6} push={1}>
+                            <Col span={7} push={1}>
                                 <Divider orientation="left">
                                     Signal Sources 
                                 </Divider>
@@ -687,6 +717,9 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                 )} <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableSourceType: 'source', editableSource: { index: -1 } }, () => this.showModal('Source'))}><Icon type="api" /> Add</Tag>
 
                                 <Divider orientation="left">Load</Divider>
+                                <div className={cnBlock('InlineParams')}>
+                                    <Params include={['R_load', 'I_load', 'P_load']} />
+                                </div>
                                 {this.state.load.map((source, index) => 
                                     <Tag
                                         key={source.name + index.toString()}
@@ -706,6 +739,8 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                     </Tag>
                                 )}<Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableLoad: { index: -1 } }, () => this.showModal('Load'))}><Icon type="api" /> Add</Tag>
 
+                               
+                                
                                 <Modal
                                     title="Add Load"
                                     visible={this.state.modalLoadVisible}
@@ -726,8 +761,9 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                 
                             </Col>
                        
-                            <Col span={6}>
+                            <Col span={6} push={1}>
                                 <Divider orientation="left">PCB Parts</Divider>
+                                <Params include={['footprint']}/>
                                 <Modal
                                     title="Add Device"
                                     visible={this.state.modalDeviceVisible}
@@ -794,9 +830,8 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                         onCancel={() => this.handleModalCancel('Test')}
                                         >
                                             <Probe
-                                                // type={this.state.probesType}
                                                 probe={this.state.probes}
-                                                pins={Object.keys(this.state.pins)}
+                                                pins={Object.keys(this.state.pins).filter(pin => this.state.pins[pin].length)}
                                                 loading={this.state.probeLoading}
                                                 onChange={(probe:any) =>
                                                     this.setState(probe)

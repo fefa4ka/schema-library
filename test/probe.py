@@ -5,6 +5,23 @@ from collections import defaultdict
 
 la = 'sigrok-cli'
 
+def serial_ports():
+    """ Lists serial port names
+
+        :raises EnvironmentError:
+            On unsupported or unknown platforms
+        :returns:
+            A list of the serial ports available on the system
+    """
+    import serial.tools.list_ports
+    ports = serial.tools.list_ports.comports()
+    return [{ 'port': port, 'desc': '%s %s' % (desc, hwid)} for port, desc, hwid in ports]
+
+    # result = {}
+    # for port, desc, hwid in sorted(ports):
+    #     result
+    #         print("{}: {} [{}]".format(port, desc, hwid))
+
 def get_analys_devices():
     devices = [device.split(' - ') for device in subprocess.getoutput(la + ' --scan').split('\n')[1:]]
     devices = {device[0]: {
@@ -85,6 +102,6 @@ def get_la_samples(device, channel, step_time=0.001 @ u_s, end_time=0.2 @ u_s): 
         print(last_sample)
         skip = int(last_sample / desire_samples)
         print(skip)
-        channels[ch] = channels[ch][::skip][:desire_samples]
+        channels[ch] = channels[ch][::skip if skip else 1][:desire_samples]
 
     return channels

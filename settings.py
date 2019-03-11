@@ -3,17 +3,33 @@ import sys
 # KiCad path for skidl
 
 # KiCad Modules directory
-os.environ['KISYSMOD'] = '/Users/fefa4ka/Development/_clone/kicad/modules'
-os.environ['KICAD_SYMBOL_DIR'] = '/Users/fefa4ka/Development/_clone/kicad/library'
-
+os.environ['KISYSMOD'] = '/Library/Application Support/kicad/modules'
+os.environ['KICAD_SYMBOL_DIR'] = '/Library/Application Support/kicad/library'
 # Path where is libngspice.dylib placed
 os.environ['DYLD_LIBRARY_PATH'] = '/usr/local/Cellar/libngspice/28/lib/'
+
+# Digital Units
+from PySpice.Unit.Unit import Unit
+from PySpice.Unit import _build_unit_shortcut
+class Byte(Unit):
+    __unit_name__ = 'byte'
+    __unit_suffix__ = 'B'
+    __quantity__ = 'byte'
+    __default_unit__ = True
+
+_build_unit_shortcut(Byte())
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 # Default settings
-DEBUG = True  # Turn on for SPICE Simulation
+
+try:
+    import __builtin__ as builtins
+except ImportError:
+    import builtins
+
+builtins.DEBUG = True  # Turn on for SPICE Simulation
 
 manage = {
     'mount': 'smd_default',  # auto, smd_only, tht_default, tht_only,
@@ -24,7 +40,7 @@ manage = {
 # Available parts
 from PySpice.Unit import u_pF, u_V, u_uF, u_Ohm, u_kOhm, u_MHz, u_mA, u_mW
 
-params_tolerance = 0.2
+params_tolerance = 0.1
 test_sources =[{
     'name': 'SINEV',
     'args': {

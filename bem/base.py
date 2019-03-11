@@ -3,7 +3,7 @@ import logging
 import os
 from pathlib import Path
 
-from PySpice.Unit import FrequencyValue, PeriodValue, u_ms
+from PySpice.Unit import FrequencyValue, PeriodValue, u_ms, u_Ohm, u_A, u_W
 from PySpice.Unit.Unit import UnitValue
 from skidl import TEMPLATE, Net, Network, Part, subcircuit
 from skidl.Net import Net as NetType
@@ -33,11 +33,24 @@ class Block:
     v_ref = None
     gnd = None
 
+    Load = 1000 @ u_Ohm  # [0 @ u_Ohm, 0 @ u_A, 0 @ u_W]
+    R_load = 0 @ u_Ohm
+    I_load = 0 @ u_A
+    P_load = 0 @ u_W
+
     element = None
     ref = ''
     files = []
 
     def __init__(self, circuit=True, *args, **kwargs):
+        """
+            V_in -- Volts across its input terminal and gnd
+            V_out -- Volts across its output terminal and gnd
+            P -- The power dissipated 
+            I -- The current through a device
+            Load -- Load in Ohm, A or W
+        """
+
         for prop in kwargs.keys():
             if hasattr(self, prop):
                 setattr(self, prop, kwargs[prop])
@@ -79,6 +92,16 @@ class Block:
         
         return description
 
+    def get_params_description(self):
+        params = {}
+        docs = [cls.__init__.__doc__ for cls in inspect.getmro(self) if cls.__init__.__doc__ and cls != object]
+        docs.reverse()
+        for doc in docs:
+            terms = [line.strip().split(' -- ') for line in doc.split('\n') if len(line.strip())]
+            for term, description in terms:
+                params[term.strip()] = description.strip()
+        
+        return params
 
     # Link Routines
     def __series__(self, instance):
@@ -194,14 +217,22 @@ class Block:
                         'name': 'string'
                     }
                 }
-            # elif type(default) == list and len(default) > 0:
-            #     arguments[arg] = {
-            #         'value': default.value * default.scale,
-            #         'unit': {
-            #             'name': default.unit.unit_name,
-            #             'suffix': default.unit.unit_suffix
-            #         }
-            #     }
+            elif arg == 'Load' and type(default) == list and len(default) > 0:
+                default = default[0]
+                # arguments[arg] = {
+                #     'value': default.value * default.scale
+                #     'unit': {
+                #         'name': default.unit.unit_name,
+                #         'suffix': default.unit.unit_suffix
+                #     }
+                # }
+                arguments[arg] = {
+                    'value': default.value * default.scale,
+                    'unit': {
+                        'name': default.unit.unit_name,
+                        'suffix': default.unit.unit_suffix
+                    }
+                }
             elif type(default) == type(None):
                 arguments[arg] = {
                     'unit': {
@@ -212,9 +243,10 @@ class Block:
         return arguments
     
     def get_params(self):
+        # arguments = self.get_arguments()
         params = {}
         for param, default in inspect.getmembers(self, lambda a:not(inspect.isroutine(a))):
-            if param in inspect.getargspec(self.__init__).args:
+            if param in inspect.getargspec(self.__init__).args:# or arguments.get(param, None):
                 continue
             
             if type(default) in [UnitValue, PeriodValue, FrequencyValue]:
@@ -406,6 +438,25 @@ class Block:
 
 
     # Properties
+    def load(self, V_load):
+        Load = self.Load
+        
+        if Load.is_same_unit(1 @ u_Ohm):
+            self.R_load = Load
+            self.I_load = V_load / self.R_load
+        
+        if Load.is_same_unit(1 @ u_W):
+            self.P_load = Load
+            self.I_load = self.P_load / V_load
+        else:
+            if Load.is_same_unit(1 @ u_A):
+                self.I_load = Load
+
+            self.P_load = V_load * self.I_load
+
+        if not self.R_load:
+            self.R_load = V_load / self.I_load
+
     def power(self):
         return None
 

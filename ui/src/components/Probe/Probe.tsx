@@ -71,7 +71,7 @@ export class Part extends React.Component<IProps, {}> {
         }
 
         const Pins = <Form>
-            {this.props.pins.map(pin => {
+            {this.props.pins.filter(pin => pin !== 'gnd').map(pin => {
                 const pin_state = this.props.probe && this.props.probe[pin]
 
                 return (<Form.Item label={pin} {...formItemLayout} key={pin}>
@@ -108,10 +108,13 @@ export class Part extends React.Component<IProps, {}> {
         
         return (
             <div className={cnPart()}>
-                <Divider orientation="left">Pins</Divider>
+               
                 {this.props.loading 
                     ? <Spin size="large" />
-                    : Pins
+                    : <>
+                        <Divider orientation="left">Connect probes to pins</Divider>
+                        {Pins}
+                    </>
                 }
             
             </div>

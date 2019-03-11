@@ -1,6 +1,6 @@
 from bem import Block, RLC, u, u_Ohm, u_V, u_A, u_F, u_Hz
 from skidl import Net
-from math import pi
+from math import pi, atan, tan
 from .. import Base
 
 class Modificator(Base):
@@ -12,17 +12,32 @@ class Modificator(Base):
     """
 
     V_in = 6 @ u_V
-    angle = 0
-    f_3db = 120 @ u_Hz
+    angle = 45
+    f_3db = 100 @ u_Hz
 
-    R_shift_out = 500000 @ u_Ohm
-    C_shift_in = 0.000001 @ u_F
+    R_shift_out = 1000000 @ u_Ohm
+    C_shift_in = 0 @ u_F
     
 
-    def __init__(self, C_shift_in, R_shift_out, *args, **kwargs):
-        self.C_shift_in = C_shift_in
-        self.R_shift_out = R_shift_out
+    def __init__(self, angle, R_shift_out=None, *args, **kwargs):
+        """
+            angle -- Phase shift angle `theta = 2 tan^-1 omega RC`
+        """
+
         
+        self.R_shift_out = R_shift_out
+        self.angle = angle
+        angle_rad = pi / (180 / self.angle)
+        atan_desire = angle_rad / 2
+        atan_argument = tan(atan_desire)
+        angular_speed = 2 * pi * self.f_3db
+        RC = atan_desire / angular_speed
+        
+        self.C_shift_in = (RC / self.R_shift_out) @ u_F
+        self.C_shift_in = self.C_shift_in.canonise()
+
+        self.angle = 2 * atan(2 * pi * self.f_3db * self.C_shift_in * self.R_shift_out) * 180 / pi
+
         super().__init__(*args, **kwargs)
 
     def circuit(self):

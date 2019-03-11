@@ -22,13 +22,15 @@ class Base(Block):
     I_load = 0 @ u_A
     frequency = 120 @ u_Hz
 
-    def __init__(self, scale, frequency, V_out, V_ripple, R_load, I_load):
+    def __init__(self, scale, frequency, V_out, V_ripple, Load):
         self.V_out = V_out
         self.scale = int(scale)
         self.frequency = frequency
         self.V_ripple = V_ripple
-        self.R_load = R_load
-        self.I_load = I_load
+        
+        self.Load = Load
+
+        self.load(V_out)
 
         self.circuit()
 
@@ -49,7 +51,7 @@ class Base(Block):
         for block in range(self.scale):
             last = sections[-1]
 
-            half = HalfBridge(V_out=self.V_out, frequency=self.frequency, V_ripple=self.V_ripple, R_load=self.R_load, I_load=self.I_load)
+            half = HalfBridge(V_out=self.V_out, frequency=self.frequency, V_ripple=self.V_ripple, Load=self.Load)
             half.gnd += last[0]
             half.input += last[1]
             

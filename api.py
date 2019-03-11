@@ -90,7 +90,8 @@ def get_arguments_values(Block, params):
     props = {}
     for attr in arguments:
         props[attr] = getattr(Block, attr)
-
+        if type(props[attr]) == list:
+            props[attr] = props[attr][0]
         arg = params.get(attr, None)
         if arg: 
             if type(arg) == dict:
@@ -100,6 +101,8 @@ def get_arguments_values(Block, params):
                 props[attr] = float(arg)
             elif type(props[attr]) == str:
                 props[attr] = arg
+            elif type(props[attr]) == list:
+                props[attr] = props[attr][0]
             else:
                 props[attr]._value = float(arg)
     
@@ -149,6 +152,7 @@ def block(name):
             'name': Block.name,
             'mods': Block.mods,
             'description': Block.get_description(Block),
+            'params_description': Block.get_params_description(Block),
             'args':  Block.get_arguments(Block, Instance),
             'params': Instance.get_params(),
             'pins': Instance.get_pins(),
@@ -160,6 +164,8 @@ def block(name):
             'devices': params.get('devices', Print.additional_devices(Instance)),
             'available': available
         }
+
+        params['params'] = {param: params['params'][param] for param in params['params'].keys() if not params['args'].get(param, None)}
         
         return params
 
@@ -202,7 +208,6 @@ def simulate(name):
         params = request.data
         Block = Build(name, **params['mods']).block
         props = get_arguments_values(Block, params['args'])
-
         Instance = Block(**props)    
         Instance.gnd += gnd
 
@@ -245,10 +250,14 @@ def simulate(name):
                         try: 
                             args[arg] = float(source['args'][arg]['value']) @ get_arg_units(part, arg)
                         except:
-                            args[arg] = source['args'][arg]['value']
+                            try:
+                                args[arg] = float(source['args'][arg]['value'])
+                                if args[arg] == int(source['args'][arg]['value']):
+                                    args[arg] = int(args[arg])
+                            except:
+                                args[arg] = source['args'][arg]['value'] 
 
                 signal = Build(part_name).spice(ref='V' + source['name'], **args)
-                # print('source', args) 
                 source_refs.append('V' + source['name'])
 
                 if not last_source:
@@ -449,12 +458,19 @@ def get_analys_devices():
     }]
     return devices
 
+@app.route('/api/serial/', methods=['GET'])
+def get_serial_ports():
+    from test.probe import serial_ports
+
+    return serial_ports()
+
 @app.route('/api/probes/', methods=['POST'])
 def get_probes():
     req = request.data
     sources = req.get('sources', [])
     for source in sources:
-        if source.get('port', None):
+        port = source.get('port', None)
+        if port:
             args = {}
             part_name = source['name'].split('_')[0]
             part = Build(part_name).spice
@@ -465,8 +481,8 @@ def get_probes():
                         args[arg] = float(source['args'][arg]['value']) @ get_arg_units(part, arg)
                     except:
                         args[arg] = source['args'][arg]['value']
-                        
-            device = JDS6600(port='/dev/tty.wchusbserial14120')
+            
+            device = JDS6600(port=port)
             if hasattr(device, source['name']):
                 generator = getattr(device, source['name'])
                 generator(
@@ -493,7 +509,6 @@ def get_probes():
             data[probe] = device_data[ch]
 
     chartData = [{'time':step * step_time} for step in range(int(end_time / step_time))]
-    print(data.keys())
     for index, entity in enumerate(chartData):
         for probe in data.keys():
             chartData[index]['V_' + probe] = data[probe][index]

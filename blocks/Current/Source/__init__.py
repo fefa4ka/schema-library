@@ -7,35 +7,33 @@ from random import randint
 class Base(Block):
     """**Transistor Current Source**
     
-    Happily, it is possible to make a very good current source with a transistor (Figure 2.31). It works like this: applying VB to the base, with VB>0.6 V, ensures that the emitter is always conducting:
+    Happily, it is possible to make a very good current source with a transistor. It works like this: applying `V_b` to the base, with `V_b>0.6 V`, ensures that the emitter is always conducting:
 
-    `V_e = V_b − 0.6 volts`
-    
+    `V_e = V_b − 0.6 V`
     so
+    `I_e = V_e / R_e = (V_b − 0.6 V) / R_e`
 
-    `I_e = V_e / R_e = (V_b − 0.6 volts) / R_e`
-
-    But, since `I_e ≈ I_c` for large beta,
-    
-    `I_c ≈ (V_b − 0.6 volts) / R_e`
+    But, since `I_e ≈ I_(load)` for large beta,
+    `I_(load) ≈ (V_b − 0.6 V) / R_e`
 
     * Paul Horowitz and Winfield Hill. "2.2.5 Emitter follower biasing" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 86
 
     """
 
-    V_ref = 25 @ u_V
-    I_out = 0.01 @ u_A
+    V_ref = 10 @ u_V
 
     V_b = 0 @ u_V
-
-    I_control = 0 @ u_A
+    Load = 0.01 @ u_A
     R_e = 0 @ u_Ohm
-    load = None
 
-    def __init__(self, V_ref, I_out):
+    def __init__(self, V_ref, Load):
+        """
+        V_je -- Base-emitter built-in potential
+        
+        """
         self.V_ref = V_ref
-        self.I_out = I_out
-        # self.load = load or Resistor()(10000)
+        self.Load = Load
+        self.load(self.V_ref)
 
         self.circuit()
 
@@ -45,23 +43,22 @@ class Base(Block):
         self.output = Net()
         self.v_ref = Net()
         self.gnd = Net()
-        
-        Diode_drop = 0.6 @ u_V
-        self.V_e = (u(Diode_drop) + randint(1, int(u(self.V_ref) / 2))) @ u_V
-        self.V_b = self.V_e + Diode_drop
-        self.R_e = (u(self.V_e) / u(self.I_out)) @ u_Ohm
 
         generator = Transistor_Bipolar(type='npn', follow='emitter')()
-        Beta = generator.selected_part.spice_params['BF']
+        # self.Beta = generator.selected_part.spice_params['BF']
+        self.V_je = (generator.selected_part.spice_params.get('VJE', None) or 0.6) @ u_V
+
+        self.V_e = (u(self.V_je) + randint(1, int(u(self.V_ref) / 2))) @ u_V
+        self.V_b = self.V_e + self.V_je
+        self.R_e = self.V_e / self.I_load
 
         generator.collector += self.output_n
-        
-        self.I_control = (u(self.I_out) / Beta) @ u_A
+    
         
         controller = Voltage_Divider(type='resistive')(
             V_in = self.V_ref,
             V_out = self.V_b,
-            I_out = self.I_control
+            Load = self.I_load
         )
     
         controller.input += self.v_ref

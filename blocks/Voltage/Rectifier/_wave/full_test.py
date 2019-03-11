@@ -13,7 +13,7 @@ class Case(Test):
                         }
                     },
                     'frequency': {
-                        'value': 10,
+                        'value': 120,
                         'unit': {
                             'name': 'herz',
                             'suffix': 'Hz'

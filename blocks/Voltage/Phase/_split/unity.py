@@ -21,6 +21,11 @@ class Modificator(Base):
     I_b = 0.001 @ u_A
 
     def __init__(self, V_ref, V_in, f_3db, *args, **kwargs):
+        """
+            f_3db -- Frequencies of interest are passed by the highpass filter
+            C_in -- Blocking capacitor is chosen so that all frequencies of interest are passed by the highpass filter `C_(i\\n) >= 1 / (2 pi f_(3db) (R_s∥R_g))`
+        """
+        
         self.V_ref = V_ref
         self.V_in = V_in
         self.f_3db = f_3db
@@ -37,7 +42,7 @@ class Modificator(Base):
         stiff_voltage = Voltage_Divider(type='resistive')(
             V_in = self.V_ref,
             V_out = self.V_split + 0.6 @ u_V,
-            I_out = self.I_b
+            Load = self.I_b
         )  
         stiff_voltage.input += self.v_ref
         stiff_voltage.gnd += self.gnd
@@ -48,8 +53,8 @@ class Modificator(Base):
             common='emitter',
             follow='collector'
         )(
-            collector = R(self.R_out),
-            emitter = R(self.R_out)
+            collector = R(self.R_out, ref='R_c'),
+            emitter = R(self.R_out, ref='R_e')
         )
         
         split = stiff_voltage & self & splitter
@@ -59,58 +64,8 @@ class Modificator(Base):
 
         self.C_in = (1 / (2 * pi * self.f_3db * R.parallel_sum(R, [self.R_out * 2 , stiff_voltage.R_in, stiff_voltage.R_out]))) @ u_F
         
-        # signal = Net('VoltageShiftAcInput')
-        # ac_coupling = signal & Capacitor()(self.C_in) & self.input
-        # self.input = signal
+        signal = Net('VoltageShiftAcInput')
+        ac_coupling = signal & Capacitor()(self.C_in, ref='C_in') & self.input
+        self.input = signal
 
 
-
-    def test_sources(self):
-        return [{
-                'name': 'SINEV',
-                'args': {
-                    'amplitude': {
-                        'value': 2,
-                        'unit': {
-                            'name': 'volt',
-                            'suffix': 'V'
-                        }
-                    },
-                    'offset': {
-                        'value': 3,
-                        'unit': {
-                            'name': 'volt',
-                            'suffix': 'V'
-                        }
-                    },
-                    'frequency': {
-                        'value': 120,
-                        'unit': {
-                            'name': 'herz',
-                            'suffix': 'Hz'
-                        }
-                    }
-                },
-                'pins': {
-                    'p': ['input'],
-                    'n': ['gnd']
-                }
-        }, {
-                'name': 'V',
-                'args': {
-                    'value': {
-                        'value': 20,
-                        'unit': {
-                            'name': 'volt',
-                            'suffix': 'V'
-                        }
-                    }
-                },
-                'pins': {
-                    'p': ['v_ref'],
-                    'n': ['gnd']
-                }
-        }]
-
-    def test_load(self):
-        return []

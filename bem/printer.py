@@ -36,7 +36,7 @@ class Print:
 
         self.scheme.ERC()
         
-        return self.sscheme.generate_netlist()
+        return self.scheme.generate_netlist()
 
     @classmethod    
     def additional_devices(self, block):

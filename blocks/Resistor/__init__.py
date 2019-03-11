@@ -3,7 +3,7 @@ from blocks.Abstract.Combination import Base as Block
 from skidl import Part, Net, subcircuit, TEMPLATE
 from PySpice.Unit import u_Ohm, u_V, u_W, u_A
 import numpy as np
-from bem import Build
+from bem import Build, u
 import logging
 
 class Base(Block):
@@ -16,34 +16,47 @@ class Base(Block):
     increase = True
     value = 1000 @ u_Ohm
     V_in = 10 @ u_V
-    R_load = 1000 @ u_Ohm
+    G = 0
     P = 0 @ u_W
     I = 0 @ u_A
     V_drop = 0 @ u_V
 
     ref = 'R'
 
-    def __init__(self, value, V_in=None, R_load=None, ref=''):
+    def __init__(self, value, V_in=None, Load=0.1 @ u_Ohm, *args, **kwargs):
+        """
+            value -- A resistor is made out of some conducting stuff (carbon, or a thin metal or carbon film, or wire of poor conductivity), with a wire or contacts at each end. It is characterized by its resistance.
+            V_drop -- Voltage drop after resistor with Load 
+            G -- Conductance `G = 1 /R`
+        """
+
         if type(value) in [str, int, float]:
             value = float(value) @ u_Ohm
 
         self.value = value
-        
-        if ref:
-            self.ref = ref
+        self.Load = Load
 
-        self.circuit()
-        self.calculator(V_in, R_load)
+        self.calculator()
+
+        super().__init__(*args, **kwargs)
     
-    def calculator(self, V_in=None, R_load=None):
+    def calculator(self):
         # Power Dissipation
-        total_value = self.value.value * self.value.scale
+        value = u(self.value)
 
-        V_in_value = self.V_in.scale * self.V_in.value
-        self.P = self.power(V_in_value, total_value) @ u_W
-        self.I = self.current(V_in_value, total_value) @ u_A
-        I_total =self.current(V_in_value, self.R_load.scale * self.R_load.value + total_value)
-        self.V_drop = total_value * I_total @ u_V
+        V_in_value = u(self.V_in)
+        self.P = self.power(V_in_value, value) @ u_W
+        self.I = self.current(V_in_value, value) @ u_A
+        if self.Load.is_same_unit(1 @ u_Ohm):
+            I_total = self.current(V_in_value, u(self.Load + self.value))
+        elif self.Load.is_same_unit(1 @ u_A):
+            I_total = self.I + self.load
+        elif self.Load.is_same_unit(1 @ u_W):
+            I_total = (self.P + self.load) / V_in_value
+        
+        self.V_drop = (value * I_total) @ u_V
+        self.G = 1 / value
+        self.load(self.V_in - self.V_drop)
 
     def series_sum(self, values):
         return sum(values) @ u_Ohm

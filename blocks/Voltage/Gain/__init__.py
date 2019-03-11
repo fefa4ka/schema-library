@@ -7,30 +7,47 @@ class Base(Block):
     
     The circuit shown here is known as a common-emitter amplifier. Unlike the common-collector amplifier, the common-emitter amplifier provides voltage gain. This amplifier makes use of the common-emitter arrangement and is modified to allow for ac coupling.
 
-    * Paul Scherz. “Practical Electronics for Inventors, Fourth Edition
+    * Paul Scherz. "4.3.2 Bipolar Transistors" Practical Electronics for Inventors — 4th Edition. McGraw-Hill Education, 2016
+    * Paul Horowitz and Winfield Hill. "2.2.7 Common-emitter amplifier" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 87
+    
+
     """
 
     V_ref = 20 @ u_V
     V_in = 1.4 @ u_V
-    f_3db = 120 @ u_Hz
-    I_quiescent = 0.1 @ u_A
+    f_3db = 1000000 @ u_Hz
+    I_quiescent = 0.01 @ u_A
 
-    gain = 0
+    G_v = -100
     C_in = 0 @ u_F
     R_c = 0 @ u_F
     R_e = 0 @ u_F
     
-    # I_e = 0 @ u_A
-    # I_c = 0 @ u_A
-    V_stiff = 0 @ u_V
-
     def __init__(self, V_ref, V_in, f_3db, I_quiescent):
+        """
+            f_3db -- Frequencies of interest are passed by the highpass filter
+            C_in -- Blocking capacitor is chosen so that all frequencies of interest are passed by the highpass filter `C_(i\\n) >= 1 / (2 pi f_(3db) (R_s∥R_g))`
+            I_quiescent --  That current puts the collector at `V_(ref)`
+
+            V_je -- Base-emitter built-in potential
+            V_e -- `V_e = 1V` selected for temperature stability and maximum voltage swing
+            V_c -- `V_c = V_(ref) / 2`
+            R_c -- `R_c = (V_(ref) - V_c) / I_(quiescent)`
+            R_in -- `1/R_(i\\n) = 1/R_s + 1/R_g + 1 / R_(i\\n(base))`
+            R_e -- `R_e = V_e / I_(load)`
+
+            R_in_base_dc -- `R_(i\\n(base),dc) = beta * R_e`
+            R_in_base_ac -- `R_(i\\n(base),ac) = beta * (r_e + R_(load))`
+
+            G_v -- Amplifier gain `G_v = v_(out) / v_(i\\n) = - g_m * R_c = -R_c/R_e`
+            g_m -- The inverse of resistance is called conductance. An amplifier whose gain has units of conductance is called a transconductance amplifier. `g_m = i_(out)/v_(i\\n) = - G_v / R_c `
+            r_e -- Transresistance `r_e = V_T / I_e = ((kT) / q) / I_e = (0.0253 V) / I_e`
+            
+        """
         self.V_ref = V_ref
         self.V_in = V_in
         self.f_3db = f_3db
         self.I_quiescent = I_quiescent
-
-        self.gain = self.V_ref / self.V_in
 
         self.circuit()
 
@@ -39,11 +56,12 @@ class Base(Block):
         self.v_ref = Net('Vref')
         self.gnd = Net()
 
-        self.V_stiff = 1.6 @ u_V # self.V_in if u(self.V_in) > 1.6 else 1.6 @ u_V
-        
-        self.R_e = ((u(self.V_stiff) - 0.6) / u(self.I_quiescent)) @ u_Ohm
-        self.R_c = self.gain * self.R_e
+        self.V_c = self.V_ref / 2
+        self.R_c = (self.V_ref - self.V_c) / self.I_quiescent
 
+        self.V_e = 1.0 @ u_V  # For temperature stability
+        self.R_e = self.V_e / self.I_quiescent 
+        
         R = Resistor()
 
         amplifier = Transistor_Bipolar(
@@ -54,16 +72,32 @@ class Base(Block):
             emitter = R(self.R_e)
         )
 
+        self.Beta = amplifier.selected_part.spice_params.get('BF', 100)
+        self.V_je = (amplifier.selected_part.spice_params.get('VJE', None) or 0.6) @ u_V
+
         stiff_voltage = Voltage_Divider(type='resistive')(
             V_in = self.V_ref,
-            V_out = self.V_stiff,
-            I_out = self.I_quiescent
+            V_out = self.V_e + self.V_je,
+            Load = self.Beta * self.R_e
         )
 
+        self.r_e = 0.026 @ u_V / self.I_quiescent
+
+        self.G_v = -1 * u(self.R_c / (self.R_e + self.r_e))
+        self.R_3 = (-1 * self.R_c - self.r_e * self.G_v) / self.G_v
+
+        self.g_m = self.G_v / self.R_c * -1
+
+        self.R_in_base_dc = self.Beta * self.R_e
+        
+        self.R_in_base_ac = self.Beta * (self.r_e + self.R_3)
+        self.R_in = R.parallel_sum(R, [self.R_in_base_ac, stiff_voltage.R_in, stiff_voltage.R_out])
+
+      
         stiff_voltage.input += self.v_ref
 
-        self.C_in = (1 / (2 * pi * self.f_3db * R.parallel_sum(R, [stiff_voltage.R_in, stiff_voltage.R_out]))) @ u_F
-
+        self.C_in = (1 / (2 * pi * self.f_3db * self.R_in)) @ u_F
+        self.C_out = (1 / (2 * pi * self.f_3db * (self.r_e + self.R_3))) @ u_F
         
         amplified = Net('VoltageGainOutput')
 
@@ -71,5 +105,7 @@ class Base(Block):
         
         signal = Net('VoltageGainAcInput')
         ac_coupling = signal & Capacitor()(self.C_in) & self.input
+        ac_out = amplifier.emitter & R(self.R_3) & Capacitor()(self.C_in) & self.gnd
+
         self.input = signal
         self.output = amplified

@@ -10,20 +10,19 @@ class Modificator(Base):
     V_out = 10 @ u_V
     V_ripple = 1 @ u_V
 
-    R_load = 1000 @ u_Ohm
-    I_load = 0 @ u_A
     frequency = 10 @ u_Hz
 
-    def __init__(self, V_out=None, V_ripple=None, frequency=None, R_load=None, I_load=None):
+    def __init__(self, V_out=None, V_ripple=None, frequency=None, Load=None):
+        """
+            V_ripple -- Periodic variations in voltage about the steady value
+            frequency -- Input signal frequency
+        """
         self.V_out = V_out
         self.V_ripple = V_ripple
-        self.R_load = R_load
-        self.I_load = I_load
+        self.Load = Load
+        self.load(self.V_out)
         self.frequency = frequency
 
-        if self.R_load and self.V_out:
-            self.I_load = self.V_out / self.R_load
-        
         self.circuit()
 
     def circuit(self):
