@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { cn } from '@bem-react/classname'
-const MathJax = require("react-mathjax-preview").default
+const MathJax = require("./mathjax-preview").default
 import Markdown from 'react-markdown'
 
 const cnMath = cn('Math')
@@ -21,7 +21,7 @@ type IProps = {
 
 export class MathMarkdown extends React.Component<IProps, {}> {
     state: State = initialState 
-    
+
     shouldComponentUpdate(nextProps:IProps) {
         if (this.props.value !== nextProps.value) {
             return true

@@ -44,7 +44,7 @@ export class Part extends React.Component<IProps, {}> {
         return true
     }
     loadParts() {
-        axios.get('http://localhost:3000/api/probes/')
+        axios.get('/api/probes/')
             .then(res => {
                 const parts = res.data
                 this.setState({ parts })

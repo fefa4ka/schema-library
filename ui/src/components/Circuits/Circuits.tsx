@@ -56,7 +56,7 @@ export class Circuits extends Component {
   state: State = initState
 
   componentWillMount() {    
-    axios.get('http://localhost:3000/api/circuits/')
+    axios.get('/api/circuits/')
         .then(res => {
             this.setState({
                 circuits: res.data
@@ -67,7 +67,7 @@ export class Circuits extends Component {
   loadSimulation() {
     const { code, simulationStopTime } = this.state
 
-    axios.post('http://localhost:3000/api/circuit/',
+    axios.post('/api/circuit/',
     {
         code,
         simulationTime: simulationStopTime

@@ -58,9 +58,9 @@ class Base(Block):
         self.R_e = 1000 @ u_Ohm
         self.R_out = (0 @ u_V - self.V_gnd) / (self.I_quiescent * 2) 
         self.r_e = 0.026 @ u_V / self.I_quiescent
-        self.G_diff = self.R_c / (2 * (self.r_e + self.R_e))
-        self.G_cm = -1 * self.R_c / (2 * self.R_out + self.R_e + self.r_e)
-        self.CMMR = self.R_out / (self.R_e + self.r_e)
+        self.G_diff = u(self.R_c / (2 * (self.r_e + self.R_e)))
+        self.G_cm = u(-1 * self.R_c / (2 * self.R_out + self.R_e + self.r_e))
+        self.CMMR = u(self.R_out / (self.R_e + self.r_e))
 
         amplifier = Transistor_Bipolar(
             type='npn',

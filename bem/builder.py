@@ -99,7 +99,7 @@ class Build:
 
         if len(self.tests):
             Tests = self.tests
-            Tests.reverse()
+            # Tests.reverse()
             Tests = tuple(set(self.tests))
         else:
             Tests = (BaseTest,)

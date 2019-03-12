@@ -1,5 +1,27 @@
 from PySpice.Unit import u_A, u_V, u_s, u_Hz 
 
+def serial_ports():
+    """ Lists serial port names
+
+        :raises EnvironmentError:
+            On unsupported or unknown platforms
+        :returns:
+            A list of the serial ports available on the system
+    """
+    import serial.tools.list_ports
+    ports = serial.tools.list_ports.comports()
+    return [{ 'port': port, 'desc': '%s %s' % (desc, hwid)} for port, desc, hwid in ports]
+
+def get_analys_devices():
+    import subprocess
+    devices = [device.split(' - ') for device in subprocess.getoutput(la + ' --scan').split('\n')[1:]]
+    devices = {device[0]: {
+        'description': device[1].split(':')[0].strip(),
+        'channels': device[1].split(':')[1].strip().split(' ')
+    } for device in devices}
+    return devices
+
+
 def get_arg_units(part, arg):
     description = getattr(part, 'description')
     part_type = 'current' if description.lower().find('current') != -1 else 'voltage'

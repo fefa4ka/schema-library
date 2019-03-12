@@ -15,9 +15,9 @@ from bem import Build, get_bem_blocks
 from bem.model import Part, Param, Mod, Prop, Stock
 from bem.printer import Print
 from bem.simulator import Simulate
-from test import get_arg_units, get_minimum_period
-from test.source import JDS6600, simulation_sources
-from test.probe import get_la_samples
+from probe.read import get_sigrok_samples
+from probe import get_arg_units, get_minimum_period
+from probe.source import JDS6600, simulation_sources
 
 try:
     import __builtin__ as builtins
@@ -119,6 +119,7 @@ def block(name):
     builtins.default_circuit = Circuit()
     builtins.NC = builtins.default_circuit.NC
     gnd = Net('0')
+    gnd.fixed_name = True
 
     def build():
         params = request.args
@@ -204,6 +205,7 @@ def simulate(name):
 
     def build():
         gnd = Net('0')
+        gnd.fixed_name = True
         
         params = request.data
         Block = Build(name, **params['mods']).block
@@ -460,7 +462,7 @@ def get_analys_devices():
 
 @app.route('/api/serial/', methods=['GET'])
 def get_serial_ports():
-    from test.probe import serial_ports
+    from bem.prober import serial_ports
 
     return serial_ports()
 
@@ -503,7 +505,7 @@ def get_probes():
     
     data = {}
     for device in devices.keys():
-        device_data = get_la_samples(device, ','.join(devices[device]), step_time @ u_s, end_time @ u_s)
+        device_data = get_sigrok_samples(device, ','.join(devices[device]), step_time @ u_s, end_time @ u_s)
         for ch in device_data.keys():
             probe = pins[device + ch]
             data[probe] = device_data[ch]
@@ -564,4 +566,4 @@ def get_part_params(name):
 
 if __name__ == "__main__":
     app.debug = True
-    app.run(debug=True, threaded=True)
+    app.run(debug=True, threaded=True, host='0.0.0.0')

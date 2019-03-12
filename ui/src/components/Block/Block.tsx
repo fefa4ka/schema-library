@@ -179,7 +179,7 @@ export class Block extends React.Component<IProps, {}> {
     loadSimulation() {
         const { args, sources, load, simulationStopTime } = this.state
         
-        axios.post('http://localhost:3000/api/blocks/' + this.props.name + '/simulate/',
+        axios.post('/api/blocks/' + this.props.name + '/simulate/',
         {
             mods: this.state.mods,
             args: Object.keys(args).reduce((result: { [name:string]: string | number }, arg) => {
@@ -218,7 +218,7 @@ export class Block extends React.Component<IProps, {}> {
         this.setState({
             probeLoading: true,
         })
-        axios.post('http://localhost:3000/api/probes/',
+        axios.post('/api/probes/',
         {
             sources,
             probes,
@@ -266,7 +266,7 @@ export class Block extends React.Component<IProps, {}> {
         // }
     
             
-        axios.get('http://localhost:3000/api/blocks/' + this.props.name + '/' + urlParams)
+        axios.get('/api/blocks/' + this.props.name + '/' + urlParams)
             .then(res => {
                 const { name, description, params_description, args, params, mods, pins, files, nets, sources, parts, load, devices } = res.data               
                 
@@ -280,7 +280,7 @@ export class Block extends React.Component<IProps, {}> {
                 const codeMods = Object.keys(mods).map((mod:string) => mod + "=['" + mods[mod].join("', '") + "']").join(', ')
                 
                 const blockImportName = name.replace('.', '_')
-                const codeExample = `from bem import ${blockImportName}${codeUnits ? ', ' + codeUnits : ''}
+                const codeExample = `from bem import ${blockImportName}${codeUnits ? '\nfrom bem import ' + codeUnits : ''}
 
 ${blockImportName}(${codeMods})${codeArgs ? `(
 	${codeArgs}
@@ -414,7 +414,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
         const { args, devices } = this.state
         const filename = this.props.name + '.net'
 
-        axios.post('http://localhost:3000/api/blocks/' + this.props.name + '/netlist/',
+        axios.post('/api/blocks/' + this.props.name + '/netlist/',
         {
             mods: this.state.mods,
             args: Object.keys(args).reduce((result: { [name:string]: string | number }, arg) => {
@@ -600,20 +600,14 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                         : 0
                     const [arg_title, arg_sub] = name.split('_')
                     
-                    return <Input
-                        key={name + index}
-                        addonBefore={
+                    return <span className={cnBlock('Param')} key={name}> 
                             <Tooltip
                                 overlayClassName={cnBlock('ParamTooltip')}
                                 title={<MathMarkdown value={this.state.params_description[name] || name} />}
                             >
-                                {arg_title}<sub key='s'>{arg_sub}</sub>
-                            </Tooltip>}
-                        addonAfter={suffix}
-                        value={value.toString()}
-                        disabled={true}
-                        className={cnBlock('ParamInput')}
-                    />
+                                <strong>{arg_title}<sub key='s'>{arg_sub}</sub></strong> = {value} {suffix}
+                            </Tooltip>
+                    </span>
             })
 
         return (
@@ -659,9 +653,16 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                 <MathMarkdown value={description}/>
                             </Col>
                             <Col span={8}>
-                                <Markdown
+                                <CodeMirror
                                     className={cnBlock('CodeExample')}
-                                    source={'```\n# Code Example\n\n' + this.state.example + '\n````'}
+                                    options={{
+                                        mode: 'python',
+                                        lineNumbers: false,
+                                        indentWithTabs: false,
+                                        indentUnit: 4,
+                                        tabSize: 4
+                                    }}
+                                    value={'# Code Example\n\n' + this.state.example}
                                 />
                             </Col>
                         </Row>
@@ -672,11 +673,11 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                 <Divider orientation="left">Attributes</Divider>
                                 {attributes}
                             </Col>
-                            <Col span={4}>
+                            <Col span={5}>
                                 <Divider orientation="left">Characteristics</Divider>
                                 <Params exclude={['Load', 'R_load', 'I_load', 'P_load', 'ref', 'footprint']}/>
                             </Col>
-                            <Col span={7} push={1}>
+                            <Col span={6} push={1}>
                                 <Divider orientation="left">
                                     Signal Sources 
                                 </Divider>

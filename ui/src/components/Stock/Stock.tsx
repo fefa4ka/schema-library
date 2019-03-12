@@ -141,7 +141,7 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
       setFieldsValue
     } = this.props.form
     const modsUrlParam = Object.keys(selectedMods).map((mod: string) => mod + '=' + selectedMods[mod].join(','))
-    axios.get('http://localhost:3000/api/blocks/' + this.state.selectedBlock + '/part_params/?' + modsUrlParam)
+    axios.get('/api/blocks/' + this.state.selectedBlock + '/part_params/?' + modsUrlParam)
       .then(res => {
         const { part, spice, props } = res.data
         const paramsValue = partData ? partData.params || {} : Object.keys(part).reduce((params:any, param) => {
@@ -420,7 +420,7 @@ export class Stock extends Component {
   formRef: any 
 
 componentWillMount() {    
-  axios.get('http://localhost:3000/api/blocks/')
+  axios.get('/api/blocks/')
   .then(res => {
       const blocks: Blocks = {}
       const { data } = res
@@ -448,7 +448,7 @@ componentWillMount() {
     }
   
     loadStock() {
-      axios.get('http://localhost:3000/api/parts/?block=' + this.state.selectedType)
+      axios.get('/api/parts/?block=' + this.state.selectedType)
         .then(res => {
             this.setState({
                 parts: res.data

@@ -104,7 +104,7 @@ export class Diagram extends React.Component<IProps, {}> {
             return diagram.join(';')
         }).join(';')
 
-        const settings = ['#font: ISOCPEUR', '#stroke: #000000', '#.load: stroke=#b9b9b9 fill=#fafafa', '#.source: stroke=#1890ff fill=#fafafa', '#direction: right', '#fill: #ffffff', '#lineWidth: 1', '#.unwired: stroke=red visual=none bold', '#.unwiredgnd: stroke=red visual=end empty '].join('\n')
+        const settings = ['#font: routed', "#fontSize: 10", '#stroke: #000000', '#.load: stroke=#b9b9b9 fill=#fafafa', '#.source: stroke=#1890ff fill=#fafafa', '#direction: right', '#fill: #ffffff', '#lineWidth: 1', '#.unwired: stroke=red visual=none bold', '#.unwiredgnd: stroke=red visual=end empty '].join('\n')
         const graph = settings + '\n' + [network, `[<${connectedPins.includes('gnd') ? 'end' : 'unwiredgnd'}>gnd]`, pinsNet, sourcesNet, loadNet].filter(_=>_).join(';')
         
         nomnoml.draw(this.canvasRef.current, graph);

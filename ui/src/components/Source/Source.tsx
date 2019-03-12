@@ -68,13 +68,13 @@ export class Part extends React.Component<IProps, {}> {
         return true
     }
     loadParts() {
-        axios.get('http://localhost:3000/api/sources/')
+        axios.get('/api/sources/')
             .then(res => {
                 const parts = res.data
                 this.setState({ parts }, () => this.loadSource(this.props.source))
             })
             
-        axios.get('http://localhost:3000/api/serial/')
+        axios.get('/api/serial/')
             .then(res => this.setState({ serial: res.data }))
     }
     getCurrentSource() {

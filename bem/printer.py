@@ -1,5 +1,5 @@
 from bem import Block, Build
-from skidl import Circuit, set_default_tool, KICAD
+from skidl import Circuit, set_default_tool, KICAD, set_backup_lib
 
 try:
     import __builtin__ as builtins
@@ -12,6 +12,7 @@ class Print:
     scheme = None
 
     def __init__(self, Block, props, kit=[]):
+        set_backup_lib('.')
         set_default_tool(KICAD) 
         builtins.DEBUG = False
         

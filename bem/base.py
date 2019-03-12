@@ -252,7 +252,7 @@ class Block:
             if type(default) in [UnitValue, PeriodValue, FrequencyValue]:
                 default = default.canonise()
                 params[param] = {
-                    'value': default.value,
+                    'value': round(default.value, 1),
                     'unit': {
                         'name': default.unit.unit_name,
                         'suffix': default.prefixed_unit.str() #unit.unit_suffix
@@ -260,7 +260,7 @@ class Block:
                 }
             elif type(default) in [int, float]:
                 params[param] = {
-                    'value': default,
+                    'value': default if type(default) == int else round(default, 3),
                     'unit': {
                         'name': 'number'
                     }

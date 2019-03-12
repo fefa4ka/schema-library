@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Block } from '../Block'
 import { Layout, Menu } from 'antd';
 import axios from 'axios'
-
+import { BrowserRouter as Router, Route, withRouter } from "react-router-dom";
 
 const {
   Header, Footer, Sider, Content,
@@ -22,11 +22,11 @@ type State = {
   selectedBlock: string
 }
 
-export class Blocks extends Component {
+export class Blocks extends Component<any> {
   state: State = initState
 
   componentWillMount() {    
-    axios.get('http://localhost:3000/api/blocks/')
+    axios.get('/api/blocks/')
         .then(res => {
             this.setState({
                 blocks: res.data
@@ -36,7 +36,7 @@ export class Blocks extends Component {
   render() {
     const blocks = Object.keys(this.state.blocks).filter(block => block[block.length - 1] !== '.')
 
-    const { selectedBlock } = this.state
+    const selectedBlock = (this.props.match && this.props.match.params.block) || 'Resistor'
     
     function insertSpaces(string:string) {
       string = string.replace(/([a-z])([A-Z])/g, '$1 $2');
@@ -44,20 +44,21 @@ export class Blocks extends Component {
       return string
     }
     
+    
     return (
           <Layout>
-            <Sider>
+            <Sider className='App-Side'>
               <Menu
                 mode="inline"
                 defaultSelectedKeys={['1']}
                 defaultOpenKeys={['sub1']}
                 style={{ height: '100%' }}
                 onClick={param => {
-                  this.setState({ selectedBlock: param.key })
+                  this.props.history.push('/block/' + param.key)
                 }}
                 onOpenChange={openKeys => {
                   if (openKeys.length) {
-                    this.setState({ selectedBlock: openKeys[openKeys.length - 1] })
+                    this.props.history.push('/block/' + openKeys[openKeys.length - 1])
                   }
                 }}
           >
@@ -75,7 +76,8 @@ export class Blocks extends Component {
               )}
               </Menu>
             </Sider>
-            <Content>
+        <Content>
+          
           {selectedBlock &&
             <Block
               name={selectedBlock}

@@ -62,7 +62,7 @@ export class Part extends React.Component<IProps, {}> {
         return true
     }
     loadParts() {
-        axios.get('http://localhost:3000/api/blocks/')
+        axios.get('/api/blocks/')
             .then(res => {
                 const blocks: TPartList = {}
                 const { data } = res
@@ -95,7 +95,7 @@ export class Part extends React.Component<IProps, {}> {
         const argsUrlParam = Object.keys(args).map(arg => arg + '=' + args[arg].value)
         let urlParams = '?' + modsUrlParam.concat(argsUrlParam).join('&')
         
-        axios.get('http://localhost:3000/api/blocks/' + this.state.name + '/' + urlParams)
+        axios.get('/api/blocks/' + this.state.name + '/' + urlParams)
             .then(res => {
                 const part = res.data
                 const selectedMods = Object.keys(part.mods).reduce((selected, type) =>

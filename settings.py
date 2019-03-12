@@ -3,8 +3,8 @@ import sys
 # KiCad path for skidl
 
 # KiCad Modules directory
-os.environ['KISYSMOD'] = '/Library/Application Support/kicad/modules'
-os.environ['KICAD_SYMBOL_DIR'] = '/Library/Application Support/kicad/library'
+os.environ['KISYSMOD'] = './kicad/modules'
+os.environ['KICAD_SYMBOL_DIR'] = './kicad/library'
 # Path where is libngspice.dylib placed
 os.environ['DYLD_LIBRARY_PATH'] = '/usr/local/Cellar/libngspice/28/lib/'
 

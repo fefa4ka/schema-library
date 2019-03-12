@@ -30,6 +30,16 @@
     margin-bottom: 8px;
 }
 
+
+.Block-Param {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    min-width: 45%;
+    max-width: 100%;
+    margin-left: 10px;
+    display: inline-block;
+}
 .Block-InlineParams {
     margin-left: -5px;
 }
@@ -44,6 +54,11 @@
     border-style: dashed;
 }
 
+.Block-Description {
+    font-family: Georgia;
+    padding-right: 40px;
+}
+
 .Block-Description table td, .Block-Description table th {
     padding: 4px;
 }
@@ -53,9 +68,9 @@
 }
 
 .Block-CodeExample {
-    font-size: 12px;
-    padding: 0 10px;
+    background: #f0f2f5;
 }
+
 .Block-TestAction {
     z-index: 10;
     position: absolute;

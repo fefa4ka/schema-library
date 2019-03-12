@@ -1,8 +1,6 @@
 import io
 from contextlib import redirect_stdout
 
-from skidl.tools.spice import node
-
 from bem import Block, u_ms
 
 try:
@@ -25,6 +23,7 @@ class Simulate:
         self.block = block
 
     def run(self, libs=libs):
+        from skidl.tools.spice import node
         # f = io.StringIO()
         # with redirect_stdout(f):
         circuit = builtins.default_circuit.generate_netlist(libs=libs) 
