@@ -77,6 +77,7 @@ const initialState = {
     example: '',
     files: [],
     simulationData: [],
+    simulationCase: {},
     probeData: [],
     showLabels: {},
     simulationStartTime: 0,
@@ -143,6 +144,14 @@ type State = {
     simulationData: {
         [name:string]: number
     }[],
+    simulationCase: {
+        [name: string]: {
+            x_field: string,
+            data: {
+                [name: string]: number
+            }[]
+        }
+    },
     probeLoading: boolean,
     probeData: {
         [name:string]: number
@@ -197,6 +206,7 @@ export class Block extends React.Component<IProps, {}> {
                     ? Object.keys(res.data[0]).filter(label => label !== 'time')
                     : []
                 
+                this.loadSimulationCases() 
                 
                 this.setState(({ showLabels }:State) => {
                     return {
@@ -211,6 +221,26 @@ export class Block extends React.Component<IProps, {}> {
                         simulationStopTime: simulationData.length ? simulationData[simulationData.length - 1].time : 0
                     }
                 })
+            })
+    }
+    loadSimulationCases() {
+        const { args, sources, load, } = this.state
+        
+        axios.post('/api/blocks/' + this.props.name + '/simulate/cases/',
+        {
+            mods: this.state.mods,
+            args: Object.keys(args).reduce((result: { [name:string]: string | number }, arg) => {
+                result[arg] = args[arg].value
+                
+                return result
+            }, {}),
+            sources,
+            load,
+        })
+            .then(res => {
+                const simulationCase = res.data
+                
+                this.setState({ simulationCase })
             })
     }
     loadProbes() {
@@ -436,7 +466,8 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
     }
     render() {
         const { mods } = this.props
-        const { simulationData } = this.state
+        const { simulationData, simulationCase} = this.state
+        const simulationCases = Object.keys(simulationCase)
         const description = this.state.description.join('\n\n')
         // const description = this.state.description.map((description, index) =>
         //         <Markdown
@@ -809,6 +840,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                             <Col span={12}>
                                 <Divider orientation="left">Simulation</Divider>
                                 <Chart
+                                    xAxisField='time'
                                     chartData={simulationData}
                                     showLabels={this.state.showLabels}
                                     xRefStart={this.state.simulationStartTime}
@@ -842,6 +874,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                     </Modal>
                                 </div>
                                 <Chart
+                                    xAxisField='time'
                                     chartData={this.state.probeData}
                                     showLabels={this.state.showLabels}
                                     xRefStart={this.state.simulationStartTime}
@@ -874,6 +907,26 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                 />
                             </Col>
                         </Row>
+
+                        
+                        {simulationCases.map(name => 
+                            <Row>
+                                <Col span={12}>
+                                <Divider orientation="left">{name}</Divider>
+                                </Col>
+                                <Col span={12}>
+                                    <Chart
+                                        xAxisField={simulationCase[name].x_field}
+                                        chartData={simulationCase[name].data}
+                                        showLabels={[]}
+                                        xRefStart={simulationCase[name].data[0][simulationCase[name].x_field]}
+                                        xRefStop={simulationCase[name].data[simulationCase[name].data.length - 1][simulationCase[name].x_field]}
+                                        onLegendClick={(e: any) => { }}
+                                    />
+                                </Col>
+                            </Row>
+                        )}
+                        
 
                         <Divider orientation="left">
                             Schematics

@@ -46,13 +46,13 @@ class Base(Block):
     def circuit(self):
         R = Resistor()
 
-        self.input = Net()
-        self.input_n = Net()
-        self.output = Net()
-        self.output_n = Net()
+        self.input = Net('DifferenceInputA')
+        self.input_n = Net('DifferenceInputB')
+        self.output = Net('DifferenceOutputA')
+        self.output_n = Net('DifferenceOutputB')
         self.gnd = Net()
-        self.v_ref = Net()
-        self.v_inv = Net()
+        self.v_ref = Net('DifferenceVref')
+        self.v_inv = Net('DifferenceVrefInvert')
 
         self.R_c = self.V_ref / 2 / self.I_quiescent
         self.R_e = 1000 @ u_Ohm

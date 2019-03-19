@@ -18,6 +18,7 @@ from bem.simulator import Simulate
 from probe.read import get_sigrok_samples
 from probe import get_arg_units, get_minimum_period
 from probe.source import JDS6600, simulation_sources
+from bem.tester import BuildTest
 
 try:
     import __builtin__ as builtins
@@ -85,30 +86,6 @@ def blocks():
     return blocks
 
 
-def get_arguments_values(Block, params):
-    arguments = Block.get_arguments(Block)
-    props = {}
-    for attr in arguments:
-        props[attr] = getattr(Block, attr)
-        if type(props[attr]) == list:
-            props[attr] = props[attr][0]
-        arg = params.get(attr, None)
-        if arg: 
-            if type(arg) == dict:
-                arg = arg['value']
-            
-            if type(props[attr]) in [int, float]:
-                props[attr] = float(arg)
-            elif type(props[attr]) == str:
-                props[attr] = arg
-            elif type(props[attr]) == list:
-                props[attr] = props[attr][0]
-            else:
-                props[attr]._value = float(arg)
-    
-    return props
-
-
 @app.route('/api/blocks/<name>/', methods=['GET'])
 def block(name):
     set_default_tool(KICAD) 
@@ -124,7 +101,7 @@ def block(name):
     def build():
         params = request.args
         Block = Build(name, **params).block
-        props = get_arguments_values(Block, params)
+        props = Block.parse_args(Block, params)
         
         Instance = Block(**props)
         
@@ -148,6 +125,7 @@ def block(name):
                 pins = [str(pin) for pin in net.get_pins()]
                 nets[net.name] = pins
         
+        Test = BuildTest(Block, **params)
         available = [{ 'id': part.id, 'model': part.model, 'fooptrint': part.footprint } for part in Instance.available_parts]
         params = {
             'name': Block.name,
@@ -160,8 +138,8 @@ def block(name):
             'files': Block.files,
             'parts': parts,
             'nets': nets,
-            'sources': params.get('sources', Block.test(Instance).sources()),
-            'load': params.get('load', Block.test(Instance).load()),
+            'sources': params.get('sources', Test.sources()),
+            'load': params.get('load', Test.load()),
             'devices': params.get('devices', Print.additional_devices(Instance)),
             'available': available
         }
@@ -175,19 +153,10 @@ def block(name):
 
 @app.route('/api/blocks/<name>/netlist/', methods=['POST'])
 def netlist(name):
-    # set_default_tool(KICAD) 
-    # builtins.DEBUG = False
     params = request.data
     
-    # scheme = Circuit()
-    # builtins.default_circuit.reset(init=True)
-    # del builtins.default_circuit
-    # builtins.default_circuit = scheme
-    # builtins.NC = scheme.NC
-    # scheme.backup_parts
-    
     Block = Build(name, **params['mods']).block
-    props = get_arguments_values(Block, params['args'])
+    props = Block.parse_args(Block, params['args'])
     kit = params.get('devices', [])
     
     netlist = Print(Block, props, kit).netlist()
@@ -196,113 +165,25 @@ def netlist(name):
 
 @app.route('/api/blocks/<name>/simulate/', methods=['POST'])
 def simulate(name):
-    set_default_tool(SPICE) 
-    builtins.DEBUG = True
-    builtins.default_circuit.reset(init=True)
-    del builtins.default_circuit
-    builtins.default_circuit = Circuit()
-    builtins.NC = builtins.default_circuit.NC  
+    params = request.data
+    Block = Build(name, **params['mods']).block
+    Test = BuildTest(Block, **params['mods'])
+    simulation = Test.simulate(params['args'])
 
-    def build():
-        gnd = Net('0')
-        gnd.fixed_name = True
-        
-        params = request.data
-        Block = Build(name, **params['mods']).block
-        props = get_arguments_values(Block, params['args'])
-        Instance = Block(**props)    
-        Instance.gnd += gnd
+    return simulation 
 
-        sources = params['sources']
-        series_sources = defaultdict(list)
-        series_sources_allready = []
-        
-        periods = []  # frequency, time, delay, duration
-        
-        # Get Series Source with same input
-        for source in params['sources']:
-            pins = source['pins'].keys()
-            hash_name = str(source['pins']['p']) + str(source['pins']['n'])
-        
-            for source_another_index, source_another in enumerate(params['sources']):
-                is_same_connection = True
-                for source_pin in pins:
-                    for index, pin in enumerate(source['pins'][source_pin]):
-                        
-                        if source_another['pins'][source_pin][index] != pin:
-                            is_same_connection = False
-                            break
-                
-                if is_same_connection and source_another_index not in series_sources_allready:
-                    series_sources_allready.append(source_another_index)
-                    series_sources[hash_name].append(source_another)
+@app.route('/api/blocks/<name>/simulate/cases/', methods=['POST'])
+def simulate_cases(name):
+    params = request.data
+    Block = Build(name, **params['mods']).block
+    Test = BuildTest(Block, **params['mods'])
 
-        
-        source_refs = []
-        for series in series_sources.keys():
-            last_source = None
+    cases = {}
+    for name in Test.cases():
+        case = getattr(Test, name)
+        cases[name] = case(params['args'])
 
-            for source in series_sources[series]:
-                part_name = source['name'].split('_')[0]
-                # part = get_part(part_name)
-                part = Build(part_name).spice
-                args = {}
-                for arg in source['args'].keys():
-                    if source['args'][arg]['value']:
-                        try: 
-                            args[arg] = float(source['args'][arg]['value']) @ get_arg_units(part, arg)
-                        except:
-                            try:
-                                args[arg] = float(source['args'][arg]['value'])
-                                if args[arg] == int(source['args'][arg]['value']):
-                                    args[arg] = int(args[arg])
-                            except:
-                                args[arg] = source['args'][arg]['value'] 
-
-                signal = Build(part_name).spice(ref='V' + source['name'], **args)
-                source_refs.append('V' + source['name'])
-
-                if not last_source:
-                    for pin in source['pins']['n']:
-                        signal['n'] += getattr(Instance, pin)
-                else:
-                    last_source['p'] += signal['n']
-
-                last_source = signal
-            
-            for pin in source['pins']['p']:
-                signal['p'] += getattr(Instance, pin)
-
-        load = params['load']
-        loads = []
-        for source in params['load']:
-            mods = {}
-            if source.get('mods', None):
-                mods = source['mods']
-
-            LoadBlock = Build(source['name'], **mods).block
-            args = get_arguments_values(LoadBlock, source['args'])
-            load = LoadBlock(**args)
-            loads.append(load)
-            
-            for source_pin in source['pins'].keys():
-                for pin in source['pins'][source_pin]:
-                    load_pin = getattr(load, source_pin)
-                    load_pin += getattr(Instance, pin)
-        
-        period = get_minimum_period(params['sources'])
-        end_time = period * 10
-        step_time = period / 50
-
-        # spice_libs = list(set([os.path.dirname(file) for file in glob.glob('./blocks/*/*/spice/*.lib')]))
-        simulated_data = Simulate(Instance).pins(end_time=end_time @ u_s, step_time=step_time @ u_s, current_nodes=source_refs)
-        
-        return simulated_data
-    
-    simulated_data = build()
-
-    return simulated_data
-
+    return cases  
 
 @app.route('/api/circuit/', methods=['POST'])
 def circuit():

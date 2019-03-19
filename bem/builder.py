@@ -8,7 +8,6 @@ except ImportError:
 
 from settings import BLOCKS_PATH
 from .base import Block as BaseBlock
-from .tester import Test as BaseTest
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,6 @@ class Build:
     props = {}
     models = {}
     files = []
-    tests = []
 
     def __init__(self, name, debug=None, *args, **kwargs):
         self.name = name
@@ -28,7 +26,6 @@ class Build:
         self.props = {}
         self.models = []
         self.files = []
-        self.tests = []
         
         self.debug = debug
 
@@ -37,18 +34,6 @@ class Build:
         base_file = Path(BLOCKS_PATH) / block_dir / ('__init__.py')
         self.base = base_file.exists() and importlib.import_module(BLOCKS_PATH + '.' + self.name).Base        
         
-        base_test = Path(BLOCKS_PATH) / block_dir / ('test.py')
-        BaseTest = base_test.exists() and importlib.import_module(BLOCKS_PATH + '.' + self.name + '.test')
-        if BaseTest:
-            self.tests.append(BaseTest.Case)
-        elif self.name.find('.') != -1:
-            parent = self.name.split('.')[0]
-            base_test = Path(BLOCKS_PATH) / parent / ('test.py')
-            BaseTest = base_test.exists() and importlib.import_module(BLOCKS_PATH + '.' + parent + '.test')
-            if BaseTest:
-                self.tests.append(BaseTest.Case)
-
-
         if self.base:
             self.files.append(str(base_file))
 
@@ -73,11 +58,6 @@ class Build:
                         self.files.append(str(module_file))
                         Module = importlib.import_module(BLOCKS_PATH + '.' + self.name + '._' + mod + '.' + value)
                         self.models.append(Module.Modificator)
-
-                        test_file = Path(BLOCKS_PATH) / block_dir / ('_' + mod) / (value + '_test.py')
-                        if test_file.exists():
-                            Test = importlib.import_module(BLOCKS_PATH + '.' + self.name + '._' + mod + '.' + value + '_test')
-                            self.tests.append(Test.Case) 
                     else:
                         self.props[mod] = value
 
@@ -97,20 +77,12 @@ class Build:
         else:
             Models = (BaseBlock, )
 
-        if len(self.tests):
-            Tests = self.tests
-            # Tests.reverse()
-            Tests = tuple(set(self.tests))
-        else:
-            Tests = (BaseTest,)
-            
         Block = type(self.name,
                     Models,
                     {
                         'name': self.name,
                         'mods': self.mods,
                         'props': self.props,
-                        'test': type(self.name + 'Test', Tests, {}),
                         'DEBUG': self.debug if self.debug != None else builtins.DEBUG,
                         'files': self.files
                     })

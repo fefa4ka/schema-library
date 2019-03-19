@@ -2,9 +2,7 @@ import * as React from 'react'
 import { IProps } from './index'
 
 import { cn } from '@bem-react/classname'
-import { Divider, Tag, Button, Input, TreeSelect} from 'antd'
-import { Icon, Tabs, Row, Col, Modal } from 'antd'
-const { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceArea } = require('recharts')
+const { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } = require('recharts')
 import './Chart.css'
 
 const cnChart = cn('Chart')
@@ -65,11 +63,10 @@ export class Chart extends React.Component<IProps, {}> {
     }
     
     render() {
-        const { showLabels, hoverLabels } = this.state
-        const { chartData } = this.props
+        const { chartData, xAxisField } = this.props
 
         const chartLabels = chartData.length > 0
-        ? Object.keys(chartData[0]).filter(label => label !== 'time').map(label => {
+        ? Object.keys(chartData[0]).filter(label => label !== xAxisField).map(label => {
             return {
                 name: label,
                 color: label.includes('I_')
@@ -82,27 +79,26 @@ export class Chart extends React.Component<IProps, {}> {
             }
         })
         : []
-// console.log({this.props.xRefStart,- {this.props.xRefStop})
     
        return  <ResponsiveContainer width='100%' height='auto' aspect={2.5/1.0} className={cnChart()}>
             <LineChart data={chartData}>
-               <Legend verticalAlign='top' onClick={this.props.onLegendClick}/>
-               <XAxis dataKey="time" allowDataOverflow={true} domain={[this.props.xRefStart, this.props.xRefStop]} type='number'/>
+                <Legend verticalAlign='top' onClick={this.props.onLegendClick}/>
+                <XAxis dataKey={xAxisField} allowDataOverflow={true} domain={[this.props.xRefStart, this.props.xRefStop]} type='number'/>
                 <YAxis yAxisId="left" label='Volt' />
                 <YAxis yAxisId="right" label='Ampere' orientation="right" />
                 <CartesianGrid strokeDasharray="3 3"/>
                 <Tooltip />
-               {chartLabels.map(label =>
-                   <Line
-                       type="monotone"
-                       strokeOpacity={ this.props.showLabels[label.name] ? 1 : 0.1}
-                       key={label.name}
-                       dataKey={label.name}
-                       stroke={label.color}
-                       dot={false}
-                       unit={label.unit}
-                       yAxisId={label.axis}
-                       animationDuration={300}
+                {chartLabels.map(label =>
+                    <Line
+                        type="monotone"
+                        strokeOpacity={ this.props.showLabels[label.name] ? 1 : 0.1}
+                        key={label.name}
+                        dataKey={label.name}
+                        stroke={label.color}
+                        dot={false}
+                        unit={label.unit}
+                        yAxisId={label.axis}
+                        animationDuration={300}
                     />)}
            </LineChart>
         </ResponsiveContainer>

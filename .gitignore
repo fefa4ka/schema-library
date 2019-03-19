@@ -1,4 +1,16 @@
 # Byte-compiled / optimized / DLL files
+_clone/
+_api/
+skidl/
+spice/
+kicad/
+.vscode
+server/public
+ui/tmp
+yarn.lock
+*_lib_sklib.py
+*.erc
+
 __pycache__/
 *.py[cod]
 *$py.class

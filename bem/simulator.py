@@ -1,7 +1,13 @@
 import io
 from contextlib import redirect_stdout
 
-from bem import Block, u_ms
+from PySpice.Unit import u_ms, u_s
+from skidl import (KICAD, SPICE, Circuit, Net, search, set_default_tool,
+                   subcircuit)
+
+from settings import default_temperature
+
+from . import Block, u
 
 try:
     import __builtin__ as builtins
@@ -13,35 +19,34 @@ libs = ['./spice/']
 
 class Simulate:
     block = None
+    circuit = None
     simulation = None
     node = None
 
     SIMULATE = False
     spice_params = {}
 
-    def __init__(self, block):
+    def __init__(self, block, libs=libs):
         self.block = block
-
-    def run(self, libs=libs):
-        from skidl.tools.spice import node
-        # f = io.StringIO()
-        # with redirect_stdout(f):
-        circuit = builtins.default_circuit.generate_netlist(libs=libs) 
-        self.simulation = circuit.simulator()
-
-        # out = f.getvalue()
-        print(circuit)
         
+        from skidl.tools.spice import node
+        self.circuit = builtins.default_circuit.generate_netlist(libs=libs)
         self.node = node
 
+    def measures(self, analysis):
+        index_field = None
+        index = None
 
-    def pins(self, current_nodes=[], libs=libs, step_time=0.01 @ u_ms, end_time=200 @ u_ms):
-        self.run(libs)
+        if hasattr(analysis, 'time'):
+            index_field = 'time'
+            index = analysis.time
+        else:
+            index_field = 'sweep'
+            index = analysis.sweep
 
-        waveforms = self.simulation.transient(step_time=step_time, end_time=end_time) 
-        time = waveforms.time 
-        
         pins = self.block.get_pins().keys()
+        
+        current_branches = analysis.branches.keys()
     
         voltage = {}
         for pin in pins:
@@ -49,19 +54,18 @@ class Simulate:
                 net = getattr(self.block, pin)
                 if net and pin != 'gnd' and net != self.block.gnd:
                     node = self.node(net)
-                    voltage[pin] = waveforms[node]
+                    voltage[pin] = analysis[node]
             except:
                 pass
 
         current = {}
-        for node in current_nodes:
-            current[node] = -waveforms[node]
-            
+        for branch in current_branches:
+            current[branch] = -analysis[branch]
+
         data = []
-        errors = []
-        for index, time in enumerate(time):
+        for index, entity in enumerate(index):
             entry = {
-                'time': time.value * time.scale
+                index_field: entity.value * entity.scale
             }
             
             for key in voltage.keys():
@@ -70,10 +74,43 @@ class Simulate:
             for key in current.keys():
                 entry['I_' + key] = current[key][index].scale * current[key][index].value
 
-            error = self.block.test(self.block).cases(entry)
-            if error: 
-                entry['error'] = error
-    
             data.append(entry)
 
         return data
+
+    def transient(self, step_time=0.01 @ u_ms, end_time=200 @ u_ms):
+        self.simulation = self.circuit.simulator()
+        print(self.circuit)
+        analysis = self.simulation.transient(step_time=step_time, end_time=end_time) 
+       
+        return self.measures(analysis) 
+
+    def dc(self, params, temperature=default_temperature):
+        pins = self.block.get_pins().keys()
+        measures = {}
+        for temp in temperature:
+            simulation = self.circuit.simulator(temperature=temp, nominal_temperature=temp)
+
+            analysis = simulation.dc(**params)
+            measures[u(temp)] = self.measures(analysis)
+
+        return measures
+
+    def ac(self, params, temperature=default_temperature):
+        pins = self.block.get_pins().keys()
+        measures = {}
+        for temp in temperature:
+            simulation = self.circuit.simulator(temperature=temp, nominal_temperature=temp)
+            analysis = simulation.ac(**params)
+            measures[temp] = analysis
+     
+        return measures
+
+
+def set_spice_enviroment():
+    set_default_tool(SPICE) 
+    builtins.DEBUG = True
+    builtins.default_circuit.reset(init=True)
+    del builtins.default_circuit
+    builtins.default_circuit = Circuit()
+    builtins.NC = builtins.default_circuit.NC  

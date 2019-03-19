@@ -97,7 +97,7 @@ class Base(Block):
         self.emitter = emitter
         self.gnd = gnd
         
-        self.circuit(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     
     @property

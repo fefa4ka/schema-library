@@ -50,6 +50,7 @@ class Block:
             I -- The current through a device
             Load -- Load in Ohm, A or W
         """
+   
 
         for prop in kwargs.keys():
             if hasattr(self, prop):
@@ -57,7 +58,6 @@ class Block:
        
         if circuit:
             self.circuit()
-
 
     # Title and Description
     @property
@@ -274,6 +274,29 @@ class Block:
                 }
         
         return params
+
+    def parse_args(self, args):
+        arguments = self.get_arguments(self)
+        props = {}
+        for attr in arguments:
+            props[attr] = getattr(self, attr)
+            if type(props[attr]) == list:
+                props[attr] = props[attr][0]
+            arg = args.get(attr, None)
+            if arg: 
+                if type(arg) == dict:
+                    arg = arg['value']
+                
+                if type(props[attr]) in [int, float]:
+                    props[attr] = float(arg)
+                elif type(props[attr]) == str:
+                    props[attr] = arg
+                elif type(props[attr]) == list:
+                    props[attr] = props[attr][0]
+                else:
+                    props[attr]._value = float(arg)
+        
+        return props
 
     def get_pins(self):
         pins = {}
