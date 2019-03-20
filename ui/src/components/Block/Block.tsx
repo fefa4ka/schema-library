@@ -4,7 +4,6 @@ import { cn } from '@bem-react/classname'
 import axios from 'axios'
 import { Slider, Divider, Tag, Button, Input, TreeSelect,} from 'antd'
 import { Icon, Tabs, Row, Col, Modal, Tooltip } from 'antd'
-import Markdown from 'react-markdown'
 import { Source, TSource } from '../Source'
 import { Device, TDevice } from '../Device'
 import { Probe, TProbe } from '../Probe'
@@ -13,10 +12,11 @@ const TabPane = Tabs.TabPane;
 import { UnitInput } from '../UnitInput'
 import { Diagram } from './Diagram'
 import { Code } from '../Code'
-import { Chart } from '../Chart'
 const TreeNode = TreeSelect.TreeNode;
 import {UnControlled as CodeMirror} from 'react-codemirror2'
 import { MathMarkdown } from './Mathdown'
+const { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ReferenceLine} = require('recharts')
+const ChartTooltip = require('recharts').Tooltip
 
 import './Block.css'
 require('codemirror/lib/codemirror.css')
@@ -84,6 +84,13 @@ const initialState = {
     simulationStopTime: 0.01
 }
 
+type TSimulationCase = {
+    field?: string,
+    label: string,
+    unit?: string,
+    scale?: string,
+    domain?: number[]
+}
 
 type State = {
     name: string,
@@ -146,10 +153,12 @@ type State = {
     }[],
     simulationCase: {
         [name: string]: {
-            x_field: string,
+            x: TSimulationCase,
+            y: TSimulationCase,
             data: {
                 [name: string]: number
-            }[]
+            }[],
+            description: string
         }
     },
     probeLoading: boolean,
@@ -574,27 +583,6 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
         //     '21': 'Z',
         //     '24': 'Y'
         // }
-        const siPrefix:{[name:string]: string} = {
-            '-24': 'y',
-            '-21': 'z',
-            '-18': 'a',
-            '-15': 'f',
-            '-12': 'p',
-            '-9': 'n',
-            '-6': 'μ',
-            '-3': 'm',
-            '0': '',
-            '1': 'da',
-            '2': 'h',
-            '3': 'k',
-            '6': 'M',
-            '9': 'G',
-            '12': 'T',
-            '15': 'P',
-            '18': 'E',
-            '21': 'Z',
-            '24': 'Y'
-        }
 
         for (let step = 0; step < simulationMaxTime; step = step + simulationMaxTime / 5) {
             let exponent = simulationTimeExponent
@@ -839,17 +827,16 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                         <Row>
                             <Col span={12}>
                                 <Divider orientation="left">Simulation</Divider>
-                                <Chart
-                                    xAxisField='time'
-                                    chartData={simulationData}
+                                <TransientChart 
+                                    data={simulationData}
                                     showLabels={this.state.showLabels}
-                                    xRefStart={this.state.simulationStartTime}
-                                    xRefStop={this.state.simulationStopTime}
+                                    startTime={this.state.simulationStartTime}
+                                    stopTime={this.state.simulationStopTime}
                                     onLegendClick={(e: any) => this.setState(({ showLabels }:State) => {
                                         showLabels[e.dataKey] = !showLabels[e.dataKey]
                     
                                         return showLabels
-                                    })}
+                                    })} 
                                 />
                             </Col>
                             <Col span={12}>
@@ -873,17 +860,16 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                             
                                     </Modal>
                                 </div>
-                                <Chart
-                                    xAxisField='time'
-                                    chartData={this.state.probeData}
+                                <TransientChart 
+                                    data={this.state.probeData}
                                     showLabels={this.state.showLabels}
-                                    xRefStart={this.state.simulationStartTime}
-                                    xRefStop={this.state.simulationStopTime}
+                                    startTime={this.state.simulationStartTime}
+                                    stopTime={this.state.simulationStopTime}
                                     onLegendClick={(e: any) => this.setState(({ showLabels }:State) => {
                                         showLabels[e.dataKey] = !showLabels[e.dataKey]
                     
                                         return showLabels
-                                    })}
+                                    })} 
                                 />
                             </Col>
                         </Row>
@@ -908,26 +894,6 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                             </Col>
                         </Row>
 
-                        
-                        {simulationCases.map(name => 
-                            <Row>
-                                <Col span={12}>
-                                <Divider orientation="left">{name}</Divider>
-                                </Col>
-                                <Col span={12}>
-                                    <Chart
-                                        xAxisField={simulationCase[name].x_field}
-                                        chartData={simulationCase[name].data}
-                                        showLabels={[]}
-                                        xRefStart={simulationCase[name].data[0][simulationCase[name].x_field]}
-                                        xRefStop={simulationCase[name].data[simulationCase[name].data.length - 1][simulationCase[name].x_field]}
-                                        onLegendClick={(e: any) => { }}
-                                    />
-                                </Col>
-                            </Row>
-                        )}
-                        
-
                         <Divider orientation="left">
                             Schematics
                         </Divider>
@@ -939,6 +905,26 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                             load={this.state.load}
                             parts={this.state.parts}
                         />
+
+                    
+                        {simulationCases.map(name => 
+                            <>
+                                <Divider orientation="left">{insertSpaces(name)}</Divider>
+                                <Row>
+                                    <Col span={14} className={cnBlock('Description')}>
+                                        <MathMarkdown value={simulationCase[name].description}/>
+                                    </Col>
+                                    <Col span={10}>
+                                        <DiscreteChart
+                                            {...simulationCase[name]}
+                                        />
+                                    </Col>
+                                </Row>
+                            </>
+                        )}
+                        
+
+        
                         
                     </TabPane>
                     <TabPane tab="Code" key="2" className={cnBlock('Code')}>
@@ -959,3 +945,202 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
         )
     }
 }
+
+const siPrefix:{[name:string]: string} = {
+        '-24': 'y',
+        '-21': 'z',
+        '-18': 'a',
+        '-15': 'f',
+        '-12': 'p',
+        '-9': 'n',
+        '-6': 'μ',
+        '-3': 'm',
+        '-2': 'c',
+        '-1': 'd',
+        '0': '',
+        '1': 'da',
+        '2': 'h',
+        '3': 'k',
+        '6': 'M',
+        '9': 'G',
+        '12': 'T',
+        '15': 'P',
+        '18': 'E',
+        '21': 'Z',
+        '24': 'Y'
+    }
+
+// const siPrefix:{[name:string]: string} = {
+//     '-24': 'y',
+//     '-21': 'z',
+//     '-18': 'a',
+//     '-15': 'f',
+//     '-12': 'p',
+//     '-9': 'n',
+//     '-6': 'μ',
+//     '-3': 'm',
+//     '0': '',
+//     '1': 'da',
+//     '2': 'h',
+//     '3': 'k',
+//     '6': 'M',
+//     '9': 'G',
+//     '12': 'T',
+//     '15': 'P',
+//     '18': 'E',
+//     '21': 'Z',
+//     '24': 'Y'
+// }
+
+function TransientChart(props: any) {
+    const { data, showLabels, startTime, stopTime, onLegendClick } = props
+    const chartLabels = data.length > 0
+        ? Object.keys(data[0]).filter(label => label !== 'time').map(label => {
+            return {
+                name: label,
+                color: label.includes('I_')
+                    ? 'red'
+                    : label.includes('input')
+                        ? "#1890ff"
+                        : "#000",
+                unit: label.includes('I_') ? 'A' : 'V',
+                axis: label.includes('I_') ? 'right' : 'left'
+            }
+        })
+        : []
+    
+    return <ResponsiveContainer width='100%' height='auto' aspect={2/1.0} className={cnBlock('TransientChart')}>
+        <LineChart data={data}>
+            <Legend
+                verticalAlign='top'
+                onClick={onLegendClick}
+                wrapperStyle={{
+                    paddingBottom: "20px"
+                }}
+            />
+            <XAxis
+                dataKey={'time'}
+                allowDataOverflow={true}
+                domain={[startTime, stopTime]}
+                label='Time'
+                type='number'
+                tickFormatter={(val: number) => canonise(val) + 's'}
+            />
+            <YAxis
+                yAxisId="left"
+                label='Volt'
+                tickFormatter={(val: number) => canonise(val) + 'V'}
+            />
+            <YAxis
+                yAxisId="right"
+                label='Ampere'
+                orientation="right"
+                tickFormatter={(val: number) => canonise(val) + 'A'}
+            />
+            <CartesianGrid strokeDasharrary="3 3"/>
+            <ChartTooltip
+                formatter={(value: number) => canonise(value)}
+                labelFormatter={(value: number) => canonise(value) + 's'}
+            />
+            {chartLabels.map(label =>
+                <Line
+                    type="monotone"
+                    strokeOpacity={ showLabels[label.name] ? 1 : 0.1}
+                    key={label.name}
+                    dataKey={label.name}
+                    stroke={label.color}
+                    dot={false}
+                    unit={label.unit}
+                    yAxisId={label.axis}
+                    animationDuration={300}
+                />)}
+        </LineChart>
+    </ResponsiveContainer>
+}
+
+const { scaleSqrt, scaleLinear } =  require('d3-scale')
+
+
+function DiscreteChart(props: any) {
+    const { data, x, y } = props
+
+    const chartLabels = data.length > 0
+        ? Object.keys(data[0]).filter(label => label !== x.field).map(label => {
+            return {
+                name: label,
+                color: "#" + ((1<<24) * Math.random() | 0).toString(16)
+            }
+        })
+        : []
+    const domainStart = data[0][x.field]
+    const domainEnd = data[data.length - 1][x.field]
+
+    return <ResponsiveContainer width='100%' height='auto' aspect={1.0/1.0} className={cnBlock('DiscreteChart')}>
+        <LineChart data={data}>
+            <Legend 
+                verticalAlign='top'
+                wrapperStyle={{
+                    paddingBottom: "20px"
+                }}
+            />
+            <XAxis
+                dataKey={x.field}
+                allowDataOverflow={true}
+                label={x.label}
+                domain={[domainStart, domainEnd]}
+                tickFormatter={(val: number) => canonise(val) + x.unit}
+                type='number'
+            />
+            <YAxis
+                label={y.label}
+                tickFormatter={(val: number) => canonise(val) + y.unit}
+                type='number'
+                domain={y.domain || ['auto', 'auto']}
+                scale={y.scale || 'auto'}
+            />
+            <CartesianGrid strokeDasharray="3 3"/>
+            <ChartTooltip
+                formatter={(value: number) => canonise(value)}
+                labelFormatter={(value: number) => canonise(value) + x.unit}
+            />
+            <ReferenceLine x={0} stroke="black"/>
+            <ReferenceLine y={0} stroke="black" />
+            {chartLabels.map(label =>
+                <Line
+                    type="monotone"
+                    key={label.name}
+                    dataKey={label.name}
+                    stroke={label.color}
+                    dot={false}
+                    unit={x.unit}
+                    animationDuration={300}
+                />)}
+        </LineChart>
+    </ResponsiveContainer>
+}
+
+
+function canonise(value:number){
+    const absoluteValue = Math.abs(value)
+    const log = Math.log(absoluteValue) / Math.log(1000)
+    let power = Math.floor(log)
+    let fixedValue:string = value.toFixed(2)
+    if(value !== 0) {
+        power *= 3
+        
+        if (power !== 0) {
+            value = value / 10 ** power
+        }
+        
+        if (value.toFixed(2) != Math.round(value).toFixed(2)) {
+            fixedValue = value.toFixed(1)
+        } else {
+            fixedValue = Math.round(value).toString()
+        }
+    } else {
+        fixedValue = '0'
+    }
+
+    return `${fixedValue} ${siPrefix[power] || ''}`
+}
+

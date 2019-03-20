@@ -182,6 +182,7 @@ def simulate_cases(name):
     for name in Test.cases():
         case = getattr(Test, name)
         cases[name] = case(params['args'])
+        cases[name]['description'] = Test.description(name)
 
     return cases  
 

@@ -3,15 +3,23 @@ from skidl import Part, TEMPLATE
 
 
 class Base(Block):
+    """
+    A diode is a two-terminal electronic component that conducts current primarily in one direction (asymmetric conductance); it has low (ideally zero) resistance in one direction, and high (ideally infinite) resistance in the other.
+
+    The most common function of a diode is to allow an electric current to pass in one direction (called the diode's forward direction), while blocking it in the opposite direction (the reverse direction). As such, the diode can be viewed as an electronic version of a check valve. This unidirectional behavior is called rectification, and is used to convert alternating current (ac) to direct current (dc). Forms of rectifiers, diodes can be used for such tasks as extracting modulation from radio signals in radio receivers.
+
+    However, diodes can have more complicated behavior than this simple on–off action, because of their nonlinear current-voltage characteristics. Semiconductor diodes begin conducting electricity only if a certain threshold voltage or cut-in voltage is present in the forward direction (a state in which the diode is said to be forward-biased). 
+
+    """
     props = {
         'type': ['generic', 'zener', 'shockley', 'led', 'photo']
     }
     
     V_in = 5 @ u_V
-    I_in = 0.5 @ u_A
-    def __init__(self, V_in=None, I_in=None, *args, **kwargs):
+    
+    def __init__(self, V_in=None, Load=None, *args, **kwargs):
         self.V_in = V_in or self.V_in
-        self.I_in = I_in or self.I_in
+        self.Load = Load
 
         if not self.props.get('type', None):
             self.props['type'] = 'generic'

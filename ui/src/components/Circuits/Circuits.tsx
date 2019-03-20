@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { Code } from '../Code'
 import { Row, Col, Layout, Menu } from 'antd';
-import { Chart } from '../Chart'
 import { Slider, Divider } from 'antd'
 import axios from 'axios'
 
@@ -188,7 +187,7 @@ export class Circuits extends Component {
               onChange={(value:string) => this.setState({ code: value }, this.loadSimulation)}  
             />
                 <Divider orientation="left">Waveforms</Divider>
-                        
+{/*                         
                 <Chart
                     chartData={chartData}
                     showLabels={this.state.showLabels}
@@ -199,7 +198,7 @@ export class Circuits extends Component {
     
                         return showLabels
                     })}
-                />
+                /> */}
                 <Row>
                     <Col push={1} span={22}>
                         <Slider

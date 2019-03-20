@@ -34,6 +34,11 @@ class Test:
         
         return cases
 
+    def description(self, method):
+        description = getattr(self, method).__doc__.strip()
+        
+        return description
+
     # Signal source configuration
     _sources = None
     
@@ -153,7 +158,6 @@ class Test:
         
         
         return simulation
-
 
 def BuildTest(Block, *args, **kwargs):
         name = Block.name

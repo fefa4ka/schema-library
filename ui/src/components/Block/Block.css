@@ -115,3 +115,13 @@
     border-color: #fff;
     background: #fff;
 }
+
+
+.Block-TransientChart .recharts-legend-item {
+    cursor: pointer;
+}
+
+.Block-TransientChart .recharts-legend-item:hover {
+    font-weight: bold;
+    cursor: pointer;
+}

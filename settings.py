@@ -40,7 +40,7 @@ manage = {
 # Available parts
 from PySpice.Unit import u_pF, u_V, u_uF, u_Ohm, u_kOhm, u_MHz, u_mA, u_mW, u_Degree
 
-default_temperature = [-30, -25, -20, -10, 0, 10, 20, 25, 30] @ u_Degree
+default_temperature = [-30, 0, 25] @ u_Degree
 params_tolerance = 0.1
 test_sources =[{
     'name': 'SINEV',

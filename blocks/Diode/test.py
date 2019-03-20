@@ -21,12 +21,12 @@ class Case(Test):
                     'n': ['gnd']
                 }
         }]
-    
-    def VoltAmpereByTemperature(self, args, temperature=None):
+
+    def characteristics(self, args, temperature, voltage_sweep):
         self._sources = self.dc_source()
         self.circuit(args)
         
-        simulations = Simulate(self.block).dc({ 'VV': slice(-2, 5, .01) })
+        simulations = Simulate(self.block).dc({ 'VV': voltage_sweep })
         self._sources = None
         
         
@@ -42,10 +42,55 @@ class Case(Test):
 
         sweep.sort()
 
+        return [chart[index] for index in sweep] 
+
+
+    def ForwardCurrentVersusForwardVoltage(self, args, temperature=None):
+        """
+            The voltage drop across a forward-biased diode varies only a little with the current, and is a function of temperature; this effect can be used as a temperature sensor or as a voltage reference. 
+        """
+        voltage_sweep = slice(0, 2, .01)
+        data = self.characteristics(args, temperature, voltage_sweep)
+
         return {
-            'x_field': 'V_input',
-            'data': [chart[index] for index in sweep]
+            'x': {
+                'field': 'V_input',
+                'label': 'Volt',
+                'unit': 'V'
+            },
+            'y': {
+                'label': 'Current',
+                'unit': 'A',
+                'scale': 'sqrt',
+                'domain': [-1e-3, 1e-3]
+            },
+            'data': data
         }
 
+    def ReverseCurrentVersusReverseVoltage(self, args, temperature=None):
+        """
+            Also, diodes' high resistance to current flowing in the reverse direction suddenly drops to a low resistance when the reverse voltage across the diode reaches a value called the breakdown voltage..
+        """
+        
+        voltage_sweep = slice(-2, 0.1, .01)
+        data = self.characteristics(args, temperature, voltage_sweep) 
+
+        return {
+            'x': {
+                'field': 'V_input',
+                'label': 'Volt',
+                'unit': 'V'
+            },
+            'y': {
+                'label': 'Current',
+                'unit': 'A',
+                'scale': 'sqrt',
+                'domain': [-1e-8, 0]
+            },
+            'data': data
+        }
+
+
+        
 
         
