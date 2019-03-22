@@ -64,6 +64,7 @@ export class Part extends React.Component<IProps, {}> {
 
     componentWillMount() {
         this.loadParts()
+        this.loadSource(this.props.source)
 
         return true
     }

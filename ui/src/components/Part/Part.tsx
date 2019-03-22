@@ -58,6 +58,7 @@ export class Part extends React.Component<IProps, {}> {
     componentWillMount() {
         this.loadParts()
         this.state.name && this.loadPart()
+        this.loadSource(this.props.source)
 
         return true
     }
@@ -197,7 +198,6 @@ export class Part extends React.Component<IProps, {}> {
             const value = isExists
                 ? args[name].value
                 : 0
-   
 
             return <UnitInput
                 key={name}

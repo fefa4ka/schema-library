@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { IProps } from './index'
+import { IProps, siPrefix, canonise } from './index'
 import { cn } from '@bem-react/classname'
 import { Input, Select, Tooltip } from 'antd'
 import Markdown from 'react-markdown'
@@ -17,7 +17,8 @@ type State = {
     exponenta: number,
     value: string | number
 }
-  
+
+
 export class UnitInput extends React.Component<IProps, {}> {
     state: State = {
         ...initialState,

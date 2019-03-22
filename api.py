@@ -441,7 +441,7 @@ def get_part_params(name):
     Block = Build(name, **params).block
     
     return {
-        'spice': Block.spice_params,
+        'spice': Block.spice_params if hasattr(Block, 'spice_params') else {},
         'part': {**Block.get_arguments(Block), **Block.get_params(Block)},
         'props': Build(name).base and Build(name).base.props
     }

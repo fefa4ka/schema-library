@@ -12,7 +12,7 @@ from skidl.NetPinList import NetPinList
 from .model import Part as PartModel
 from .model import Param, Mod, Prop
 from .util import u, is_tolerated, label_prepare
-from settings import BLOCKS_PATH, params_tolerance, parts
+from settings import BLOCKS_PATH, params_tolerance
 
 logger = logging.getLogger(__name__)
 # logger = logging.getLogger('peewee')

@@ -67,7 +67,7 @@
     margin-bottom: 10px;
 }
 
-.Block-CodeExample {
+.Block-CodeExample .CodeMirror { 
     background: #f0f2f5;
 }
 

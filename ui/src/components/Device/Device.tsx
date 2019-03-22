@@ -45,7 +45,9 @@ export class Device extends React.Component<IProps, {}> {
             ? this.props.device.index 
             : -1
     }
-
+    componentWillMount() {
+        this.loadDevice(this.props.device) 
+    }
     getCurrentDevice() {
         const device = this.state.device
 

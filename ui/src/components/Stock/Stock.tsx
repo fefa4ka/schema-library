@@ -4,7 +4,7 @@ import { Row, Col, Layout, Menu, Table, Button, Modal, Divider, Form, Icon, Inpu
 import axios from 'axios'
 import { Select, Tooltip, TreeSelect } from 'antd'
 import { cn } from '@bem-react/classname'
-import { UnitInput } from '../UnitInput'
+import { BlocksMenu, insertSpaces } from '../Blocks/Blocks'
 import './Stock.css'
 
 const TreeNode = TreeSelect.TreeNode
@@ -39,16 +39,6 @@ type State = {
 
 const cnStock = cn('Stock')
  
-function insertSpaces(string:string) {
-  string = string.replace(/([a-z])([A-Z])/g, '$1 $2')
-  string = string.replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
-
-  return string
-}
-
-function hasErrors(fieldsError:any) {
-    return Object.keys(fieldsError).some(field => fieldsError[field])
-}  
 const initFormState = {
   selectedBlock: '',
   selectedBlockProps: {},
@@ -95,20 +85,24 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
   state: FormState = initFormState
   canvasRef = React.createRef<HTMLCanvasElement>()
   kicadviewer: any = null
-  
+  componentWillMount() {
+    this.loadStockPart()
+  }
+
   componentDidMount() {
     let options = {
       grid: 1.27
     }
     this.kicadviewer = new KiCad(this.canvasRef.current, options)
-
   }
 
   componentDidUpdate(prevProps: any) {
-    
-
     if (this.props.data.id != prevProps.data.id) {
-      const { data } = this.props
+      this.loadStockPart()
+    }
+  }
+  loadStockPart() {
+    const { data } = this.props
       const partData = this.props.data.model && {
         ...this.props.data,
         ...this.props.data.stock[0] || {}
@@ -124,8 +118,6 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
         spice: data.spice,
         spiceParams: data.spice_params
       }, () => this.loadBlock(partData) )   
-       
-    }
   }
   
   loadBlock(partData: any = {}) {
@@ -149,7 +141,6 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
           return params
         }, {})
         this.setState({ params: part, spiceAttrs: spice, paramsValue, selectedBlockProps: props }, () => {
-          
           const params = Object.keys(this.state.paramsValue).reduce((params:any, name) => {
             params[`params[${name}]`] = this.state.paramsValue[name]
 
@@ -190,29 +181,26 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
     const mods:any = this.props.blocks[this.state.selectedBlock]
     const props = this.state.selectedBlockProps
     const footprints: any = this.state.footprints
-    
+
     const {
       getFieldDecorator, getFieldsError, getFieldError, isFieldTouched, setFieldsValue, getFieldValue
     } = this.props.form
 
     const { spiceAttrs }= this.state
-
-      
     const params = this.state.params || getFieldValue('params') || {}
+
     const attributes = Object.keys(params).map(name => {
       const args = params
       const isExists = args.hasOwnProperty(name)
 
       let suffix = ''
-     let  value = this.state.paramsValue ? this.state.paramsValue[name] : []
-      if (isExists && args[name] && args[name].unit) {
+      let value = this.state.paramsValue ? this.state.paramsValue[name] : []
+        if (isExists && args[name] && args[name].unit) {
         if (isExists && args[name].unit.name === 'network') {
           return null
         }
 
         suffix =  args[name].unit.suffix
-       
-
       }
       if(value === '') {
         value = undefined
@@ -247,13 +235,19 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
       const suffix = isExists
           ? args[name].unit.suffix || 'Number'
           : 'Number'
-
-      return <Tooltip title={<span>{this.state.spiceParams && this.state.spiceParams[name] + ' ' + suffix}<br />{args[name].description + ` (${suffix})`}</span>} key={name}><Button type='dashed' onClick={() => this.addToSpiceModel(name)}><span>{name[0]}<sub>{name.slice(1)}</sub></span></Button></Tooltip>
+      const label = <span>{name[0]}<sub>{name.slice(1)}</sub></span>
+      
+      return (<Tooltip
+        title={<span>{args[name].description + ` (${suffix})`}</span>} key={name}>
+        <span className={cnStock('PartDescriptionParam')}>
+          {this.state.spiceParams && this.state.spiceParams[name]
+            ? <>{label} = {this.state.spiceParams[name]} {args[name].unit.suffix}</>
+            : <>{label} = ?</>
+          }
+          </span>
+      </Tooltip>)
     })
     
-    // Only show error after a field is touched.
-    const userNameError = isFieldTouched('userName') && getFieldError('userName')
-
     return (
       <Form layout="inline" onSubmit={this.handleSubmit} className={cnStock('AddForm')}>
         <Divider orientation="left">Part</Divider>
@@ -406,8 +400,6 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
             {spice_attributes}
           </Col>
         </Row>
-
-        
       </Form>
     )
   }
@@ -419,27 +411,18 @@ export class Stock extends Component {
   state: State = initState
   formRef: any 
 
-componentWillMount() {    
-  axios.get('/api/blocks/')
-  .then(res => {
-      const blocks: Blocks = {}
-      const { data } = res
-      Object.keys(data).forEach(block => {
-          if (block[block.length - 1] === '.') {
-              Object.keys(data[block]).forEach(element =>
-                  blocks[block + element] = data[block][element]
-              )
-          } else {
-              blocks[block] = data[block]
-          }
+    componentWillMount() {    
+      axios.get('/api/blocks/')
+      .then(res => {
+          const blocks: Blocks = {}
+          const { data } = res
+          
+          this.setState({ blocks: data })
       })
       
-      this.setState({ blocks })
-  })
-  
-  this.loadStock()
-    
-}
+      this.loadStock()
+    }
+
     showAddPartModal = (part:any) => {
         this.setState({
           addPartModalVisible: true,
@@ -489,21 +472,6 @@ componentWillMount() {
         })
     }
     render() {
-      const blocks = Object.keys(this.state.blocks)
-      
-      
-    // const dataSource = [{
-    //     key: '1',
-    //     name: 'Mike',
-    //     age: 32,
-    //     address: '10 Downing Street'
-    //   }, {
-    //     key: '2',
-    //     name: 'John',
-    //     age: 42,
-    //     address: '10 Downing Street'
-    //   }]
-      
       const columns = [{
         title: 'Model',
         dataIndex: 'model',
@@ -512,44 +480,41 @@ componentWillMount() {
         title: 'Description',
         dataIndex: 'description',
         key: 'description',
-          render: (text: string, record: any) => <div className={cnStock('PartDescription')}>
+        render: (text: string, record: any) => 
+          <div className={cnStock('PartDescription')}>
             <a href={record.datasheet} target='_blank'>{text}</a>
             {record.spice_params && Object.keys(record.spice_params).map((name, index) => 
-              <span className={cnStock('PartDescriptionParam')} key={index}>{name[0]}<sub>{name.slice(1)}</sub> = {record.spice_params[name]}</span>)}
-          </div>,
+              <span className={cnStock('PartDescriptionParam')} key={index}>
+                {name[0]}<sub>{name.slice(1)}</sub> = {record.spice_params[name]}
+              </span>)}
+          </div>
       }, {
         title: 'Footprint',
         dataIndex: 'footprint',
         key: 'footprint',
       }, {
-        title: 'Delete',
+        title: 'Action',
         dataIndex: 'id',
         key: 'id',
-          render: (text: string, record: any) => [
-            <Button key='edit' type='dashed' onClick={() => this.showAddPartModal(record)}>Edit</Button>,
-            <Button key='delete' type='dashed' onClick={() => {
+        render: (text: string, record: any) => 
+          <div className={cnStock('TableAction')}>
+            <Button type='dashed' onClick={() => this.showAddPartModal(record)}>Edit</Button>
+            <Button type='dashed' onClick={() => {
               axios.delete('/api/parts/?id=' + record.id).then(() => this.loadStock())
-            }}>Delete</Button>],
+            }}>Delete</Button>
+          </div>
       }]
-   
-
-      
     
     return (
         <Layout>
-            <Sider>
-              <Menu
-                mode="inline"
-                defaultSelectedKeys={['1']}
-                defaultOpenKeys={['sub1']}
-                style={{ height: '100%' }}
-                onClick={param => {
+            <Sider className='App-Side'>
+              <BlocksMenu
+                onClick={(param:any) => {
                   this.setState({ selectedType: param.key }, this.loadStock)
                 }}
-              >
-                {blocks.map((block, index) =>
-                  <Menu.Item key={block}>{insertSpaces(block)}</Menu.Item>)}
-              </Menu>
+                onOpenChange={() => { }}
+                blocks={this.state.blocks}
+              />
             </Sider>
             <Content>
                 <Button type='primary' onClick={this.showAddPartModal}>Add part</Button>
@@ -569,7 +534,6 @@ componentWillMount() {
                 <Table dataSource={this.state.parts} columns={columns} rowKey='id' />
             </Content>
           </Layout>
-
     )
   }
 }

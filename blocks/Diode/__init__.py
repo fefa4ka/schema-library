@@ -14,6 +14,25 @@ class Base(Block):
     props = {
         'type': ['generic', 'zener', 'shockley', 'led', 'photo']
     }
+
+    spice_params = {
+        'AF': {'description': 'Flicker noise exponent', 'unit': { 'suffix': '', 'name': 'number' }, 'value': ''},
+        'BV': {'description': 'Reverse breakdown voltage', 'unit': { 'suffix': 'V', 'name': 'volt' }, 'value': ''},
+        'CJO': {'description': 'Zero-bias junction capacitance', 'unit': { 'suffix': 'F', 'name': 'farad' }, 'value': ''},
+        'EG': {'description': 'Band-gap energy', 'unit': { 'suffix': 'eV', 'name': 'electron volt' }, 'value': ''},
+        'FC': {'description': 'Coefficient for forward-bias', 'unit': { 'suffix': '', 'name': 'number' }, 'value': ''},
+        'IBV': {'description': 'Current at breakdown voltage', 'unit': { 'suffix': 'A', 'name': 'ampere' }, 'value': ''},
+        'IS': {'description': 'Saturation current', 'unit': { 'suffix': 'A', 'name': 'ampere' }, 'value': ''},
+        'KF': {'description': 'Flicker noise coefficient', 'unit': { 'suffix': '', 'name': 'number' }, 'value': ''},
+        'M': {'description': 'Grading coefficient', 'unit': { 'suffix': '', 'name': 'number' }, 'value': ''},
+        'N': {'description': 'Emission coefficient', 'unit': { 'suffix': '', 'name': 'number' }, 'value': ''},
+        'RS': {'description': 'Ohmic resistanc', 'unit': { 'suffix': 'Ω', 'name': 'ohm' }, 'value': ''},
+        'TNOM': {'description': 'Parameter measurement temperature', 'unit': { 'suffix': '°', 'name': 'degree' }, 'value': ''},
+        'TT': {'description': 'Transit-time', 'unit': { 'suffix': 's', 'name': 'sec' }, 'value': ''},
+        'VJ': {'description': 'Junction potential', 'unit': { 'suffix': 'V', 'name': 'volt' }, 'value': ''},
+        'XTI': {'description': 'Saturation-current temp.exp', 'unit': { 'suffix': '', 'name': 'number' }, 'value': ''}
+    }
+    
     
     V_in = 5 @ u_V
     

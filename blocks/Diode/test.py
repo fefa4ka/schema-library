@@ -72,7 +72,7 @@ class Case(Test):
             Also, diodes' high resistance to current flowing in the reverse direction suddenly drops to a low resistance when the reverse voltage across the diode reaches a value called the breakdown voltage..
         """
         
-        voltage_sweep = slice(-2, 0.1, .01)
+        voltage_sweep = slice(-0.3, 0.1, .01)
         data = self.characteristics(args, temperature, voltage_sweep) 
 
         return {

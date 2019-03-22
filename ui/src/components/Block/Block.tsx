@@ -9,7 +9,7 @@ import { Device, TDevice } from '../Device'
 import { Probe, TProbe } from '../Probe'
 import { Part } from '../Part'
 const TabPane = Tabs.TabPane;
-import { UnitInput } from '../UnitInput'
+import { UnitInput, siPrefix, canonise } from '../UnitInput'
 import { Diagram } from './Diagram'
 import { Code } from '../Code'
 const TreeNode = TreeSelect.TreeNode;
@@ -560,29 +560,6 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
         simulationMaxTime *= simulationValueScale
         const simulationStartTime = this.state.simulationStartTime * simulationValueScale 
         const simulationStopTime = this.state.simulationStopTime * simulationValueScale
-        // const siPrefix:{[name:string]: string} = {
-        //     '-24': 'y',
-        //     '-21': 'z',
-        //     '-18': 'a',
-        //     '-15': 'f',
-        //     '-12': 'p',
-        //     '-9': 'n',
-        //     '-6': 'μ',
-        //     '-3': 'm',
-        //     '-2': 'c',
-        //     '-1': 'd',
-        //     '0': '',
-        //     '1': 'da',
-        //     '2': 'h',
-        //     '3': 'k',
-        //     '6': 'M',
-        //     '9': 'G',
-        //     '12': 'T',
-        //     '15': 'P',
-        //     '18': 'E',
-        //     '21': 'Z',
-        //     '24': 'Y'
-        // }
 
         for (let step = 0; step < simulationMaxTime; step = step + simulationMaxTime / 5) {
             let exponent = simulationTimeExponent
@@ -908,7 +885,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
 
                     
                         {simulationCases.map(name => 
-                            <>
+                            <React.Fragment key={name}>
                                 <Divider orientation="left">{insertSpaces(name)}</Divider>
                                 <Row>
                                     <Col span={14} className={cnBlock('Description')}>
@@ -920,7 +897,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                         />
                                     </Col>
                                 </Row>
-                            </>
+                            </React.Fragment>
                         )}
                         
 
@@ -946,51 +923,6 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
     }
 }
 
-const siPrefix:{[name:string]: string} = {
-        '-24': 'y',
-        '-21': 'z',
-        '-18': 'a',
-        '-15': 'f',
-        '-12': 'p',
-        '-9': 'n',
-        '-6': 'μ',
-        '-3': 'm',
-        '-2': 'c',
-        '-1': 'd',
-        '0': '',
-        '1': 'da',
-        '2': 'h',
-        '3': 'k',
-        '6': 'M',
-        '9': 'G',
-        '12': 'T',
-        '15': 'P',
-        '18': 'E',
-        '21': 'Z',
-        '24': 'Y'
-    }
-
-// const siPrefix:{[name:string]: string} = {
-//     '-24': 'y',
-//     '-21': 'z',
-//     '-18': 'a',
-//     '-15': 'f',
-//     '-12': 'p',
-//     '-9': 'n',
-//     '-6': 'μ',
-//     '-3': 'm',
-//     '0': '',
-//     '1': 'da',
-//     '2': 'h',
-//     '3': 'k',
-//     '6': 'M',
-//     '9': 'G',
-//     '12': 'T',
-//     '15': 'P',
-//     '18': 'E',
-//     '21': 'Z',
-//     '24': 'Y'
-// }
 
 function TransientChart(props: any) {
     const { data, showLabels, startTime, stopTime, onLegendClick } = props
@@ -1118,29 +1050,3 @@ function DiscreteChart(props: any) {
         </LineChart>
     </ResponsiveContainer>
 }
-
-
-function canonise(value:number){
-    const absoluteValue = Math.abs(value)
-    const log = Math.log(absoluteValue) / Math.log(1000)
-    let power = Math.floor(log)
-    let fixedValue:string = value.toFixed(2)
-    if(value !== 0) {
-        power *= 3
-        
-        if (power !== 0) {
-            value = value / 10 ** power
-        }
-        
-        if (value.toFixed(2) != Math.round(value).toFixed(2)) {
-            fixedValue = value.toFixed(1)
-        } else {
-            fixedValue = Math.round(value).toString()
-        }
-    } else {
-        fixedValue = '0'
-    }
-
-    return `${fixedValue} ${siPrefix[power] || ''}`
-}
-
