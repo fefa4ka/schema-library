@@ -1,24 +1,32 @@
-import * as React from 'react'
-import { IProps } from './index'
-import { cn } from '@bem-react/classname'
-import axios from 'axios'
+import * as React from 'react';
+import axios from 'axios';
+import { canonise, siPrefix, Unit } from '../Unit';
+import { cn } from '@bem-react/classname';
+import { Code } from '../Code';
+import {
+    Col,
+    Icon,
+    Modal,
+    Row,
+    Tabs,
+    Tooltip
+    } from 'antd';
+import { Device, TDevice } from '../Device';
+import { Diagram } from './Diagram';
+import { IProps } from './index';
+import { MathMarkdown } from './Mathdown';
+import { Part } from '../Part';
+import { Probe, TProbe } from '../Probe';
+import { Source, TSource } from '../Source';
+import { UnControlled as CodeMirror } from 'react-codemirror2';
+import { UnitInput } from '../UnitInput';
+import './Block.css';
 import { Slider, Divider, Tag, Button, Input, TreeSelect,} from 'antd'
-import { Icon, Tabs, Row, Col, Modal, Tooltip } from 'antd'
-import { Source, TSource } from '../Source'
-import { Device, TDevice } from '../Device'
-import { Probe, TProbe } from '../Probe'
-import { Part } from '../Part'
 const TabPane = Tabs.TabPane;
-import { UnitInput, siPrefix, canonise } from '../UnitInput'
-import { Diagram } from './Diagram'
-import { Code } from '../Code'
 const TreeNode = TreeSelect.TreeNode;
-import {UnControlled as CodeMirror} from 'react-codemirror2'
-import { MathMarkdown } from './Mathdown'
 const { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ReferenceLine} = require('recharts')
 const ChartTooltip = require('recharts').Tooltip
 
-import './Block.css'
 require('codemirror/lib/codemirror.css')
 require('codemirror/mode/python/python')
 
@@ -594,16 +602,14 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                     const value = isExists
                         ? this.state.params[name].value
                         : 0
-                    const [arg_title, arg_sub] = name.split('_')
                     
-                    return <span className={cnBlock('Param')} key={name}> 
-                            <Tooltip
-                                overlayClassName={cnBlock('ParamTooltip')}
-                                title={<MathMarkdown value={this.state.params_description[name] || name} />}
-                            >
-                                <strong>{arg_title}<sub key='s'>{arg_sub}</sub></strong> = {value} {suffix}
-                            </Tooltip>
-                    </span>
+                    return <Unit
+                        key={name}
+                        name={name}
+                        suffix={suffix}
+                        value={value}
+                        description={this.state.params_description[name]}
+                    /> 
             })
 
         return (
@@ -956,23 +962,23 @@ function TransientChart(props: any) {
                 domain={[startTime, stopTime]}
                 label='Time'
                 type='number'
-                tickFormatter={(val: number) => canonise(val) + 's'}
+                tickFormatter={(val: number) => canonise(val, 's')}
             />
             <YAxis
                 yAxisId="left"
                 label='Volt'
-                tickFormatter={(val: number) => canonise(val) + 'V'}
+                tickFormatter={(val: number) => canonise(val, 'V')}
             />
             <YAxis
                 yAxisId="right"
                 label='Ampere'
                 orientation="right"
-                tickFormatter={(val: number) => canonise(val) + 'A'}
+                tickFormatter={(val: number) => canonise(val, 'A')}
             />
             <CartesianGrid strokeDasharrary="3 3"/>
             <ChartTooltip
-                formatter={(value: number) => canonise(value)}
-                labelFormatter={(value: number) => canonise(value) + 's'}
+                formatter={(value: number) => canonise(value, 's')}
+                labelFormatter={(value: number) => canonise(value, 's')}
             />
             {chartLabels.map(label =>
                 <Line
@@ -1020,20 +1026,20 @@ function DiscreteChart(props: any) {
                 allowDataOverflow={true}
                 label={x.label}
                 domain={[domainStart, domainEnd]}
-                tickFormatter={(val: number) => canonise(val) + x.unit}
+                tickFormatter={(val: number) => canonise(val, x.unit)}
                 type='number'
             />
             <YAxis
                 label={y.label}
-                tickFormatter={(val: number) => canonise(val) + y.unit}
+                tickFormatter={(val: number) => canonise(val, y.unit)}
                 type='number'
                 domain={y.domain || ['auto', 'auto']}
                 scale={y.scale || 'auto'}
             />
             <CartesianGrid strokeDasharray="3 3"/>
             <ChartTooltip
-                formatter={(value: number) => canonise(value)}
-                labelFormatter={(value: number) => canonise(value) + x.unit}
+                formatter={(value: number) => canonise(value, x.unit)}
+                labelFormatter={(value: number) => canonise(value, x.unit)}
             />
             <ReferenceLine x={0} stroke="black"/>
             <ReferenceLine y={0} stroke="black" />

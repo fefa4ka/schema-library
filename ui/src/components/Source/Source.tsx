@@ -64,19 +64,20 @@ export class Part extends React.Component<IProps, {}> {
 
     componentWillMount() {
         this.loadParts()
-        this.loadSource(this.props.source)
-
-        return true
     }
     loadParts() {
         axios.get('/api/sources/')
             .then(res => {
                 const parts = res.data
-                this.setState({ parts }, () => this.loadSource(this.props.source))
+                this.setState({ parts }, () => {
+                    axios.get('/api/serial/')
+                        .then(res =>
+                            this.setState({ serial: res.data }, () => this.loadSource(this.props.source))
+                        )
+                })
             })
             
-        axios.get('/api/serial/')
-            .then(res => this.setState({ serial: res.data }))
+        
     }
     getCurrentSource() {
         const { name, port, channel } = this.state
@@ -236,7 +237,13 @@ export class Part extends React.Component<IProps, {}> {
                 <Divider orientation="left">Pins</Divider>
                 {Pins}
                 
-                <Divider orientation="left">Signal Generator Channel</Divider>
+                <Divider orientation="left">Device</Divider>
+                <RadioGroup onChange={e => this.setState({ channel: e.target.value }, () => onChange(this.getCurrentSource()))} defaultValue="0">
+                    <RadioButton value="0">Off</RadioButton>
+                    <RadioButton value="1">Signal Generator</RadioButton>
+                    <RadioButton value="2">Laboratory Voltage Supply</RadioButton>
+                </RadioGroup>
+
                 <Select
                     className={cnPart('SerialPort')}
                     value={this.state.port}
@@ -250,6 +257,11 @@ export class Part extends React.Component<IProps, {}> {
                     <RadioButton value="0">None</RadioButton>
                     <RadioButton value="1">CH1</RadioButton>
                     <RadioButton value="2">CH2</RadioButton>
+                </RadioGroup>
+                
+                <RadioGroup onChange={e => this.setState({ channel: e.target.value }, () => onChange(this.getCurrentSource()))} defaultValue="0">
+                    <RadioButton value="0">OFF</RadioButton>
+                    <RadioButton value="1">ON</RadioButton>
                 </RadioGroup>
             </div>
         )

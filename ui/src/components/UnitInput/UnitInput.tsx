@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { IProps, siPrefix, canonise } from './index'
+import { IProps } from './index'
 import { cn } from '@bem-react/classname'
 import { Input, Select, Tooltip } from 'antd'
 import Markdown from 'react-markdown'

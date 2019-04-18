@@ -22,7 +22,11 @@
 .Stock-AddFormStock .ant-form-item { 
     width: 40%;
 }
-.Stock-PartDescription a {
+.Stock-PartTitle {
+    white-space: nowrap;
+}
+.Stock-PartDescriptionTitle {
+    font-weight: 600;
     display: block;
 }
 .Stock-PartDescriptionParam {

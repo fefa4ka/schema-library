@@ -1,11 +1,12 @@
 import React, { Component } from 'react'
 import { KiCad } from './Kicad'
-import { Row, Col, Layout, Menu, Table, Button, Modal, Divider, Form, Icon, Input } from 'antd'
+import { Row, Col, Layout, Menu, Table, Button, Modal, Divider, Form, Icon, Input, Popconfirm } from 'antd'
 import axios from 'axios'
 import { Select, Tooltip, TreeSelect } from 'antd'
 import { cn } from '@bem-react/classname'
 import { BlocksMenu, insertSpaces } from '../Blocks/Blocks'
 import './Stock.css'
+import { Unit } from '../Unit'
 
 const TreeNode = TreeSelect.TreeNode
 const Option = Select.Option
@@ -146,7 +147,15 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
 
             return params
           }, {})
+          
           setFieldsValue({ ...partData, ...params })
+
+          if (partData.footprint) {
+            axios.get('/api/parts/footprint?name=' + partData.footprint.replace('=', ':')).then((data: any) => {
+
+              this.kicadviewer.render(data.data)
+            })
+          }
         })
       })
   }
@@ -177,7 +186,18 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
   }
   
   render() {
-    const blocks = Object.keys(this.props.blocks)
+    const blocks:string[] = Object.keys(this.props.blocks).reduce((blocks:string[], block) => {
+      if (block.indexOf('.') === block.length - 1) {
+        Object.keys(this.props.blocks[block]).forEach(subBlock => {
+          blocks.push(block + subBlock)
+        })
+      } else {
+        blocks.push(block)
+      }
+
+      return blocks
+    }, [])
+
     const mods:any = this.props.blocks[this.state.selectedBlock]
     const props = this.state.selectedBlockProps
     const footprints: any = this.state.footprints
@@ -224,7 +244,7 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
         </Select>)
     })
 
-    const spice_attributes = Object.keys(spiceAttrs).map((name, index, list) => {
+    const spice_attributes = this.state.spiceParams && Object.keys(spiceAttrs).map((name, index, list) => {
       const args = spiceAttrs
       const isExists = args.hasOwnProperty(name)
 
@@ -232,22 +252,15 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
           return null
       }
 
-      const suffix = isExists
-          ? args[name].unit.suffix || 'Number'
-          : 'Number'
-      const label = <span>{name[0]}<sub>{name.slice(1)}</sub></span>
-      
-      return (<Tooltip
-        title={<span>{args[name].description + ` (${suffix})`}</span>} key={name}>
-        <span className={cnStock('PartDescriptionParam')}>
-          {this.state.spiceParams && this.state.spiceParams[name]
-            ? <>{label} = {this.state.spiceParams[name]} {args[name].unit.suffix}</>
-            : <>{label} = ?</>
-          }
-          </span>
-      </Tooltip>)
+      return (<Unit
+        key={name}
+        name={name}
+        suffix={args[name].unit.suffix}
+        value={this.state.spiceParams[name] || '?'}
+        description={args[name].description}
+      />)
     })
-    
+
     return (
       <Form layout="inline" onSubmit={this.handleSubmit} className={cnStock('AddForm')}>
         <Divider orientation="left">Part</Divider>
@@ -475,18 +488,25 @@ export class Stock extends Component {
       const columns = [{
         title: 'Model',
         dataIndex: 'model',
-        key: 'model'
+        key: 'model',
+        render: (text: string, record: any) => 
+            record.datasheet
+              ? <a href={record.datasheet} className={cnStock('PartTitle')} target='_blank'><Icon type='file-pdf' /> {text}</a>
+              : text
       }, {
         title: 'Description',
         dataIndex: 'description',
         key: 'description',
         render: (text: string, record: any) => 
           <div className={cnStock('PartDescription')}>
-            <a href={record.datasheet} target='_blank'>{text}</a>
-            {record.spice_params && Object.keys(record.spice_params).map((name, index) => 
-              <span className={cnStock('PartDescriptionParam')} key={index}>
-                {name[0]}<sub>{name.slice(1)}</sub> = {record.spice_params[name]}
-              </span>)}
+            <a onClick={() => this.showAddPartModal(record)}>{text}</a>
+            {/* {record.spice_params && Object.keys(record.spice_params).map((name, index) => 
+                <Unit
+                  key={name}
+                  name={name}
+                  value={record.spice_params[name]}
+                />
+             )} */}
           </div>
       }, {
         title: 'Footprint',
@@ -498,10 +518,16 @@ export class Stock extends Component {
         key: 'id',
         render: (text: string, record: any) => 
           <div className={cnStock('TableAction')}>
-            <Button type='dashed' onClick={() => this.showAddPartModal(record)}>Edit</Button>
-            <Button type='dashed' onClick={() => {
-              axios.delete('/api/parts/?id=' + record.id).then(() => this.loadStock())
-            }}>Delete</Button>
+            <Popconfirm
+              title="Are you sure delete this part?"
+              placement='left'
+              onConfirm={() => axios.delete('/api/parts/?id=' + record.id).then(() => this.loadStock())}
+              onCancel={() => { }} 
+              okText="Yes" 
+              cancelText="No"
+            >
+              <Button icon='delete' shape='circle' type='danger'/>
+            </Popconfirm>
           </div>
       }]
     
