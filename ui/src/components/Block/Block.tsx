@@ -52,6 +52,7 @@ const initialState = {
         description: '',
         args: {},
         pins: {},
+        device: '',
         port: '',
         channel: 0,
         index: -1
@@ -76,6 +77,7 @@ const initialState = {
         description: '',
         args: {},
         pins: {},
+        device: '',
         port: '',
         channel: 0,
         index: -1
@@ -803,7 +805,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
 
                                 <br />
                                 
-                                <Button type='default' onClick={this.downloadNetlist}>Download Netlist</Button>
+                                <Button type='primary' onClick={this.downloadNetlist}>Download Netlist</Button>
                             </Col>
                         </Row>
                 
@@ -825,7 +827,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                             <Col span={12}>
                                 <Divider orientation="left">Probes</Divider>
                                 <div className={cnBlock('TestAction', { checked: this.state.probeData.length > 1 })}>
-                                    <Button type='default' onClick={() => this.showModal('Test')}>Test Citcuit</Button>
+                                    <Button type='primary' onClick={() => this.showModal('Test')}>Test Citcuit</Button>
                                     <Modal
                                         title="Circuit Test"
                                         visible={this.state.modalTestVisible}
@@ -977,7 +979,7 @@ function TransientChart(props: any) {
             />
             <CartesianGrid strokeDasharrary="3 3"/>
             <ChartTooltip
-                formatter={(value: number) => canonise(value, 's')}
+                formatter={(value: number) => canonise(value, '')}
                 labelFormatter={(value: number) => canonise(value, 's')}
             />
             {chartLabels.map(label =>

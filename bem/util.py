@@ -4,8 +4,10 @@ from settings import params_tolerance
 def u(unit):
     """Absolute float value of PySpice.Unit
     """
-
-    return float(unit.convert_to_power())
+    if type(unit) in [str, int, float]:
+        return float(unit)
+    else:
+        return float(unit.convert_to_power())
 
 
 def label_prepare(text):
@@ -16,6 +18,16 @@ def label_prepare(text):
     return text
 
 def is_tolerated(a, b, tollerance=params_tolerance):
+    """
+    A mathematical model for symmetrical parameter variations is
+    `P_(nom) * (1 − ε) ≤ P ≤ P_(nom)(1 + ε)`
+    in which `P_(nom)` is the nominal specification for the parameter such as the resistor value or independent source value, and `ε` is the fractional tolerance for the component. 
+    
+    For example, a resistor `R` with nominal value of 10 kOhm and a 5 percent tolerance could exhibit a resistance anywhere in the following range:
+    `10,000 * (1 − 0.05) ≤ R ≤ 10,000 * (1 + 0.05)`
+    `9500 ≤ R ≤ 10,500`
+    """
+    
     if type(a) == list and b in a:
         return True
 

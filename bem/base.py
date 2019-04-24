@@ -9,15 +9,11 @@ from skidl import TEMPLATE, Net, Network, Part, subcircuit
 from skidl.Net import Net as NetType
 from skidl.NetPinList import NetPinList
 
-from .model import Part as PartModel
-from .model import Param, Mod, Prop
+from .stockman import Stockman
 from .util import u, is_tolerated, label_prepare
 from settings import BLOCKS_PATH, params_tolerance
 
 logger = logging.getLogger(__name__)
-# logger = logging.getLogger('peewee')
-# logger.addHandler(logging.StreamHandler())
-# logger.setLevel(logging.DEBUG)
 
 class Block:
     name = ''
@@ -48,7 +44,9 @@ class Block:
             V_out -- Volts across its output terminal and gnd
             P -- The power dissipated 
             I -- The current through a device
-            Load -- Load in Ohm, A or W
+            I_load -- Connected load presented in Amperes
+            R_load -- Connected load presented in Ohms
+            P_load -- Connected load presented in Watts
         """
    
 
@@ -172,6 +170,9 @@ class Block:
             self.output += ntwk[-1]
 
             return self
+
+    def create_network(self):
+        return [self.input, self.output]
 
     def connect_power_bus(self, instance):
         if self.gnd and instance.gnd:
@@ -302,10 +303,22 @@ class Block:
         pins = {}
         for key, value in inspect.getmembers(self, lambda item: not (inspect.isroutine(item))):
             if type(value) == NetType and key not in ['__doc__', 'element', 'simulation', 'ref']:
-                pins[key] = [str(pin) for pin in getattr(self, key) and getattr(self, key).get_pins()]
-
+                pins[key] = [str(pin).split(',')[0] for pin in getattr(self, key) and getattr(self, key).get_pins()]
+       
         return pins
+       
+    def set_pins(self):
+        self.input = Net('Input') 
+        self.output = Net('Output')
+        self.input += self.element[1]
+        self.output += self.element[2]
         
+        # self.gnd == Net('0')
+        self.v_ref = Net()
+        self.input_n = self.output_n = self.gnd = Net()
+ 
+
+
     @property
     def part(self):
         if self.DEBUG:
@@ -337,72 +350,10 @@ class Block:
     # Physical Part
     @property
     def available_parts(self):
-        """Available parts in stock 
-            from Part model
-            filtered by Block modifications and params and spice model.
-        
-        Returns:
-            list -- of parts with available values
-        """
+        parts = Stockman(self).suitable_parts()
 
-
-        params = list(self.props.keys()) + list(self.mods.keys())
-        values = list(self.props.values()) + list(self.mods.values())
-
-        available = []
-
-        parts = PartModel.select().where(PartModel.block == self.name)
-        if hasattr(self, 'model') and self.model:
-            parts = parts.where(PartModel.model.contains(self.model))
-        
-        for part in parts:
-            for index, param in enumerate(params):
-                if param == 'value':
-                    continue
-
-                is_proper = True
-                value = values[index]
-                
-                part_params = part.params.where(Param.name == param)
-                if part_params.count():
-                    for part_param in part_params:
-                        if is_tolerated(value, part_param.value):
-                            break
-                    else:
-                        is_proper = False
-                
-                part_mods = part.mods.where(Mod.name == param)
-                if part_mods.count():
-                    for part_mod in part_mods:
-                        if is_tolerated(value, part_mod.value):
-                            break
-                    else:
-                        is_proper = False
-                
-                part_props = part.props.where(Prop.name == param)
-                if part_props.count():
-                    for part_prop in part_props:
-                        if is_tolerated(value, part_prop.value):
-                            break
-                    else:
-                        is_proper = False
-                
-                spice_param = part.spice_params.get(param, None)
-                if spice_param:
-                    if is_tolerated(value, spice_param):
-                        continue
-
-                    is_proper = False 
-                             
-                if is_proper:
-                    continue
-
-                break
-            else:
-                available.append(part)
-
-        return available
-            
+        return parts
+      
     @property
     def selected_part(self):
         available = list(self.available_parts)
@@ -440,19 +391,6 @@ class Block:
         self.element = element
         
         self.set_pins()
-
-    def create_network(self):
-        return [self.input, self.output]
-
-    def set_pins(self):
-        self.input = Net('Input') 
-        self.output = Net('Output')
-        self.input += self.element[1]
-        self.output += self.element[2]
-        
-        # self.gnd == Net('0')
-        self.v_ref = Net()
-        self.input_n = self.output_n = self.gnd = Net()
 
 
 

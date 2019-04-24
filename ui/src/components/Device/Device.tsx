@@ -2,7 +2,7 @@ import * as React from 'react'
 import { IProps, TDevice } from './index'
 import { cn } from '@bem-react/classname'
 import axios from 'axios'
-import { Select, TreeSelect} from 'antd'
+import { Row, Col, Select, TreeSelect} from 'antd'
 import { Form, Divider } from 'antd'
 import './Device.css'
 
@@ -141,68 +141,72 @@ export class Device extends React.Component<IProps, {}> {
         
         return (
             <div className={cnPart()}>
-                <TreeSelect
-                    showSearch
-                    style={{ width: 230 }}
-                    dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
-                    placeholder="Device"
-                    allowClear
-                    treeDefaultExpandAll
-                    value={device && device.library ? device.library + ':' + device.name : ''}
-                    onSearch={(value) => {
-                        if (value.length >= 3) {
-                            axios.get('/api/devices/?query=' + value).then((res: any) => {
-                                this.setState({ parts: res.data })
-                            })
-                        }
-                    }}
-                    onChange={(value) => {
-                        axios.get('/api/devices?name=' + value).then((res: any) => {
-                            this.setState({ device: res.data })
-                        })
-                    }}>
-                    
-                    {Object.keys(parts).map((lib, index) => 
-                        <TreeNode value={lib} title={lib} key={lib + index}>
-                            {parts[lib].map(item =>
-                                <TreeNode value={lib + ':' + item[0]} title={item[0]} key={lib + ':' + item[0]}  />
+                <Row>
+                    <Col span={11}>
+                        <TreeSelect
+                            showSearch
+                            style={{ width: 230 }}
+                            dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
+                            placeholder="Device"
+                            allowClear
+                            treeDefaultExpandAll
+                            value={device && device.library ? device.library + ':' + device.name : ''}
+                            onSearch={(value) => {
+                                if (value.length >= 3) {
+                                    axios.get('/api/devices/?query=' + value).then((res: any) => {
+                                        this.setState({ parts: res.data })
+                                    })
+                                }
+                            }}
+                            onChange={(value) => {
+                                axios.get('/api/devices?name=' + value).then((res: any) => {
+                                    this.setState({ device: res.data })
+                                })
+                            }}>
+                            
+                            {Object.keys(parts).map((lib, index) => 
+                                <TreeNode value={lib} title={lib} key={lib + index}>
+                                    {parts[lib].map(item =>
+                                        <TreeNode value={lib + ':' + item[0]} title={item[0]} key={lib + ':' + item[0]}  />
+                                    )}
+                                </TreeNode>
                             )}
-                        </TreeNode>
-                    )}
-                </TreeSelect>
-
-                <TreeSelect
-                  showSearch
-                  style={{ width: 230 }}
-                  value={device ? device.footprint : ''}
-                  dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
-                  placeholder="Footprint"
-                  allowClear
-                  treeDefaultExpandAll
-                  onSearch={(value) => {
-                    if (value.length >= 3) {
-                      axios.get('/api/parts/footprints/?query=' + value).then((data: any) => {
-                        this.setState({ footprints: data.data })
-                      })
-                    }
-                  }}
-                  onChange={(value) => {
-                      axios.get('/api/parts/footprint?name=' + value).then((data: any) => {
-                          this.setState(({ device }: any) => {
-                            return ({ device: { ...device || {}, footprint: value } })
-                        })
-                    //   this.kicadviewer.render(data.data)
-                    })
-                  }}>
-                
-                {Object.keys(this.state.footprints).map((type:string) =>
-                  <TreeNode value={type} title={type} key={type}>
-                      {footprints[type].map((value:string) => 
-                          <TreeNode value={type + ':' + value} title={value} key={type + ':' + value} />
-                      )}
-                  </TreeNode>
-                )}
-                </TreeSelect>
+                        </TreeSelect>
+                    </Col>
+                    <Col span={12} push={1}>
+                        <TreeSelect
+                        showSearch
+                        style={{ width: 230 }}
+                        value={device ? device.footprint : ''}
+                        dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
+                        placeholder="Footprint"
+                        allowClear
+                        treeDefaultExpandAll
+                        onSearch={(value) => {
+                            if (value.length >= 3) {
+                            axios.get('/api/parts/footprints/?query=' + value).then((data: any) => {
+                                this.setState({ footprints: data.data })
+                            })
+                            }
+                        }}
+                        onChange={(value) => {
+                            axios.get('/api/parts/footprint?name=' + value).then((data: any) => {
+                                this.setState(({ device }: any) => {
+                                    return ({ device: { ...device || {}, footprint: value } })
+                                })
+                            //   this.kicadviewer.render(data.data)
+                            })
+                        }}>
+                            {Object.keys(this.state.footprints).map((type:string) =>
+                            <TreeNode value={type} title={type} key={type}>
+                                {footprints[type].map((value:string) => 
+                                    <TreeNode value={type + ':' + value} title={value} key={type + ':' + value} />
+                                )}
+                            </TreeNode>
+                            )}
+                        </TreeSelect>
+                    </Col>
+                </Row>
                 {this.state.device && this.state.device.description}
                 <Divider orientation="left">Pins</Divider>
                 {Pins}

@@ -62,7 +62,7 @@ export const canonise = (value:number, suffix?: string) => {
         fixedValue = '?'
     }
 
-    const prefix = suffix
+    const prefix = suffix !== undefined
         ? (siPrefix[power] || '') + suffix
         : power !== 0 && fixedValue !== '?' && value !== 0
             ? ' * 10^' + power
@@ -86,7 +86,7 @@ export const Unit = ({ name, suffix, value, description }: IProps): any => {
                 overlayClassName={cnUnit('Tooltip')}
                 title={<MathMarkdown value={description || name + ' is not described'} />}
             >
-                <strong>{unit_title}<sub key='s'>{unit_subscript}</sub></strong> = {canonised}{suffix}
+                <strong>{unit_title}<sub key='s'>{unit_subscript}</sub></strong> = {canonised} {suffix}
             </Tooltip>
         </span>
     )

@@ -68,8 +68,8 @@ class Base(Block):
             common='emitter',
             follow='collector'
         )(
-            collector = R(self.R_c),
-            emitter = R(self.R_e)
+            collector = R(self.R_c, ref='R_c'),
+            emitter = R(self.R_e, ref='R_e')
         )
 
         self.Beta = amplifier.selected_part.spice_params.get('BF', 100)
@@ -105,7 +105,7 @@ class Base(Block):
         
         signal = Net('VoltageGainAcInput')
         ac_coupling = signal & Capacitor()(self.C_in) & self.input
-        ac_out = amplifier.emitter & R(self.R_3) & Capacitor()(self.C_in) & self.gnd
+        ac_out = amplifier.emitter & R(self.R_3, ref='R_ac') & Capacitor()(self.C_in) & self.gnd
 
         self.input = signal
         self.output = amplified

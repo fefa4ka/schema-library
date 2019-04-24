@@ -1,5 +1,4 @@
 from bem import Block, RLC
-from settings import parts
 from skidl import Net, subcircuit
 from PySpice.Unit import u_Ohm, u_V, u_F, u_A, u_s
 from math import log

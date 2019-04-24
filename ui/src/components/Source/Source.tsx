@@ -23,6 +23,7 @@ const cnPart = cn('Source')
 
 const initialState = {
     name: '',
+    device: '',
     pins: {},
     parts: [],
     port: '',
@@ -43,6 +44,7 @@ type State = {
     name: string,
     pins: TSource['pins'],
     parts: TPart[],
+    device: string,
     port: string,
     channel: number,
     index: number,
@@ -80,7 +82,7 @@ export class Part extends React.Component<IProps, {}> {
         
     }
     getCurrentSource() {
-        const { name, port, channel } = this.state
+        const { name, device, port, channel } = this.state
         const source = this.state.parts.find(item => item.name === name.split('_')[0])
         const description = source 
             ? source.description
@@ -98,13 +100,14 @@ export class Part extends React.Component<IProps, {}> {
             description,
             args,
             pins: Object.assign({}, this.state.pins),
+            device,
             port,
             channel,
             index: this.state.index,
         }
 
     }
-    loadSource({ name, args, pins, index, port, channel }: TSource) {
+    loadSource({ name, args, pins, index, device, port, channel }: TSource) {
         this.setState(({ parts }: State) => {
             if (index === -1 || index === undefined) {
                 return {
@@ -127,6 +130,7 @@ export class Part extends React.Component<IProps, {}> {
                     name,
                     index,
                     pins,
+                    device,
                     port,
                     channel
                 }
@@ -238,12 +242,12 @@ export class Part extends React.Component<IProps, {}> {
                 {Pins}
                 
                 <Divider orientation="left">Device</Divider>
-                <RadioGroup onChange={e => this.setState({ channel: e.target.value }, () => onChange(this.getCurrentSource()))} defaultValue="0">
-                    <RadioButton value="0">Off</RadioButton>
-                    <RadioButton value="1">Signal Generator</RadioButton>
-                    <RadioButton value="2">Laboratory Voltage Supply</RadioButton>
+                <RadioGroup onChange={e => this.setState({ device: e.target.value }, () => onChange(this.getCurrentSource()))} defaultValue="0">
+                    <RadioButton value=''>Off</RadioButton>
+                    <RadioButton value='jds6600'>Signal Generator</RadioButton>
+                    <RadioButton value='ka3005d'>Laboratory Voltage Supply</RadioButton>
                 </RadioGroup>
-
+                <Divider/>
                 <Select
                     className={cnPart('SerialPort')}
                     value={this.state.port}
@@ -253,16 +257,14 @@ export class Part extends React.Component<IProps, {}> {
                     {this.state.serial.map(item => <Option value={item.port} key={item.port}>{item.port} {item.desc}</Option>)}
                     
                 </Select>
+                {this.state.device === 'jds6600' &&
                 <RadioGroup onChange={e => this.setState({ channel: e.target.value }, () => onChange(this.getCurrentSource()))} defaultValue="0">
                     <RadioButton value="0">None</RadioButton>
                     <RadioButton value="1">CH1</RadioButton>
                     <RadioButton value="2">CH2</RadioButton>
-                </RadioGroup>
+                </RadioGroup>}
                 
-                <RadioGroup onChange={e => this.setState({ channel: e.target.value }, () => onChange(this.getCurrentSource()))} defaultValue="0">
-                    <RadioButton value="0">OFF</RadioButton>
-                    <RadioButton value="1">ON</RadioButton>
-                </RadioGroup>
+               
             </div>
         )
     }

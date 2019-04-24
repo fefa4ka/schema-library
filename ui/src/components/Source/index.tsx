@@ -17,6 +17,7 @@ export type TSource = {
     pins: {
         [name: string]: string[]
     },
+    device: string,
     port: string,
     channel: number,
     index: number

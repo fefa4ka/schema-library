@@ -275,6 +275,7 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
                 </Select>
               )}
             </Form.Item>
+            <Form.Item>
             {mods && Object.keys(mods).length 
               ? getFieldDecorator('mods', {})(
                 <TreeSelect
@@ -296,6 +297,8 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
                   )}
               </TreeSelect>)
                 : ''}
+            </Form.Item>
+            <Form.Item>
             {props && Object.keys(props).length 
               ? getFieldDecorator('props', {})(
                 <TreeSelect
@@ -316,6 +319,7 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
                   )}
               </TreeSelect>)
                 : ''}
+            </Form.Item>
             <Form.Item>
               {getFieldDecorator('model', {
                 rules: [{ required: true, message: 'Please input model name' }],
@@ -499,7 +503,7 @@ export class Stock extends Component {
         key: 'description',
         render: (text: string, record: any) => 
           <div className={cnStock('PartDescription')}>
-            <a onClick={() => this.showAddPartModal(record)}>{text}</a>
+            <a onClick={() => this.showAddPartModal(record)}>{text || record.model}</a>
             {/* {record.spice_params && Object.keys(record.spice_params).map((name, index) => 
                 <Unit
                   key={name}

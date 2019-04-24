@@ -52,7 +52,7 @@ class App extends Component<any> {
               <Route exact path="/stock" component={Stock} />
             </Switch>
             {PageContent}
-            <Footer><strong>⏚ Circuits</strong> builds by <strong>B</strong>locks with <strong>E</strong>lements and <strong>M</strong>odificators<a className='copyright' href="mailto:alex@nder.work">alex@nder.work</a></Footer>
+            <Footer><strong>⏚ Circuits</strong> builds by <strong>B</strong>locks with <strong>E</strong>lements and <strong>M</strong>odificators<a className='copyright' href="mailto:alex@nder.work?subject=schema.vc">alex@nder.work</a></Footer>
           </Layout>
         </div>
       </Router>

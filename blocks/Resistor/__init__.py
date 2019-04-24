@@ -1,7 +1,7 @@
 
 from blocks.Abstract.Combination import Base as Block
 from skidl import Part, Net, subcircuit, TEMPLATE
-from PySpice.Unit import u_Ohm, u_V, u_W, u_A
+from PySpice.Unit import u_Ohm, u_V, u_W, u_A, u_S
 import numpy as np
 from bem import Build, u
 import logging
@@ -16,14 +16,12 @@ class Base(Block):
     increase = True
     value = 1000 @ u_Ohm
     V_in = 10 @ u_V
-    G = 0
-    P = 0 @ u_W
-    I = 0 @ u_A
+    G = 0 @ u_S
     V_drop = 0 @ u_V
 
     ref = 'R'
 
-    def __init__(self, value, V_in=None, Load=0.1 @ u_Ohm, *args, **kwargs):
+    def __init__(self, value, V_in=None, Load=0.125 @ u_W, *args, **kwargs):
         """
             value -- A resistor is made out of some conducting stuff (carbon, or a thin metal or carbon film, or wire of poor conductivity), with a wire or contacts at each end. It is characterized by its resistance.
             V_drop -- Voltage drop after resistor with Load 
@@ -50,12 +48,12 @@ class Base(Block):
         if self.Load.is_same_unit(1 @ u_Ohm):
             I_total = self.current(V_in_value, u(self.Load + self.value))
         elif self.Load.is_same_unit(1 @ u_A):
-            I_total = self.I + self.load
+            I_total = self.I + self.Load
         elif self.Load.is_same_unit(1 @ u_W):
-            I_total = (self.P + self.load) / V_in_value
+            I_total = (u(self.P + self.Load) / u(self.V_in))
         
         self.V_drop = (value * I_total) @ u_V
-        self.G = 1 / value
+        self.G = (1 / value) @ u_S
         self.load(self.V_in - self.V_drop)
 
     def series_sum(self, values):

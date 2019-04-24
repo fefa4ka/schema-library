@@ -114,7 +114,7 @@ def block(name):
             else:
                 circuit = Instance.input.circuit
             for part in circuit.parts:
-                pins = [str(pin) for pin in part.get_pins()]
+                pins = [str(pin).split(',')[0] for pin in part.get_pins()]
                 parts.append({
                     'name': part.name,
                     'description': part.description,
@@ -122,7 +122,7 @@ def block(name):
                 })
 
             for net in circuit.get_nets():
-                pins = [str(pin) for pin in net.get_pins()]
+                pins = [str(pin).split(',')[0] for pin in net.get_pins()]
                 nets[net.name] = pins
         
         Test = BuildTest(Block, **params)
