@@ -11,7 +11,7 @@ class Modificator(Base):
     * Paul Horowitz and Winfield Hill. "2.2.7 Common-emitter amplifier" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 89
     """
 
-    V_in = 6 @ u_V
+    V = 6 @ u_V
     angle = 45
     f_3db = 100 @ u_Hz
 
@@ -19,14 +19,11 @@ class Modificator(Base):
     C_shift_in = 0 @ u_F
     
 
-    def __init__(self, angle, R_shift_out=None, *args, **kwargs):
+    def willMount(self, angle, R_shift_out=None):
         """
             angle -- Phase shift angle `theta = 2 tan^-1 omega RC`
         """
-
         
-        self.R_shift_out = R_shift_out
-        self.angle = angle
         angle_rad = pi / (180 / self.angle)
         atan_desire = angle_rad / 2
         atan_argument = tan(atan_desire)
@@ -38,14 +35,13 @@ class Modificator(Base):
 
         self.angle = 2 * atan(2 * pi * self.f_3db * self.C_shift_in * self.R_shift_out) * 180 / pi
 
-        super().__init__(*args, **kwargs)
-
     def circuit(self):
         super().circuit()
         
         shifter = RLC(series=['C'], gnd=['R'])(
             C_series = self.C_shift_in,
-            R_gnd = self.R_shift_out
+            R_gnd = self.R_shift_out,
+            **self.load_args
         )
 
         shifter.input += self.output_n
@@ -53,4 +49,4 @@ class Modificator(Base):
 
         self.output = Net('ShiftedSignal')
         self.output += shifter.output
-        self.output_n = Net()
+        self.output_n = None

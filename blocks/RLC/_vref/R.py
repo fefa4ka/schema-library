@@ -5,10 +5,8 @@ from PySpice.Unit import u_Ohm
 class Modificator(Base):
     R_vref = 1 @ u_Ohm
 
-    def __init__(self, R_vref, *args, **kwargs):
-        self.R_vref = R_vref
-
-        super().__init__(*args, **kwargs)
+    def willMount(self, R_vref):
+        pass
 
     def circuit(self):
         super().circuit()
@@ -22,6 +20,6 @@ class Modificator(Base):
             self.output = Net('VrefResistorOutput')
 
         R = Build('Resistor').block
-        R_out = R(value=self.R_vref, ref='R_v')
+        R_out = R(value=self.R_vref, ref='R_v', **self.load_args)
 
         circuit = signal & self.output & R_out['+,-'] & self.v_ref

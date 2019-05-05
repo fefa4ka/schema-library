@@ -10,17 +10,21 @@ class Base(Block):
     """
     
     V_ref = 10 @ u_V
-    V_in = 1 @ u_V
+    V = 1 @ u_V
     # I_load = 0.015 @ u_A
     # R_load = 1000 @ u_Ohm
 
     I_in = 0 @ u_A
     R_e = 0 @ u_Ohm
     Beta = 100
-    
-    
 
-    def __init__(self, V_ref, V_in, Load):
+    pins = {
+        'v_ref': True,
+        'input': ('Signal', ['output']),
+        'gnd': True
+    } 
+
+    def willMount(self, V_ref):
         """
         R_in -- `1/R_(i\\n) = 1/R_s + 1/R_g + 1 / R_(i\\n(base))`
         R_e -- `R_e = V_e / I_(load)`
@@ -32,22 +36,12 @@ class Base(Block):
         R_in_base_ac -- `R_(i\\n(base),ac) = beta * (R_e * R_(load)) / (R_e + R_(load))`
         """
         
-        self.V_ref = V_ref
-        self.V_in = V_in
-        self.Load = Load
         self.load(V_ref)
-        self.input_n = None
-
-        self.circuit()
 
     def circuit(self):
         R = Resistor()
         is_ac = 'ac' in self.mods.get('coupled', []) 
         is_compensating = 'compensate' in self.mods.get('drop', [])
-        self.gnd = Net()
-        self.v_ref = Net()
-        
-        self.input =  self.output = Net()
        
         self.V_e = self.V_ref / 2
         self.R_e = self.V_e / self.I_load
@@ -72,7 +66,7 @@ class Base(Block):
         self.R_in_base_ac = self.Beta * ((self.R_e * self.R_load) / (self.R_e + self.R_load)) 
 
         stiff_voltage = Voltage_Divider(type='resistive')(
-            V_in = self.V_ref,
+            V = self.V_ref,
             V_out = self.V_b,
             Load = self.I_in
         )

@@ -11,24 +11,21 @@ class Modificator(Base):
     """
 
     frequency = 120 @ u_Hz
-    def __init__(self, frequency, *args, **kwargs):
+    def willMount(self, frequency):
         """
             frequency -- Input signal frequency
         """
-        
-        self.frequency = frequency
-
-        super().__init__(*args, **kwargs)
+        pass
 
     def circuit(self):
-        self.R_load /= 2
 
         super().circuit()
         
         reduce_ripple = Signal(filter=['lowpass'])(
             input=self.input,
-            R_load = self.R_load,
-            f_3dB = self.frequency
+            f_3dB = self.frequency,
+            V = self.V,
+            Load=self.R_load / 2,
         )
 
         reduce_ripple.input += self.input
@@ -36,6 +33,3 @@ class Modificator(Base):
 
         self.input = reduce_ripple.output
         
-
-        
-        # self.R_protect = self.R_load / 10

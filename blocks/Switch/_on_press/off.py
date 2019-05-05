@@ -17,6 +17,4 @@ class Modificator(Base):
                     type='pnp',
                     common='collector',
                     follow='collector'
-                )(collector = self.load)
-
-        self.output = self.load.input
+                )(collector = self.load_block) & self.gnd

@@ -10,11 +10,9 @@ class Modificator(Base):
 
     R_out = 1000 @ u_Ohm
 
-    def __init__(self, R_out=None, *args, **kwargs):
-        self.R_out = R_out
-
-        super().__init__(*args, **kwargs)
-
+    def willMount(self, R_out=None):
+        pass
+        
     def circuit(self, *args, **kwargs):
         super().circuit(*args, **kwargs)
 
@@ -24,7 +22,7 @@ class Modificator(Base):
         signal = self.output
         self.output = Net('SignalRecrifierOutput')
 
-        circuit = signal & D()['A,K'] & self.output & R(value=self.R_out) & self.gnd
+        circuit = signal & D(V=self.V, Load=self.Load)['A,K'] & self.output & R(value=self.R_out) & self.gnd
 
         # compensationVoltageDropDiode = D()
         # compensation = signal & R(value=self.R_out) & compensationVoltageDropDiode.input & R(value=self.R_out) & (self.v_ref)

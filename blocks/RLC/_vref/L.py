@@ -5,10 +5,8 @@ from PySpice.Unit import u_H
 class Modificator(Base):
     L_vref = 1 @ u_H
 
-    def __init__(self, L_vref, *args, **kwargs):
-        self.L_vref = L_vref
-        
-        super().__init__(*args, **kwargs)
+    def willMount(self, L_vref):
+        pass
 
     def circuit(self):
         super().circuit()
@@ -22,6 +20,6 @@ class Modificator(Base):
             self.output = Net('VrefInductorOutput')
 
         L = Build('Inductor').block
-        L_out = L(value=self.L_vref, ref='L_v')
+        L_out = L(value=self.L_vref, ref='L_v', **self.load_args)
 
         circuit = signal & self.output & L_out['+,-'] & self.v_ref

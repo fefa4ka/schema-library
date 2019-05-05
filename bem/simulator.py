@@ -2,7 +2,7 @@ import io
 from contextlib import redirect_stdout
 
 from PySpice.Unit import u_ms, u_s
-from skidl import (KICAD, SPICE, Circuit, Net, search, set_default_tool,
+from skidl import (KICAD, SPICE, Circuit, Net, search, set_default_tool, set_backup_lib,
                    subcircuit)
 
 from settings import default_temperature
@@ -32,6 +32,8 @@ class Simulate:
         from skidl.tools.spice import node
         self.circuit = builtins.default_circuit.generate_netlist(libs=libs)
         self.node = node
+
+        print(self.circuit)
 
     def measures(self, analysis):
         index_field = None
@@ -80,15 +82,14 @@ class Simulate:
 
     def transient(self, step_time=0.01 @ u_ms, end_time=200 @ u_ms):
         self.simulation = self.circuit.simulator()
-        print(self.circuit)
         analysis = self.simulation.transient(step_time=step_time, end_time=end_time) 
        
         return self.measures(analysis) 
 
-    def dc(self, params, temperature=default_temperature):
+    def dc(self, params, temperature=None):
         pins = self.block.get_pins().keys()
         measures = {}
-        for temp in temperature:
+        for temp in temperature or default_temperature:
             simulation = self.circuit.simulator(temperature=temp, nominal_temperature=temp)
 
             analysis = simulation.dc(**params)
@@ -96,10 +97,10 @@ class Simulate:
 
         return measures
 
-    def ac(self, params, temperature=default_temperature):
+    def ac(self, params, temperature=None):
         pins = self.block.get_pins().keys()
         measures = {}
-        for temp in temperature:
+        for temp in temperature or default_temperature:
             simulation = self.circuit.simulator(temperature=temp, nominal_temperature=temp)
             analysis = simulation.ac(**params)
             measures[temp] = analysis
@@ -108,9 +109,12 @@ class Simulate:
 
 
 def set_spice_enviroment():
+    set_backup_lib('.')
     set_default_tool(SPICE) 
-    builtins.DEBUG = True
+    builtins.SIMULATION = True
+    
+    scheme = Circuit()
     builtins.default_circuit.reset(init=True)
     del builtins.default_circuit
-    builtins.default_circuit = Circuit()
-    builtins.NC = builtins.default_circuit.NC  
+    builtins.default_circuit = scheme
+    builtins.NC = scheme.NC

@@ -40,6 +40,7 @@
     margin-left: 10px;
     display: inline-block;
 }
+
 .Block-InlineParams {
     margin-left: -5px;
 }
@@ -125,4 +126,19 @@
 .Block-TransientChart .recharts-legend-item:hover {
     font-weight: bold;
     cursor: pointer;
+}
+
+.Block-AvailableParts {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.Block-DebugModal {
+    top: 50px;
+    width: 80% !important;
+}
+
+.Block-DebugIframe {
+    width: 100%;
+    height: 400px;
 }

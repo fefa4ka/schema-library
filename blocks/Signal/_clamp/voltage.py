@@ -1,5 +1,5 @@
 from .. import Base
-from bem import Divider, Resistor, Diode, u, u_Ohm, u_V, u_A
+from bem import Voltage_Divider, Resistor, Diode, u, u_Ohm, u_V, u_A
 from skidl import Net, subcircuit
 
 
@@ -16,17 +16,9 @@ class Modificator(Base):
     V_ref = 10 @ u_V
     V_out = 3 @ u_V
     I_ref = 0.01 @ u_A
-    R_load = 1000 @ u_Ohm
 
-    def __init__(self, V_ref=None, V_out=None, I_ref=None, R_load=None, *args, **kwargs):
-        self.V_ref = V_ref
-        self.V_out = V_out
-        self.R_load = R_load
-
-        # if R_load:
-        # self.I_ref = u(V_out) / u(I_ref) @ u_Ohm
-        # self.R_load =( u(V_out) / u(I_ref)) @ u_Ohm
-        super().__init__(*args, **kwargs)
+    def willMount(self, V_ref, V_out, I_ref):
+        pass
 
     def circuit(self):
         super().circuit()
@@ -36,13 +28,13 @@ class Modificator(Base):
 
         Rref = None
         if self.V_out and self.V_ref and self.V_ref >  self.V_out:
-            Rref = Divider(type='resistive')(
-                V_in = self.V_ref,
+            Rref = Voltage_Divider(type='resistive')(
+                V = self.V_ref,
                 V_out = self.V_out,
-                I_out=self.I_ref)
+                Load=self.I_ref)
             Rref.gnd += self.gnd
         else:
             Rref = Resistor()(667)
 
-        clamp = self.v_ref & Rref & Diode()()['K', 'A'] & self.output
+        clamp = self.v_ref & Rref & Diode(type='generic')(V=self.V_ref, Load=self.Load)['K', 'A'] & self.output
         signal_input = signal & Resistor()(self.R_load, ref='R_load') & self.output

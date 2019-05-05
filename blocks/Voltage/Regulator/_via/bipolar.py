@@ -18,7 +18,8 @@ class Modificator(Base):
         self.R_protect = self.R_load / 10
         
         follower = Transistor_Bipolar(type='npn', follow='emitter')(
-            base=Resistor()(self.R_protect)
+            base = Resistor()(self.R_protect, **self.load_args),
+            **self.load_args
         )
 
         follower.input += self.output

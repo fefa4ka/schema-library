@@ -61,7 +61,15 @@ export class Blocks extends Component<any> {
       })
   }
   render() {
+    const { blocks } = this.state
     const selectedBlock = (this.props.match && this.props.match.params.block) || 'Resistor'
+    let mods = {}
+    
+    if (Object.keys(blocks).length > 0) {
+      mods = selectedBlock.includes('.')
+        ? blocks[selectedBlock.split('.')[0] + '.'][selectedBlock.split('.')[1]]
+        : blocks[selectedBlock]
+    } 
     
     return (
           <Layout>
@@ -75,17 +83,16 @@ export class Blocks extends Component<any> {
                   this.props.history.push('/block/' + openKeys[openKeys.length - 1])
                 }
               }}
-              blocks={this.state.blocks}
+              blocks={blocks}
             />
             </Sider>
         <Content>
           
-        {selectedBlock &&
-          <Block
-            name={selectedBlock}
-            mods={selectedBlock.includes('.')
-              ? this.state.blocks[selectedBlock.split('.')[0] + '.'][selectedBlock.split('.')[1]]
-              : this.state.blocks[selectedBlock] } />}
+          {selectedBlock &&
+            <Block
+              name={selectedBlock}
+              mods={mods}
+            />}
           </Content>
         </Layout>
 

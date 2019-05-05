@@ -1,4 +1,5 @@
-from bem import Block, Build, u_V, u_A
+from blocks.Abstract.Physical import Base as Block
+from bem import Build, u_V, u_A, u_S
 from skidl import Part, TEMPLATE
 
 
@@ -11,9 +12,6 @@ class Base(Block):
     However, diodes can have more complicated behavior than this simple on–off action, because of their nonlinear current-voltage characteristics. Semiconductor diodes begin conducting electricity only if a certain threshold voltage or cut-in voltage is present in the forward direction (a state in which the diode is said to be forward-biased). 
 
     """
-    props = {
-        'type': ['generic', 'zener', 'shockley', 'led', 'photo']
-    }
 
     spice_params = {
         'AF': {'description': 'Flicker noise exponent', 'unit': { 'suffix': '', 'name': 'number' }, 'value': ''},
@@ -33,32 +31,22 @@ class Base(Block):
         'XTI': {'description': 'Saturation-current temp.exp', 'unit': { 'suffix': '', 'name': 'number' }, 'value': ''}
     }
     
-    
-    V_in = 5 @ u_V
-    
-    def __init__(self, V_in=None, Load=None, *args, **kwargs):
-        self.V_in = V_in or self.V_in
-        self.Load = Load
+    mods = {
+        'type': ['generic']
+    } 
 
-        if not self.props.get('type', None):
-            self.props['type'] = 'generic'
+    def willMount(self):
+        self.Power = self.I_load
+        self.V_j = (self.selected_part.spice_params.get('VJ', None) or 0.6) @ u_V
 
-        if self.selected_part and self.selected_part.model:
-            self.model = self.selected_part.model
-        else:  
-            self.model = 'D'
-        
-        super().__init__(*args, **kwargs)
+        self.consumption(self.V_j)
+        self.Z = (self.V_j * self.V_j) / self.P
+        self.load(self.V - self.V_j)
 
-    @property
-    def spice_part(self):
-        return Build('D').spice
+    def part_spice(self, *args, **kwargs):
+        return Build('D').spice(*args, **kwargs)
 
-    @property
-    def part(self):
-        if self.DEBUG:
-            return
-
+    def part_template(self):
         if self.model == 'D':
             library = 'Device'
         else:
@@ -69,3 +57,6 @@ class Base(Block):
         part.set_pin_alias('K', 2)
         
         return part
+
+    def circuit(self):
+        super().circuit(model=self.model)

@@ -28,20 +28,15 @@ class Base(Block):
 
     * Paul Horowitz and Winfield Hill. "1.4.2 RC circuits: V and I versus time" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 21-23
     """
-    V_in = 10 @ u_V
+    V = 10 @ u_V
     V_out = 5 @ u_V
-    I_out = 0.5 @ u_A
     Time_to_V_out = 0.005 @ u_s
 
     R_in = 0 @ u_Ohm
     C_out = 0 @ u_Ohm
 
-    def __init__(self, V_in, V_out, I_out, Time_to_V_out):
-        self.V_in = V_in
-        self.V_out = V_out
-        self.Time_to_V_out = Time_to_V_out
-
-        self.circuit()
+    def willMount(self, V_out, Time_to_V_out):
+        pass
 
     # @subcircuit
     def circuit(self):
@@ -49,18 +44,18 @@ class Base(Block):
         C_out_value = self.C_out.value * self.C_out.scale
 
         if not (R_in_value and C_out_value):
-            self.R_in = (self.V_in / self.I_out) @ u_Ohm
+            self.R_in = (self.V / self.I_load) @ u_Ohm
             R_in_value = self.R_in.value * self.R_in.scale
 
         Time_to_V_out = self.Time_to_V_out.value * self.Time_to_V_out.scale
-        V_in = self.V_in.value * self.V_in.scale
+        V = self.V.value * self.V.scale
         V_out = self.V_out.value * self.V_out.scale
         
         if R_in_value and not C_out_value:        
-            self.C_out = (Time_to_V_out / (R_in_value * log(V_in / (V_in - V_out)))) @ u_F
+            self.C_out = (Time_to_V_out / (R_in_value * log(V / (V - V_out)))) @ u_F
         
         if C_out_value and not R_in_value:
-            self.R_in = (Time_to_V_out / (C_out_value * log(V_in / (V_in - V_out)))) @ u_Ohm
+            self.R_in = (Time_to_V_out / (C_out_value * log(V / (V - V_out)))) @ u_Ohm
         
         rlc = RLC(series=['R'], gnd=['C'])(
             R_series = self.R_in,

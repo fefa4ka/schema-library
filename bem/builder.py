@@ -1,13 +1,10 @@
 import importlib
 import logging
 from pathlib import Path
-try:
-    import __builtin__ as builtins
-except ImportError:
-    import builtins
 
 from settings import BLOCKS_PATH
 from .base import Block as BaseBlock
+from skidl import TEMPLATE
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +17,13 @@ class Build:
     models = {}
     files = []
 
-    def __init__(self, name, debug=None, *args, **kwargs):
+    def __init__(self, name, *args, **kwargs):
         self.name = name
         self.mods = {}
         self.props = {}
         self.models = []
         self.files = []
         
-        self.debug = debug
-
         block_dir = self.name.replace('.', '/')
 
         base_file = Path(BLOCKS_PATH) / block_dir / ('__init__.py')
@@ -83,7 +78,6 @@ class Build:
                         'name': self.name,
                         'mods': self.mods,
                         'props': self.props,
-                        'DEBUG': self.debug if self.debug != None else builtins.DEBUG,
                         'files': self.files
                     })
 
@@ -95,7 +89,7 @@ class Build:
 
     @property
     def spice(self):
-        from skidl import SKIDL, SPICE, set_default_tool, SchLib
+        from skidl import SKIDL, SPICE, set_default_tool, SchLib, Part
         from skidl.tools.spice import set_net_bus_prefixes
         
         set_default_tool(SPICE) 
@@ -105,3 +99,8 @@ class Build:
         for p in _splib.get_parts():
             if self.name == p.name or (hasattr(p, 'aliases') and self.name in p.aliases):
                 return p
+            
+        if self.name.find(':') != -1:
+            kicad, spice = self.name.split(':')
+
+            return Part(kicad, spice, dest=TEMPLATE)

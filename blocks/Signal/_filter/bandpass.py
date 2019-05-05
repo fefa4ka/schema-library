@@ -17,26 +17,9 @@ class Modificator(Base):
     R_series = 1000 @ u_Ω
     Q = 2
 
-    def __init__(self, f_0=None, Q=None, C_gnd=None, *arg, **kwargs):
-        self.f_0 = f_0
-
-        # if C_gnd and L_gnd:
-
-        f_0_value = None
-        if f_0:
-            f_0_value = f_0.value * f_0.scale
-
-        self.C_gnd = C_gnd
-        C_gnd_value = C_gnd.scale * C_gnd.value
-        self.R_load = Q / (2 * pi * f_0_value * C_gnd_value) @ u_Ω
-
-        self.L_gnd = pow(1 / (2 * pi * f_0_value * sqrt(C_gnd_value)), 2) @ u_H
-        # if L_gnd:
-        
-        # if C_gnd:
-        
-
-        super().__init__(*arg, **kwargs)
+    def willMount(self, f_0, Q, C_gnd):
+        self.R_series = Q / (2 * pi * f_0 * C_gnd) @ u_Ω
+        self.L_gnd = pow(1 / (2 * pi * f_0 * sqrt(C_gnd)), 2) @ u_H
 
     def circuit(self):
         super().circuit()
@@ -46,7 +29,7 @@ class Modificator(Base):
 
         RLC = Build('RLC', series=['R'], gnd=['L', 'C']).block
         rlc = RLC(
-            R_series = self.R_load,
+            R_series = self.R_series,
             L_gnd = self.L_gnd,
             C_gnd = self.C_gnd
         )

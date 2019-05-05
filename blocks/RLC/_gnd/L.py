@@ -5,10 +5,8 @@ from PySpice.Unit import u_H
 class Modificator(Base):
     L_gnd = 1 @ u_H
 
-    def __init__(self, L_gnd, *args, **kwargs):
-        self.L_gnd = L_gnd
-        
-        super().__init__(*args, **kwargs)
+    def willMount(self, L_gnd):
+        pass
 
     def circuit(self):
         super().circuit()
@@ -22,6 +20,6 @@ class Modificator(Base):
             self.output = Net('GndInductorOutput')
 
         L = Build('Inductor').block
-        L_out = L(value=self.L_gnd, ref='L_g')
+        L_out = L(value=self.L_gnd, ref='L_g', **self.load_args)
 
         circuit = signal & self.output & L_out['+,-'] & self.gnd

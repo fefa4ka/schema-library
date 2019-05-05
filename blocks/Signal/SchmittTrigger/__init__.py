@@ -10,12 +10,9 @@ class Base(Block):
     R_out = 20 @ u_Ohm
     R_collector = 1000 @ u_Ohm
 
-    def __init__(self, input=None):
+    def willMount(self, input=None):
         self.input = input or Net('SchmittTriggerInput')
 
-        self.circuit()
-
-    
     def circuit(self):
         self.gnd = Net()
         self.v_ref = Net()

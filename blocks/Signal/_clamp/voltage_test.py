@@ -2,7 +2,7 @@ from bem.tester import Test
 
 class Case(Test):
     def sources(self):
-        return super().test_sources() + [{
+        return super().sources() + [{
                 'name': 'V',
                 'args': {
                     'value': {

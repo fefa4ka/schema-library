@@ -5,11 +5,9 @@ from PySpice.Unit import u_F
 class Modificator(Base):
     C_series = 1 @ u_F
 
-    def __init__(self, C_series, *args, **kwargs):
-        self.C_series = C_series
+    def willMount(self, C_series):
+        pass
 
-        super().__init__(*args, **kwargs)
-        
     def circuit(self):
         super().circuit()
         
@@ -23,6 +21,6 @@ class Modificator(Base):
 
         C = Build('Capacitor').block
         
-        C_out = C(value=self.C_series, ref='C_s')
+        C_out = C(value=self.C_series, ref='C_s', **self.load_args)
 
         circuit = signal & C_out['+', '-'] & self.output 

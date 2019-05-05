@@ -5,10 +5,8 @@ from PySpice.Unit import u_F
 class Modificator(Base):
     C_parallel = 1 @ u_F
 
-    def __init__(self, C_parallel, *args, **kwargs):
-        self.C_parallel = C_parallel
-
-        super().__init__(*args, **kwargs)
+    def willMount(self, C_parallel):
+        pass
 
     def circuit(self):
         super().circuit()
@@ -19,6 +17,6 @@ class Modificator(Base):
             
         C = Build('Capacitor').block
         
-        C_out = C(value=self.C_parallel, ref='C_p')
+        C_out = C(value=self.C_parallel, ref='C_p', **self.load_args)
 
         circuit = self.input & C_out['+', '-'] & self.output

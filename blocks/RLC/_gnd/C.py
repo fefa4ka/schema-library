@@ -6,11 +6,9 @@ from PySpice.Unit import u_F
 class Modificator(Base):
     C_gnd = 1 @ u_F
 
-    def __init__(self, C_gnd, *args, **kwargs):
-        self.C_gnd = C_gnd
+    def willMount(self, C_gnd):
+        pass
         
-        super().__init__(*args, **kwargs)
-
     def circuit(self):
         super().circuit()
         
@@ -22,6 +20,6 @@ class Modificator(Base):
             signal = self.output
             self.output = Net('GndCapacitorOutput')
 
-        C_out = Capacitor()(value=self.C_gnd, ref='C_g')
+        C_out = Capacitor()(value=self.C_gnd, ref='C_g', **self.load_args)
 
         circuit = signal & self.output & C_out['+', '-'] & self.gnd

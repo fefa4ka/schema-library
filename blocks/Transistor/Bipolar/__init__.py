@@ -1,4 +1,5 @@
-from bem import Block, Build
+from blocks.Abstract.Physical import Base as Block
+from bem import Build
 from skidl import Net, Part, subcircuit, TEMPLATE
 from skidl.Net import Net as NetType
 from PySpice.Unit import u_Ohm, u_uF, u_H, u_kHz
@@ -19,17 +20,18 @@ class Base(Block):
     Input resistance|Low|High|Medium
     Output resistance|High|Low|Medium
 
-    You can choose **props**:
-    * common: emitter | base | collector
-    * follow: emitter | base | collector
-
-    ```
-    Transistor_Bipolar(follow='collector', common='emitter')(collector = Resistor()(1000 @ u_Ohm))
-    ```
-
     * [Transistor Configurations: circuit configurations](https://www.electronics-notes.com/articles/analogue_circuits/transistor/transistor-circuit-configurations.php)
     """
 
+    pins = {
+        'v_ref': True,
+        'input': True,
+        'input_n': True,
+        'output': True,
+        'output_n': True,
+        'gnd': True
+    }
+    
     emitter = None
     base = None
     collector = None
@@ -86,48 +88,23 @@ class Base(Block):
         'XTF': { 'description': 'Transit time bias dependence coefficient', 'unit': { 'suffix': '', 'name': 'number' }, 'value': '' },
         'XTI': { 'description': 'IS temperature effect exponent', 'unit': { 'suffix': '', 'name': 'number' }, 'value': '' }
     }
-        
-        
 
+    def willMount(self, collector=None, base=None, emitter=None):
+        pass
 
-    def __init__(self, collector=None, base=None, emitter=None, gnd=None,*args, **kwargs):
-        self.model = self.selected_part and self.selected_part.model
-        self.collector = collector
-        self.base = base
-        self.emitter = emitter
-        self.gnd = gnd
-        
-        super().__init__(*args, **kwargs)
+    def part_spice(self, *args, **kwargs):
+        return Build('BJT').spice(*args, **kwargs)
 
-    
-    @property
-    def spice_part(self):
-        return Build('BJT').spice
+    def part_template(self):
+        # TODO: Search for models and footprints using low level attributes of Block
+        part = Part('Transistor_BJT', self.selected_part.scheme or self.model, footprint=self.footprint, dest=TEMPLATE)
+        part.set_pin_alias('collector', 1)
+        part.set_pin_alias('base', 2)
+        part.set_pin_alias('emitter', 3)
 
-    @property
-    def part(self):
-        if not self.DEBUG:
-            # TODO: Search for models and footprints using low level attributes of Block
-            part = Part('Transistor_BJT', self.selected_part.scheme or self.model, footprint=self.footprint, dest=TEMPLATE)
-            part.set_pin_alias('collector', 1)
-            part.set_pin_alias('base', 2)
-            part.set_pin_alias('emitter', 3)
-
-            return part
-        else:
-            return self.spice_part
-
+        return part
 
     def circuit(self):
-        self.input = Net('BJTInput')
-        self.output = Net('BJTOutput')
-        self.input_n = Net('BJTInputN')
-        self.output_n = Net('BJTOutputN')
-
-        self.v_ref = Net()
-        self.gnd = Net()
-
-        
         transistor = self.part(model=self.model)
 
         common = self.props.get('common', 'emitter') 

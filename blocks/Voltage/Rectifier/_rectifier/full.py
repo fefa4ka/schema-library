@@ -28,23 +28,17 @@ class Modificator(Base):
     """
     C_ripple = 0.01 @ u_F
 
-    V_out = 10 @ u_V
     V_ripple = 1 @ u_V
 
     frequency = 120 @ u_Hz
 
-    def __init__(self, V_out=None, V_ripple=None, frequency=None, Load=None):
+    def willMount(self, V_ripple=None, frequency=None):
         """
             V_ripple -- Periodic variations in voltage about the steady value
             frequency -- Input signal frequency
             C_ripple -- A relatively large value capacitor; it charges up to the peak output voltage during the diode conduction
         """
-        self.V_out = V_out
-        self.V_ripple = V_ripple
-        self.Load = Load
-        self.frequency = frequency
-        self.load(self.V_out) 
-        self.circuit()
+        pass 
     
     def circuit(self):
         super().circuit()
@@ -54,7 +48,6 @@ class Modificator(Base):
         self.output = Net('BridgeOutput')
 
         C = Capacitor(**self.mods, **self.props)
-        
         self.C_ripple = (self.I_load / (self.frequency * self.V_ripple * (2 if is_full_wave else 1))) @ u_F
 
-        circuit = bridge_output & self.output & C(value=self.C_ripple, ref='C_ripple')['+', '-'] & self.output_n
+        circuit = bridge_output & self.output & C(value=self.C_ripple, ref='C_ripple', **self.load_args)['+', '-'] & self.output_n

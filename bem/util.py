@@ -27,7 +27,7 @@ def is_tolerated(a, b, tollerance=params_tolerance):
     `10,000 * (1 − 0.05) ≤ R ≤ 10,000 * (1 + 0.05)`
     `9500 ≤ R ≤ 10,500`
     """
-    
+
     if type(a) == list and b in a:
         return True
 

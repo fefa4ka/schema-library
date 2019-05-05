@@ -1,24 +1,36 @@
 from .. import Base
-from skidl import Net, subcircuit, Part
-from PySpice.Unit import u_Ohm, u_A, u_V
+from bem import Build, u_Ohm, u_A, u_V
+from blocks.Abstract.Physical import Base as Physical
+from skidl import Net, Part, TEMPLATE
 
-
-class Modificator(Base):
+class Modificator(Base, Physical):
     """**Physical Switch Input**
     
     Switch connected series to the signal.
     """
 
+    def part_spice(self, *args, **kwargs):
+        return Build('VCS').spice(*args, **kwargs)
 
-    @property
-    def part(self):
-        if self.DEBUG:
-            return
+    def part_template(self):
+        part = Part('Switch', 'SW_DPST', footprint=self.footprint, dest=TEMPLATE)
 
-        return Part('Switch', 'SW_DPST', footprint=self.footprint, dest=TEMPLATE)
+        part.set_pin_alias('ip', 1)
+        part.set_pin_alias('in', 3)
+        part.set_pin_alias('op', 2)
+        part.set_pin_alias('on', 4)
+
+        return part
 
     def circuit(self):
         switch = self.part()
+
+        # self.input += self.v_ref
+
+        self.input += switch['ip']
+        self.input_n += switch['in']
         
-        self.input += switch['1,3']
-        self.output += switch['2,4']
+        self.output += switch['op']
+        self.output_n += switch['on']
+
+        super().circuit()

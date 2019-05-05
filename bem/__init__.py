@@ -6,6 +6,7 @@ from collections import defaultdict
 
 from .base import Block, u, is_tolerated
 from .builder import Build
+from .stockman import Stockman
 from PySpice.Unit import *
 
 def get_bem_blocks(parent=''):

@@ -6,16 +6,13 @@ class Base(Block):
     mods = {
         'split': ['unity']
     }
-    
-    def __init__(self):
-        # self.input = input
 
-        self.circuit()
-
+    pins = {
+        'v_ref': True,
+        'input': ('Some', ['output']),
+        'output_n': True,
+        'gnd': True
+    }
     
     def circuit(self):
-        self.gnd = Net()
-        self.v_ref = Net()
-        self.input = self.output = Net()
-        
-        self.output_n = Net()
+        pass 

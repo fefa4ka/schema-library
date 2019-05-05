@@ -26,24 +26,20 @@ class Base(Block):
     Load = 0.01 @ u_A
     R_e = 0 @ u_Ohm
 
-    def __init__(self, V_ref, Load):
+    pins = {
+        'v_ref': ('Vref', ['input', 'output']),
+        'output_n': True,
+        'gnd': True
+    }
+
+    def willMount(self, V_ref):
         """
         V_je -- Base-emitter built-in potential
         
         """
-        self.V_ref = V_ref
-        self.Load = Load
         self.load(self.V_ref)
 
-        self.circuit()
-
     def circuit(self, **kwargs):
-        self.input = Net()
-        self.output_n = Net()
-        self.output = Net()
-        self.v_ref = Net()
-        self.gnd = Net()
-
         generator = Transistor_Bipolar(type='npn', follow='emitter')()
         # self.Beta = generator.selected_part.spice_params['BF']
         self.V_je = (generator.selected_part.spice_params.get('VJE', None) or 0.6) @ u_V
@@ -53,10 +49,10 @@ class Base(Block):
         self.R_e = self.V_e / self.I_load
 
         generator.collector += self.output_n
-    
+        
         
         controller = Voltage_Divider(type='resistive')(
-            V_in = self.V_ref,
+            V = self.V_ref,
             V_out = self.V_b,
             Load = self.I_load
         )

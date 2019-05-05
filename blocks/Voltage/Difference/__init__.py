@@ -27,7 +27,7 @@ class Base(Block):
     G_cm = 0
     CMMR = 0
 
-    def __init__(self, V_ref, V_gnd, I_quiescent):
+    def willMount(self, V_ref, V_gnd, I_quiescent):
         """
         R_c -- `R_c = V_c / I_(quiescent)`
         R_e -- Hardcoded value `R_e = 1000 Ω` 
@@ -37,11 +37,7 @@ class Base(Block):
         CMMR -- A good differential amplifier has a high _common-mode rejection ratio_ `CM\\R\\R = R_1/(R_e + r_e)` the ratio of response for a normal-mode signal to the response for a common-mode signal of the same amplitude.
         r_e -- Transresistance `r_e = V_T / I_e = ((kT) / q) / I_e = (0.0253 V) / I_e`
         """
-        self.V_ref = V_ref
-        self.V_gnd = V_gnd
-        self.I_quiescent = I_quiescent
-
-        self.circuit()
+        pass 
 
     def circuit(self):
         R = Resistor()

@@ -3,15 +3,19 @@ import logging
 import os
 from pathlib import Path
 
-from PySpice.Unit import FrequencyValue, PeriodValue, u_ms, u_Ohm, u_A, u_W
+from PySpice.Unit import FrequencyValue, PeriodValue, u_V, u_ms, u_Ohm, u_A, u_W, u_S
 from PySpice.Unit.Unit import UnitValue
 from skidl import TEMPLATE, Net, Network, Part, subcircuit
 from skidl.Net import Net as NetType
 from skidl.NetPinList import NetPinList
 
-from .stockman import Stockman
 from .util import u, is_tolerated, label_prepare
 from settings import BLOCKS_PATH, params_tolerance
+
+try:
+    import __builtin__ as builtins
+except ImportError:
+    import builtins
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +23,13 @@ class Block:
     name = ''
     mods = {}
     props = {}
+
+    pins = {
+        'input': True,
+        'output': True,
+        'vref': True,
+        'gnd': ('Ground', ['output_n', 'input_n'])
+    }
 
     input = None
     output = None
@@ -29,38 +40,69 @@ class Block:
     v_ref = None
     gnd = None
 
+    V = 10 @ u_V
+    Power = 0 @ u_W
     Load = 1000 @ u_Ohm  # [0 @ u_Ohm, 0 @ u_A, 0 @ u_W]
-    R_load = 0 @ u_Ohm
-    I_load = 0 @ u_A
-    P_load = 0 @ u_W
 
     element = None
     ref = ''
     files = []
 
-    def __init__(self, circuit=True, *args, **kwargs):
-        """
-            V_in -- Volts across its input terminal and gnd
-            V_out -- Volts across its output terminal and gnd
-            P -- The power dissipated 
-            I -- The current through a device
-            I_load -- Connected load presented in Amperes
-            R_load -- Connected load presented in Ohms
-            P_load -- Connected load presented in Watts
-        """
-   
+    def __init__(self, *args, **kwargs):
+        if len(args) > 0 and 'value' not in kwargs.keys():
+            kwargs['value'] = args[0]
+            args = args[1:]
+
+        is_ciruit_building = kwargs.get('circuit', True)
+        if kwargs.get('circuit', None) != None:
+            del kwargs['circuit']
 
         for prop in kwargs.keys():
             if hasattr(self, prop):
                 setattr(self, prop, kwargs[prop])
-       
-        if circuit:
+
+        self.set_pins()
+
+        self.load(self.V)
+        
+        self.mount(*args, **kwargs)
+
+        if self.Power and not hasattr(self, 'P'):
+            self.consumption(self.V)
+
+        if is_ciruit_building:
             self.circuit()
 
+    def mount(self, *args, **kwargs):
+        classes = list(inspect.getmro(self.__class__))
+        classes.reverse()
+        for cls in classes:
+            if hasattr(cls, 'willMount'):
+                mount_args_keys = inspect.getargspec(cls.willMount).args
+                mount_args = {key: value for key, value in kwargs.items() if key in mount_args_keys}
+        
+                cls.willMount(self, *args, **mount_args)
+
+    def willMount(self, V=None, Load=None):
+        """
+            V -- Volts across its input terminal and gnd
+            V_out -- Volts across its output terminal and gnd
+            G -- Conductance `G = 1 / Z`
+            Z -- Impedance of block
+            P -- The power dissipated by block
+            I -- The current through a block
+            I_load -- Connected load presented in Amperes
+            R_load -- Connected load presented in Ohms
+            P_load -- Connected load presented in Watts
+        """
+        pass
+
     # Title and Description
+    # def __instance__name__(self):
+    #     return [k for k,v in globals().items() if v is self]
     @property
-    def __instance__name__(self):
-        return [k for k,v in globals().items() if v is self]
+    def SIMULATION(self):
+        return builtins.SIMULATION
 
     def __str__(self):
         body = [self.name]
@@ -69,7 +111,6 @@ class Block:
         
         return '\n'.join(body)
 
-    @property
     def title(self):
         input = self.input
         output = self.output
@@ -91,9 +132,36 @@ class Block:
         return description
 
     def get_params_description(self):
+        def is_proper_cls(cls):
+            if cls == object:
+                return False
+
+            if hasattr(cls, 'willMount') and cls.willMount.__doc__:
+                return True
+        
+            if hasattr(cls, 'circuit') and cls.circuit.__doc__:
+                return True
+
+            return False
+            
+        def extract_doc(cls):
+            doc = ''
+
+            mount = hasattr(cls, 'willMount') and cls.willMount.__doc__
+            if mount:
+                doc += mount
+
+            circuit = hasattr(cls, 'circuit') and cls.circuit.__doc__
+            if circuit:
+                doc += circuit
+
+            return doc
+
         params = {}
-        docs = [cls.__init__.__doc__ for cls in inspect.getmro(self) if cls.__init__.__doc__ and cls != object]
+
+        docs = [extract_doc(cls) for cls in inspect.getmro(self) if is_proper_cls(cls) ]
         docs.reverse()
+
         for doc in docs:
             terms = [line.strip().split(' -- ') for line in doc.split('\n') if len(line.strip())]
             for term, description in terms:
@@ -101,7 +169,14 @@ class Block:
         
         return params
 
+
     # Link Routines
+    def __getitem__(self, *pin_ids, **criteria):
+        if len(pin_ids) == 1 and hasattr(self, str(pin_ids[0])):
+            return getattr(self, pin_ids[0])
+
+        return self.element.__getitem__(*pin_ids, **criteria)
+
     def __series__(self, instance):
         if self.output and instance.input:
             self.output._name = instance.input._name = f'{self.name}{instance.name}_Net'
@@ -121,15 +196,9 @@ class Block:
 
         self.connect_power_bus(instance)
 
-    def __getitem__(self, *pin_ids, **criteria):
-        if len(pin_ids) == 1 and hasattr(self, str(pin_ids[0])):
-            return getattr(self, pin_ids[0])
-
-        return self.element.__getitem__(*pin_ids, **criteria)
-
     def __and__(self, instance):
         if issubclass(type(instance), Block):
-            print(f'{self.title} series connect {instance.title if hasattr(instance, "title") else instance.name}')
+            # print(f'{self.title} series connect {instance.title if hasattr(instance, "title") else instance.name}')
             self.__series__(instance)
 
             return instance
@@ -153,7 +222,7 @@ class Block:
     #     return instance & self
 
     def __or__(self, instance):
-        print(f'{self.title} parallel connect {instance.title if hasattr(instance, "title") else instance.name}')
+        # print(f'{self.title} parallel connect {instance.title if hasattr(instance, "title") else instance.name}')
         if issubclass(type(instance), Block):
             self.__parallel__(instance)
 
@@ -186,10 +255,12 @@ class Block:
     def get_arguments(self, Instance=None):
         arguments = {}
         args = []
+
         classes = list(inspect.getmro(self))
         classes.reverse()
         for cls in classes:
-            args += inspect.getargspec(cls.__init__).args
+            if hasattr(cls, 'willMount'):
+                args += inspect.getargspec(cls.willMount).args
         
         for arg in args:
             if arg in ['self', 'circuit']:
@@ -243,11 +314,36 @@ class Block:
 
         return arguments
     
+    def parse_args(self, args):
+        arguments = self.get_arguments(self)
+        props = {}
+        for attr in arguments:
+            props[attr] = getattr(self, attr)
+            if type(props[attr]) == list:
+                props[attr] = props[attr][0]
+            arg = args.get(attr, None)
+            if arg: 
+                if type(arg) == dict:
+                    arg = arg['value']
+                
+                if type(props[attr]) in [int, float]:
+                    props[attr] = float(arg)
+                elif type(props[attr]) == str:
+                    props[attr] = arg
+                elif type(props[attr]) == list:
+                    props[attr] = props[attr][0]
+                else:
+                    props[attr]._value = float(arg)
+        
+        return props
+
+
     def get_params(self):
-        # arguments = self.get_arguments()
+        params_default = inspect.getmembers(self, lambda a: not (inspect.isroutine(a)))
+
         params = {}
-        for param, default in inspect.getmembers(self, lambda a:not(inspect.isroutine(a))):
-            if param in inspect.getargspec(self.__init__).args:# or arguments.get(param, None):
+        for param, default in params_default: 
+            if param in inspect.getargspec(self.willMount).args:# or arguments.get(param, None):
                 continue
             
             if type(default) in [UnitValue, PeriodValue, FrequencyValue]:
@@ -276,29 +372,8 @@ class Block:
         
         return params
 
-    def parse_args(self, args):
-        arguments = self.get_arguments(self)
-        props = {}
-        for attr in arguments:
-            props[attr] = getattr(self, attr)
-            if type(props[attr]) == list:
-                props[attr] = props[attr][0]
-            arg = args.get(attr, None)
-            if arg: 
-                if type(arg) == dict:
-                    arg = arg['value']
-                
-                if type(props[attr]) in [int, float]:
-                    props[attr] = float(arg)
-                elif type(props[attr]) == str:
-                    props[attr] = arg
-                elif type(props[attr]) == list:
-                    props[attr] = props[attr][0]
-                else:
-                    props[attr]._value = float(arg)
-        
-        return props
 
+    # Pins
     def get_pins(self):
         pins = {}
         for key, value in inspect.getmembers(self, lambda item: not (inspect.isroutine(item))):
@@ -308,97 +383,78 @@ class Block:
         return pins
        
     def set_pins(self):
-        self.input = Net('Input') 
-        self.output = Net('Output')
-        self.input += self.element[1]
-        self.output += self.element[2]
-        
-        # self.gnd == Net('0')
-        self.v_ref = Net()
-        self.input_n = self.output_n = self.gnd = Net()
- 
+        for pin in self.pins.keys():
+            pin_description = [self.pins[pin]] if type(self.pins[pin]) == bool else self.pins[pin]
+            device_name = self.name.replace('.', '')
+            net_name = device_name + ''.join([word.capitalize() for word in pin.split('_')])
+            
+            related_nets = [pin]
+
+            if type(pin_description) in [list, tuple]: 
+                for pin_data in pin_description:
+                    if type(pin_data) == str:
+                        net_name = device_name + pin_data
+
+                    if type(pin_data) == list:
+                        related_nets += pin_data
+            else:
+                net_name = device_name + pin_description 
+            
+            original_net = Net(net_name)
+            
+            # if not hasattr(self, 'model') and pin.find('output') != -1:
+                # print(net_name.replace('.', ))
+                # original_net.fixed_name = True
+
+            for net in related_nets:
+                setattr(self, net, original_net)
 
 
-    @property
-    def part(self):
-        if self.DEBUG:
-            return None
-
-        part = None
-
-        if self.props.get('part', None) or self.name.find(':') != -1:
-            part = self.props.get('part', None) or self.name
-
-            library, device = part.split(':')
-            part = Part(library, device, footprint=self.footprint, dest=TEMPLATE)
-
-            if len(part.pins) == 2:
-                part.set_pin_alias('p', 1)
-                part.set_pin_alias('n', 2)
-        
-        return part
-
-    @property
-    def spice_part(self):
-        return self.part
-
-    @property
-    def spice_model(self):
-        return self.get_spice_model(self.model)
     
-
-    # Physical Part
-    @property
-    def available_parts(self):
-        parts = Stockman(self).suitable_parts()
-
-        return parts
-      
-    @property
-    def selected_part(self):
-        available = list(self.available_parts)
-
-        return available[0] if len(available) > 0 else None
-
-    @property
-    def footprint(self):
-        if self.props.get('footprint', None):
-            return self.props['footprint']
-
-        part = self.selected_part
-        if part:
-            return part.footprint.replace('=', ':')
-
-        return None
-
-
+    # @property
+    # def spice_model(self):
+    #     return self.get_spice_model(self.model)
+ 
     # Circuit Creation
     def circuit(self, *args, **kwargs):
-        Model = None
-        if self.DEBUG:
-            Model = self.spice_part
-        else:
-            Model = self.part
+        element = self.part(*args, **kwargs)
 
-        if not Model:
-            return
-
-        if hasattr(self, 'model'):
-            kwargs['model'] = self.model
-
-        element = Model(*args, **kwargs)
         element.ref = self.ref or element.ref 
         self.element = element
         
-        self.set_pins()
+        self.input += self.element[1]
+        self.output += self.element[2]
 
 
+    # Consumption and Load
+    def consumption(self, V):
+        self.P = None
+        self.I = None
+        self.Z = None
 
-    def log(self, message):
-        logger.info(self.title + ' - ' + str(message))
+        if self.Power == 0 @ u_Ohm or V == 0:
+            return
 
+        Power = self.Power
+        
+        if Power.is_same_unit(1 @ u_Ohm):
+            self.Z = Power
+            self.I = V / self.Z
+        
+        if Power.is_same_unit(1 @ u_W):
+            self.P = Power
+            self.I = self.P / V
+        else:
+            if Power.is_same_unit(1 @ u_A):
+                self.I = Power
 
-    # Properties
+            self.P = V * self.I
+
+        if not self.Z:
+            self.Z = V / self.I
+
+        self.G = (1 / self.Z) @ u_S
+
     def load(self, V_load):
         Load = self.Load
         
@@ -418,6 +474,18 @@ class Block:
         if not self.R_load:
             self.R_load = V_load / self.I_load
 
-    def power(self):
-        return None
+        self.load_args = {
+            'V': V_load,
+            'Load': self.Load
+        } 
+        
+    def current(self, voltage, impedance):
+        return voltage / impedance
+
+    def power(self, voltage, impedance):
+        return voltage * voltage / impedance
+        
+    def log(self, message):
+        logger.info(self.title() + ' - ' + str(message))
+
 

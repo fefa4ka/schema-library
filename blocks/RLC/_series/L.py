@@ -5,10 +5,8 @@ from PySpice.Unit import u_H
 class Modificator(Base):
     L_series = 1 @ u_H
 
-    def __init__(self, L_series, *args, **kwargs):
-        self.L_series = L_series
-
-        super().__init__(*args, **kwargs)
+    def willMount(self, L_series):
+        pass
 
     def circuit(self):
         super().circuit()
@@ -23,6 +21,6 @@ class Modificator(Base):
 
         L = Build('Inductor').block
         
-        L_out = L(value=self.L_series, ref='L_s')
+        L_out = L(value=self.L_series, ref='L_s', **self.load_args)
 
         circuit = signal & L_out['+,-'] & self.output 

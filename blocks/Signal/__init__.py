@@ -1,13 +1,12 @@
-from bem import Block, Build
+from bem import Block, Build, u_V
 from skidl import Net, subcircuit
 # from PySpice.Unit import u_Ohm, u_V, u_A
 
 class Base(Block):
-    def __init__(self, input=None):
+    V = 10 @ u_V
+
+    def willMount(self, input=None):
         self.input = input
-
-        self.circuit()
-
     
     def circuit(self):
         self.input = self.output = self.input or Net('SignalInput')

@@ -5,10 +5,8 @@ from PySpice.Unit import u_Ohm
 class Modificator(Base):
     R_gnd = 1 @ u_Ohm
 
-    def __init__(self, R_gnd, *args, **kwargs):
-        self.R_gnd = R_gnd
-
-        super().__init__(*args, **kwargs)
+    def willMount(self, R_gnd):
+        pass
 
     def circuit(self):
         super().circuit()
@@ -22,6 +20,6 @@ class Modificator(Base):
             self.output = Net('GndResistorOutput')
 
         R = Build('Resistor').block
-        R_out = R(value=self.R_gnd, ref='R_g')
+        R_out = R(value=self.R_gnd, ref='R_g', **self.load_args)
 
         circuit = signal & self.output & R_out['+,-'] & self.gnd

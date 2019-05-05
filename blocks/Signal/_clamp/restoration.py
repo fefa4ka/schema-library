@@ -16,4 +16,4 @@ class Modificator(Base):
         signal = self.output
         self.output = Net('SignalClampedOutput')
 
-        restoration = signal & C(value=1000 @ u_uF) & self.output & D()['K', 'A'] & self.gnd
+        restoration = signal & C(value=1000 @ u_uF) & self.output & D(V=self.V, Load=self.Load)['K', 'A'] & self.gnd

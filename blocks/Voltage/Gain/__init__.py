@@ -14,7 +14,7 @@ class Base(Block):
     """
 
     V_ref = 20 @ u_V
-    V_in = 1.4 @ u_V
+    V = 1.4 @ u_V
     f_3db = 1000000 @ u_Hz
     I_quiescent = 0.01 @ u_A
 
@@ -23,7 +23,7 @@ class Base(Block):
     R_c = 0 @ u_F
     R_e = 0 @ u_F
     
-    def __init__(self, V_ref, V_in, f_3db, I_quiescent):
+    def willMount(self, V_ref, f_3db, I_quiescent):
         """
             f_3db -- Frequencies of interest are passed by the highpass filter
             C_in -- Blocking capacitor is chosen so that all frequencies of interest are passed by the highpass filter `C_(i\\n) >= 1 / (2 pi f_(3db) (R_s∥R_g))`
@@ -44,12 +44,7 @@ class Base(Block):
             r_e -- Transresistance `r_e = V_T / I_e = ((kT) / q) / I_e = (0.0253 V) / I_e`
             
         """
-        self.V_ref = V_ref
-        self.V_in = V_in
-        self.f_3db = f_3db
-        self.I_quiescent = I_quiescent
-
-        self.circuit()
+        pass 
 
     def circuit(self):
         self.input = self.output = Net('VoltageGainInput')
@@ -76,7 +71,7 @@ class Base(Block):
         self.V_je = (amplifier.selected_part.spice_params.get('VJE', None) or 0.6) @ u_V
 
         stiff_voltage = Voltage_Divider(type='resistive')(
-            V_in = self.V_ref,
+            V = self.V_ref,
             V_out = self.V_e + self.V_je,
             Load = self.Beta * self.R_e
         )

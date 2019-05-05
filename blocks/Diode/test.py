@@ -1,7 +1,7 @@
 from bem.tester import Test
 from bem.simulator import Simulate
 from collections import defaultdict
-from bem import u
+from bem import u, u_A, u_Degree
 
 class Case(Test):
     def dc_source(self):
@@ -26,7 +26,7 @@ class Case(Test):
         self._sources = self.dc_source()
         self.circuit(args)
         
-        simulations = Simulate(self.block).dc({ 'VV': voltage_sweep })
+        simulations = Simulate(self.block).dc({ 'VV': voltage_sweep }, temperature=temperature)
         self._sources = None
         
         
@@ -85,12 +85,34 @@ class Case(Test):
                 'label': 'Current',
                 'unit': 'A',
                 'scale': 'sqrt',
-                'domain': [-1e-8, 0]
+                'domain': [-1e-12, 0]
             },
             'data': data
         }
 
 
         
+    def LoadLineQPoint(self, args, temperature=[25] @ u_Degree):
+        """
+            The Q-point can be found by plotting the graph of the load line on the i-v characteristic for the diode. The intersection of the two curves represents the quiescent operating point, or Q-point, for the diode.
+        """
+        voltage_sweep = slice(0, self.block.V, .1)
+        data = self.characteristics(args, temperature, voltage_sweep)
+        data[0]['Load_Line'] = u(self.block.I_load)
+        data[len(data) - 1]['Load_Line'] = 0 
 
+        return {
+            'x': {
+                'field': 'V_input',
+                'label': 'Volt',
+                'unit': 'V'
+            },
+            'y': {
+                'label': 'Current',
+                'unit': 'A',
+                'scale': 'sqrt',
+                'domain': [-1e-3, 1e-3]
+            },
+            'data': data
+        }
         

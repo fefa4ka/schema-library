@@ -13,6 +13,7 @@ class Stockman:
     def request(self):
         block = self.block
         load = {
+             'V': getattr(block, 'V', None),
              'P_load': block.P_load,
              'I_load': block.I_load,
              'R_load': block.R_load
@@ -60,11 +61,10 @@ class Stockman:
             value = values[index]
             
             is_param_proper = self.check_attrubute(part, param, value)
-                            
+
             if is_param_proper:
                 continue
 
-            print('BREAK', param, value)
             break
         else:
             return True
@@ -74,14 +74,15 @@ class Stockman:
     def check_attrubute(self, part, attribute, desire):
         checks = ['param', 'mod', 'property', 'spice']
         for check in checks:
-            is_proper = getattr(self, 'check_' + check)
-           
-            if is_proper(part, attribute, desire):
+            check_is_proper = getattr(self, 'check_' + check)
+            is_proper = check_is_proper(part, attribute, desire)
+                
+            if not is_proper:
                 break
         else:
-            return False
+            return True
 
-        return True
+        return False
 
     def check_param(self, part, param, desire):
         part_params = part.params.where(Param.name == param)

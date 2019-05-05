@@ -13,11 +13,16 @@ class Modificator(Block):
     """
     
     def create_bridge(self):
-        D = Diode()
+        D = Diode(type='generic') 
         
+        load = {
+            'V': self.V_out,
+            'Load': self.Load
+        }
+
         circuit = self.output_n & (
-            (D(ref='D_out_n_in')['A,K'] & self.input & D(ref='D_in_out')['A,K']) 
-            | (D(ref='D_out_n_in_n')['A,K'] & self.input_n & D(ref='D_in_n_out')['A,K']) 
+            (D(ref='D_out_n_in', **load)['A,K'] & self.input & D(ref='D_in_out', **load)['A,K']) 
+            | (D(ref='D_out_n_in_n', **load)['A,K'] & self.input_n & D(ref='D_in_n_out', **load)['A,K']) 
         ) & self.output
 
    

@@ -22,19 +22,12 @@ class Modificator(Base):
 
     f_3dB = 1000 @ u_Hz
 
-    R_load = 1000 @ u_Ω
     R_gnd = 1000 @ u_Ω
     C_series = 1e-6 @ u_F
 
-    def __init__(self, R_load=None, f_3dB=None, *arg, **kwargs):
-        self.f_3dB = f_3dB
-        f_3dB_value = f_3dB.value * f_3dB.scale
-        R_gnd_value = (self.R_load.value * self.R_load.scale) / 10
-        self.R_load = R_load
-        self.R_gnd = R_gnd_value @ u_Ω
-        self.C_series = 1 / (2 * pi * R_gnd_value * f_3dB_value) @ u_F
-
-        super().__init__(*arg, **kwargs)
+    def willMount(self, f_3dB):
+        self.R_gnd = self.R_load / 10
+        self.C_series = 1 / (2 * pi * self.R_gnd * f_3dB) @ u_F
 
     def circuit(self):
         super().circuit()

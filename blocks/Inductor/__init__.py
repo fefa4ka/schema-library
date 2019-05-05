@@ -1,4 +1,5 @@
-from bem import Block, Build
+from blocks.Abstract.Combination import Base as Block
+from bem import Build
 from skidl import Part, TEMPLATE
 from PySpice.Unit import u_H
 
@@ -22,31 +23,27 @@ class Base(Block):
     """
 
     increase = False
-    value = 0 @ u_H 
+    value = 10 @ u_H 
 
-    def __init__(self, value, *args, **kwargs):
+    def willMount(self, value):
         """
             value -- L is called the inductance and is measured in henrys (or mH, μH, nH, etc.).
         """
         
         if type(value) in [float, int]:
             value = float(value) @ u_H
+        
+        self.value = self.value_closest(value) if not self.SIMULATION else value
 
-        super().__init__(circuit=False, *args, **kwargs);
+    def part_spice(self, *args, **kwargs):
+        return Build('L').spice(*args, **kwargs)
 
-        self.circuit(value=self.value)
-
-    @property
-    def spice_part(self):
-        return Build('L').spice
-
-    @property
-    def part(self):
-        if self.DEBUG:
-            return
-
+    def part_template(self):
         part = Part('Device', 'L', footprint=self.footprint, dest=TEMPLATE)
         part.set_pin_alias('+', 1)
         part.set_pin_alias('-', 2)
         
         return part
+
+    def circuit(self):
+        super().circuit(value=self.value)

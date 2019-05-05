@@ -1,4 +1,5 @@
 from .. import Base, Build
+from bem import u
 from skidl import Net, subcircuit
 from PySpice.Unit import u_Ω, u_F, u_Hz, u_H
 from math import pi, sqrt
@@ -17,23 +18,11 @@ class Modificator(Base):
     R_in = 1000 @ u_Ω
     Q = 2
 
-    def __init__(self, f_0=None, Q=None, C_series=None, *arg, **kwargs):
-        self.f_0 = f_0
+    def willMount(self, f_0, Q, C_series):
+        self.R_in = Q / (2 * pi * f_0 * C_series) @ u_Ω
 
-        # if C_series and L_series:
-
-        f_0_value = None
-        if f_0:
-            f_0_value = f_0.value * f_0.scale
-
-        self.C_series = C_series
-        C_series_value = C_series.scale * C_series.value
-        self.R_in = Q / (2 * pi * f_0_value * C_series_value) @ u_Ω
-
-        self.L_series = pow(1 / (2 * pi * f_0_value * sqrt(C_series_value)), 2) @ u_H
+        self.L_series = pow(1 / (2 * pi * f_0 * sqrt(C_series)), 2) @ u_H
         
-        super().__init__(*arg, **kwargs)
-
     def circuit(self):
         super().circuit()
         

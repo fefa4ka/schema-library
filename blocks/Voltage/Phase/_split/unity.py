@@ -12,7 +12,6 @@ class Modificator(Base):
     """
 
     V_ref = 20 @ u_V
-    V_in = 6 @ u_V
     f_3db = 120 @ u_Hz
     
     V_split = 0 @ u_V
@@ -20,27 +19,23 @@ class Modificator(Base):
     C_in = 0 @ u_F
     I_b = 0.001 @ u_A
 
-    def __init__(self, V_ref, V_in, f_3db, *args, **kwargs):
+    def willMount(self, V_ref, f_3db):
         """
             f_3db -- Frequencies of interest are passed by the highpass filter
             C_in -- Blocking capacitor is chosen so that all frequencies of interest are passed by the highpass filter `C_(i\\n) >= 1 / (2 pi f_(3db) (R_s∥R_g))`
         """
         
-        self.V_ref = V_ref
-        self.V_in = V_in
-        self.f_3db = f_3db
-
         self.V_split = self.V_ref / 6
         self.R_out = (u(self.V_split) / u(self.I_b) * 100) @ u_Ohm
-    
-        super().__init__(*args, **kwargs)
 
+        self.load(V_ref)
+    
     def circuit(self):
         super().circuit()
         
         R = Resistor()
         stiff_voltage = Voltage_Divider(type='resistive')(
-            V_in = self.V_ref,
+            V = self.V_ref,
             V_out = self.V_split + 0.6 @ u_V,
             Load = self.I_b
         )  
@@ -53,8 +48,8 @@ class Modificator(Base):
             common='emitter',
             follow='collector'
         )(
-            collector = R(self.R_out, ref='R_c'),
-            emitter = R(self.R_out, ref='R_e')
+            collector = R(self.R_out, ref='R_c', **self.load_args),
+            emitter = R(self.R_out, ref='R_e', **self.load_args)
         )
         
         split = stiff_voltage & self & splitter
@@ -65,7 +60,7 @@ class Modificator(Base):
         self.C_in = (1 / (2 * pi * self.f_3db * R.parallel_sum(R, [self.R_out * 2 , stiff_voltage.R_in, stiff_voltage.R_out]))) @ u_F
         
         signal = Net('VoltageShiftAcInput')
-        ac_coupling = signal & Capacitor()(self.C_in, ref='C_in') & self.input
+        ac_coupling = signal & Capacitor()(self.C_in, ref='C_in', **self.load_args) & self.input
         self.input = signal
 
 

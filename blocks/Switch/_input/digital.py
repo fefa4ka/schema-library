@@ -20,5 +20,5 @@ class Modificator(Base):
             ) & Resistor()(100 @ u_Ohm) & amplified
         
         self.output = amplified
-
+        
         super().circuit()

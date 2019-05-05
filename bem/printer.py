@@ -14,7 +14,7 @@ class Print:
     def __init__(self, Block, props, kit=[]):
         set_backup_lib('.')
         set_default_tool(KICAD) 
-        builtins.DEBUG = False
+        builtins.SIMULATION = False
         
         self.scheme = Circuit()
         builtins.default_circuit.reset(init=True)
@@ -28,7 +28,8 @@ class Print:
     def netlist(self):
         for device in self.kit:
             device_name = device['library'] + ':' + device['name'][:device['name'].rfind('_')]
-            DeviceBlock = Build(device_name, footprint=device['footprint']).element
+            ref = device['library'] + ':' + device['name'][device['name'].rfind('_'):] 
+            DeviceBlock = Build(device_name, footprint=device['footprint'], ref=ref).element
             
             for device_pin_name in device['pins'].keys():
                 for pin in device['pins'][device_pin_name]:
@@ -41,7 +42,7 @@ class Print:
 
     @classmethod    
     def additional_devices(self, block):
-        pins = block.get_pins()
+        pins = block.get_pins() or []
         connected = [pin for pin in pins.keys() if len(pins[pin]) > 0]
         
         pin_head = {

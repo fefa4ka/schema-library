@@ -22,6 +22,8 @@ class Test:
     block = None
 
     def __init__(self, builder):
+        set_spice_enviroment()
+        
         self.builder = builder
 
     def cases(self):
@@ -72,7 +74,6 @@ class Test:
                 is_same_connection = True
                 for source_pin in pins:
                     for index, pin in enumerate(source['pins'][source_pin]):
-                        
                         if source_another['pins'][source_pin][index] != pin:
                             is_same_connection = False
                             break
@@ -128,14 +129,15 @@ class Test:
             LoadBlock = Build(load['name'], **mods).block
             args = LoadBlock.parse_args(LoadBlock, load['args'])
             Load = LoadBlock(**args)
+            
             for load_pin in load['pins'].keys():
                 for pin in load['pins'][load_pin]:
-                    load_pin = getattr(Load, load_pin)
-                    load_pin += getattr(self.block, pin)
+                    Load_pin = getattr(Load, load_pin)
+                    Load_pin += getattr(self.block, pin)
 
     # Circuit for simulation
     def circuit(self, args):
-        set_spice_enviroment()
+        
         props = self.builder.parse_args(self.builder, args)
         self.block = self.builder(**props)     
 

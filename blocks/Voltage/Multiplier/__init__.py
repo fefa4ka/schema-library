@@ -15,32 +15,18 @@ class Base(Block):
 
     scale = 2
 
-    V_out = 20 @ u_V
     V_ripple = 1 @ u_V
 
-    R_load = 1000 @ u_Ohm
-    I_load = 0 @ u_A
     frequency = 120 @ u_Hz
 
-    def __init__(self, scale, frequency, V_out, V_ripple, Load):
-        self.V_out = V_out
+    def willMount(self, scale, frequency, V_ripple):
         self.scale = int(scale)
-        self.frequency = frequency
-        self.V_ripple = V_ripple
         
-        self.Load = Load
-
-        self.load(V_out)
-
-        self.circuit()
+        self.load(self.V * self.scale)
 
     def circuit(self):
         HalfBridge = Voltage_Rectifier(wave='half', rectifier='full')
         
-        self.input = Net()
-        self.output = Net()
-        self.gnd = self.input_n = self.output_n = Net()
-
         sections = []
         
         if self.scale % 2:
@@ -51,7 +37,7 @@ class Base(Block):
         for block in range(self.scale):
             last = sections[-1]
 
-            half = HalfBridge(V_out=self.V_out, frequency=self.frequency, V_ripple=self.V_ripple, Load=self.Load)
+            half = HalfBridge(V_out=self.V * self.scale, frequency=self.frequency, V_ripple=self.V_ripple, Load=self.Load)
             half.gnd += last[0]
             half.input += last[1]
             

@@ -13,15 +13,13 @@ class Modificator(Base):
     C_in = 0 @ u_F
     C_out = 0 @ u_F
 
-    def __init__(self, f_3db, *arg, **kwarg):
+    def willMount(self, f_3db):
         """
         C_in -- `C_(i\\n) = 1 / (2 pi f_(3db)R_(i\\n))`
         C_out -- `C_(out) = 1 / (2 pi f_(3db)R_(load))` 
         """
-        self.f_3db = f_3db
-
-        super().__init__(*arg, **kwarg)
-
+        pass
+        
     def circuit(self):
         super().circuit()
         

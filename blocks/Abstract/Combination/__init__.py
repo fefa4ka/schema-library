@@ -1,4 +1,5 @@
-from bem import Block, u
+from bem import u
+from ..Physical import Base as Block
 from bem.model import Param
 import numpy as np
 from PySpice.Unit import SiUnits
@@ -14,12 +15,11 @@ prefixes['0'] = 0
 
 class Base(Block):
     increase = True
-    
-    @property
+
     def values(self):
         values = []
         
-        for part in self.available_parts:
+        for part in self.available_parts():
             values += self.part_values(part)
 
         return values
@@ -44,14 +44,14 @@ class Base(Block):
 
         return values
                 
-    @property
-    def selected_part(self):
-        for part in self.available_parts:
+    def select_part(self):
+        available_parts = self.available_parts()
+        for part in available_parts:
             for value in self.part_values(part):
                 if value == self.value:
                     return part
         
-        return self.available_parts[0]
+        return available_parts[0]
 
     def values_optimal(self, desire, error=10):
         # return [desire]
@@ -94,7 +94,7 @@ class Base(Block):
         absolute_value = u(value)
 
         closest = None
-        for unit in self.values:            
+        for unit in self.values():            
             if not closest:
                 closest = unit
 

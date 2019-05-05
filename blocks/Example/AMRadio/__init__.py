@@ -7,18 +7,17 @@ class Base(Block):
     R_out = 1000 @ u_Ohm
     C_out = 0 @ u_Ohm
 
-    def __init__(self, frequency=None, *args, **kwargs):
-        self.frequency = frequency
+    pins = {
+        'v_ref': True,
+        'input': ('Modulated',),
+        'output': ('Demodulated',),
+        'gnd': True
+    }
 
-        self.circuit(*args, **kwargs)
-
+    def willMount(self, frequency=None):
+        pass
     
     def circuit(self):
-        self.v_ref = Net('AMRadioVref')
-        self.gnd = Net()
-        self.input = Net('AMRadioInput')
-        self.output = Net('AMRadioOutput')
-
         signal = Signal(filter=['bandpass'], clamp=['rectifier'])(
             f_0 = self.frequency,
             Q = 2,
@@ -39,50 +38,3 @@ class Base(Block):
 
         circuit = self.input & signal & self.output & C_out & self.gnd
         
-		
-
-    def test_sources(self):
-        return [{
-                'name': 'AMV',
-                'args': {
-                    'amplitude': {
-                        'value': 2,
-                        'unit': {
-                            'name': 'volt',
-                            'suffix': 'V'
-                        }
-                    },
-                    'offset': {
-                        'value': 6,
-                        'unit': {
-                            'name': 'volt',
-                            'suffix': 'V'
-                        }
-                    },
-                    'signal_delay': {
-                        'value': 0.0000000001,
-                        'unit': {
-                            'name': 'sec',
-                            'suffix': 's'
-                        }
-                    },
-                    'carrier_frequency': {
-                        'value': 5000,
-                        'unit': {
-                            'name': 'herz',
-                            'suffix': 'Hz'
-                        }
-                    },
-                    'modulating_frequency': {
-                        'value': 1000000,
-                        'unit': {
-                            'name': 'herz',
-                            'suffix': 'Hz'
-                        }
-                    }
-                },
-                'pins': {
-                    'p': ['input'],
-                    'n':  ['gnd']
-                }
-        }]

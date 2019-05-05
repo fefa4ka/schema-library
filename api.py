@@ -9,7 +9,7 @@ from flask_api import FlaskAPI
 
 from PySpice.Unit import u_A, u_Hz, u_ms, u_Ohm, u_s, u_V
 from PySpice.Unit.Unit import UnitValue
-from skidl import Circuit, Net, search, subcircuit, set_default_tool, KICAD, SPICE
+from skidl import Circuit, Net, search, subcircuit, set_default_tool, set_backup_lib, KICAD, SPICE
 
 from bem import Build, get_bem_blocks
 from bem.model import Part, Param, Mod, Prop, Stock
@@ -27,13 +27,13 @@ except ImportError:
 
 app = FlaskAPI(__name__)
 
-builtins.DEBUG = True
+builtins.SIMULATION = True
 
 
 @app.route('/api/devices/', methods=['GET'])
 def devices():
     set_default_tool(KICAD)
-    builtins.DEBUG = False
+    builtins.SIMULATION = False
 
     import io
     from contextlib import redirect_stdout
@@ -88,13 +88,17 @@ def blocks():
 
 @app.route('/api/blocks/<name>/', methods=['GET'])
 def block(name):
+    set_backup_lib('.')
     set_default_tool(KICAD) 
-    builtins.DEBUG = True
+    builtins.SIMULATION = False
     
+    scheme = Circuit()
     builtins.default_circuit.reset(init=True)
     del builtins.default_circuit
-    builtins.default_circuit = Circuit()
-    builtins.NC = builtins.default_circuit.NC
+    builtins.default_circuit = scheme
+    builtins.NC = scheme.NC
+
+
     gnd = Net('0')
     gnd.fixed_name = True
 
@@ -114,7 +118,7 @@ def block(name):
             else:
                 circuit = Instance.input.circuit
             for part in circuit.parts:
-                pins = [str(pin).split(',')[0] for pin in part.get_pins()]
+                pins = [str(pin).split(',')[0] for pin in part.get_pins() or []]
                 parts.append({
                     'name': part.name,
                     'description': part.description,
@@ -122,14 +126,21 @@ def block(name):
                 })
 
             for net in circuit.get_nets():
-                pins = [str(pin).split(',')[0] for pin in net.get_pins()]
+                pins = [str(pin).split(',')[0] for pin in net.get_pins() or []]
                 nets[net.name] = pins
         
+        RawBlock = Build(Block.name)
+        props = RawBlock.base and RawBlock.base.props
         Test = BuildTest(Block, **params)
-        available = [{ 'id': part.id, 'model': part.model, 'fooptrint': part.footprint } for part in Instance.available_parts]
+        if hasattr(Instance, 'selected_part'):
+            available = [{'id':part.id, 'model':part.model, 'footprint':part.footprint} for part in Instance.available_parts()]
+        else:
+            available = []
+            
         params = {
             'name': Block.name,
-            'mods': Block.mods,
+            'mods': { **Block.mods, **{ key: prop for key, prop in Block.props.items() if key in props.keys() }},
+            'props': props,
             'description': Block.get_description(Block),
             'params_description': Block.get_params_description(Block),
             'args':  Block.get_arguments(Block, Instance),

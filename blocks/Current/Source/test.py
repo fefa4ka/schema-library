@@ -35,7 +35,7 @@ class Case(Test):
                     }
                 },
                 'pins': {
-                    'input': ['v_ref'],
+                    'input': ['output'],
                     'output': ['output_n']
                 }
         }]

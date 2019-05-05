@@ -15,46 +15,34 @@ class Base(Block):
 
     increase = True
     value = 1000 @ u_Ohm
-    V_in = 10 @ u_V
     G = 0 @ u_S
     V_drop = 0 @ u_V
 
     ref = 'R'
 
-    def __init__(self, value, V_in=None, Load=0.125 @ u_W, *args, **kwargs):
+    def willMount(self, value):
         """
             value -- A resistor is made out of some conducting stuff (carbon, or a thin metal or carbon film, or wire of poor conductivity), with a wire or contacts at each end. It is characterized by its resistance.
             V_drop -- Voltage drop after resistor with Load 
-            G -- Conductance `G = 1 /R`
         """
 
         if type(value) in [str, int, float]:
             value = float(value) @ u_Ohm
 
-        self.value = value
-        self.Load = Load
-
-        self.calculator()
-
-        super().__init__(*args, **kwargs)
-    
-    def calculator(self):
+        self.value = self.Power = value
+        
         # Power Dissipation
-        value = u(self.value)
-
-        V_in_value = u(self.V_in)
-        self.P = self.power(V_in_value, value) @ u_W
-        self.I = self.current(V_in_value, value) @ u_A
         if self.Load.is_same_unit(1 @ u_Ohm):
-            I_total = self.current(V_in_value, u(self.Load + self.value))
+            I_total = self.current(self.V, self.Load + self.value)
         elif self.Load.is_same_unit(1 @ u_A):
             I_total = self.I + self.Load
         elif self.Load.is_same_unit(1 @ u_W):
-            I_total = (u(self.P + self.Load) / u(self.V_in))
+            I_total = (self.P + self.Load) / self.V
         
-        self.V_drop = (value * I_total) @ u_V
-        self.G = (1 / value) @ u_S
-        self.load(self.V_in - self.V_drop)
+        self.V_drop = self.value * I_total
+        
+        self.load(self.V - self.V_drop)
+        self.consumption(self.V)
 
     def series_sum(self, values):
         return sum(values) @ u_Ohm
@@ -62,38 +50,19 @@ class Base(Block):
     def parallel_sum(self, values):
         return 1 / sum(1 / np.array(values)) @ u_Ohm
 
-    def current(self, voltage, value):
-        return voltage / value
+    def part_spice(self, *args, **kwargs):
+        return Build('R').spice(*args, **kwargs)
 
-    def power(self, voltage, value):
-        return voltage * voltage / value
-        
-    @property
-    def part(self):
-        if not self.DEBUG:
-            part = Part('Device', 'R', footprint=self.footprint, dest=TEMPLATE)
-            part.set_pin_alias('+', 1)
-            part.set_pin_alias('-', 2)
+    def part_template(self):
+        part = Part('Device', 'R', footprint=self.footprint, dest=TEMPLATE)
+        part.set_pin_alias('+', 1)
+        part.set_pin_alias('-', 2)
 
-            return part
-        else:
-            return None
+        return part
 
-
-    # @subcircuit
     def circuit(self):
-        R_model = None
-
-        if self.DEBUG:
-            R_model = Build('R').spice
-        else:
-            R_model = self.part
-
-    
-        values = self.values_optimal(self.value, error=5) if not self.DEBUG else [self.value]
+        values = self.values_optimal(self.value, error=5) if not self.SIMULATION else [self.value]
         resistors = []
-        rin = Net()
-        rout = Net()
         
         self.log(f'{self.value} implemented by {len(values)} resistors: ' + ', '.join([str(value) + " Ω" for value in values]))
         total_value = 0
@@ -103,7 +72,7 @@ class Base(Block):
                 parallel_out = Net()
                 
                 for resistance in value:
-                    r = R_model(value=resistance)
+                    r = self.part(value=resistance)
                     r.ref = self.ref
                     total_value += resistance.value * resistance.scale
                         
@@ -117,7 +86,7 @@ class Base(Block):
                 resistors.append((None, parallel_in, parallel_out))
 
             else:
-                r = R_model(value=value)
+                r = self.part(value=value)
                 total_value += value.value * value.scale
                 r.ref = self.ref
                 self.element = r
@@ -130,13 +99,6 @@ class Base(Block):
 
         self.value = total_value @ u_Ohm
         
-        rin += resistors[0][1]
-        rout += resistors[-1][2]
+        self.input += resistors[0][1]
+        self.output += resistors[-1][2]
         
-        self.input = rin
-        self.output = rout
-
-        self.input_n = self.output_n = self.gnd = Net()
-        self.v_ref = Net()
-       
-        return 'Resistor'

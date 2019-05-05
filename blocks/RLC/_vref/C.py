@@ -6,11 +6,9 @@ from PySpice.Unit import u_F
 class Modificator(Base):
     C_vref = 1 @ u_F
 
-    def __init__(self, C_vref, *args, **kwargs):
-        self.C_vref = C_vref
+    def willMount(self, C_vref):
+       pass
         
-        super().__init__(*args, **kwargs)
-
     def circuit(self):
         super().circuit()
         
@@ -22,6 +20,6 @@ class Modificator(Base):
             signal = self.output
             self.output = Net('VrefCapacitorOutput')
 
-        C_out = Capacitor()(value=self.C_vref, ref='C_v')
+        C_out = Capacitor()(value=self.C_vref, ref='C_v', **self.load_args)
 
         circuit = signal & self.output & C_out['+', '-'] & self.v_ref

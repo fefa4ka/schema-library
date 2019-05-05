@@ -15,6 +15,16 @@ class Base(Block):
         'wave': ['full']
     }
 
+    V_out = 10 @ u_V
+
+    def willMount(self, V_out=None,):
+        """
+            V_ripple -- Periodic variations in voltage about the steady value
+            frequency -- Input signal frequency
+        """
+        self.load(self.V_out)
+
+
     def __series__(self, instance):
         if self.output and instance.input:
             self.output._name = instance.input._name = f'{self.name}{instance.name}_Net'

@@ -7,22 +7,14 @@ class Base(Block):
     """
 
     # Props
-    V_in = 10 @ u_V
     V_out = 3 @ u_V
-    Load = 0.06 @ u_A
 
     mods = {
         'type': ['resistive']
     }
 
-    def __init__(self, V_in, V_out, Load):
+    def willMount(self, V_out):
         """
            V_out -- Note that the output voltage is always less than (or equal to) the input voltage; that’s why it’s called a divider.
         """
-        
-        self.V_in = V_in
-        self.V_out = V_out
-        self.Load = Load
-
-        self.load(V_in)
-        self.circuit()
+        self.load(self.V_out)

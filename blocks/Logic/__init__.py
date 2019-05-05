@@ -6,20 +6,18 @@ class Base(Block):
     inputs = []
     outputs = []
 
-    def __init__(self, inputs=None):
+    pins = {
+        'v_ref': True,
+        'gnd': True
+    }
+
+    def willMount(self, inputs=None):
         default_input = [Net()]
-        if self.DEBUG:
+        if self.SIMULATION:
             self.input_b = Net()
             default_input = [Net(), self.input_b]
 
         self.inputs = self.outputs = inputs or default_input
-
-        self.circuit()
-
-    def circuit(self):
-        
-        self.v_ref = Net()
-        self.gnd = Net()
 
     @property
     def input(self):

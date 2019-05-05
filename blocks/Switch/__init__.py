@@ -1,4 +1,4 @@
-from bem import Block, Resistor
+from bem import Block, Resistor, Abstract_Virtual
 from skidl import Net, subcircuit
 from PySpice.Unit import u_Ohm, u_A, u_V
 
@@ -8,31 +8,37 @@ class Base(Block):
     Switch connected series to the signal.
     """
 
+    mods = {
+        'input': ['physical']
+    }
+
     V_ref = 15 @ u_V
     V_input = 10 @ u_V
-    I_load = 0.015 @ u_A
 
-    load = None
+    load_block = None
 
-    def __init__(self, V_ref=None, V_input=None, I_load=None, load=None, *args, **kwargs):
+    pins = {
+        'v_ref': True,
+        'input': 'ControlP',
+        'input_n': 'ControllerN',
+        'output': 'LoadP',
+        'output_n': 'LoadN'
+    }
+
+    def willMount(self, V_ref=None):
         if not self.gnd:
             self.gnd = Net()
-
-        if self.DEBUG:
-            self.load = Resistor()(value = 330, ref = 'R_switch_load')
-        else:
-            self.load = load
         
-        self.input = Net('SwitchController')
-        self.output = Net('SwitchLoadP')
-        self.output_n = Net('SwitchLoadN')
-        self.v_ref = Net() # ?
+        self.load_block = Abstract_Virtual()(input=self.output, output=self.output_n)
         
-        self.circuit(*args, **kwargs)
+        self.load(self.V_ref)
+        
+    def circuit(self):
+        pass
 
     # @property
     # def part(self):
-    #     if self.DEBUG:
+    #     if self.SIMULATION:
     #         return
 
     #     return Part('Switch', 'SW_DPST', footprint=self.footprint, dest=TEMPLATE)
@@ -42,7 +48,7 @@ class Base(Block):
 
         # attach_load = self.output & self.load & self.output_n & self.gnd
 
-        # if not self.DEBUG:
+        # if not self.SIMULATION:
         #     switch = self.part()
             
         #     self.input += switch['1,3']

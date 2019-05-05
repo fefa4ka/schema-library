@@ -55,4 +55,23 @@ class Case(Test):
                     'n': ['gnd']
                 }
         }]
+
+
+    def load(self):
+        return [{
+                'name': 'Resistor',
+                'args': {
+                    'value': {
+                        'value': 1000,
+                        'unit': {
+                            'name': 'ohm',
+                            'suffix': 'Ω'
+                        }
+                    }
+                },
+                'pins': {
+                    'input': ['output'],
+                    'output': ['output_n']
+                }
+        }]
     
