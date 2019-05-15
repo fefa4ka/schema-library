@@ -5,6 +5,8 @@ from pathlib import Path
 from settings import BLOCKS_PATH
 from .base import Block as BaseBlock
 from skidl import TEMPLATE
+from inspect import getmro
+from collections import OrderedDict
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +24,8 @@ class Build:
         self.mods = {}
         self.props = {}
         self.models = []
-        self.files = []
+        self.inherited = []
+        # self.files = []
         
         block_dir = self.name.replace('.', '/')
 
@@ -30,7 +33,10 @@ class Build:
         self.base = base_file.exists() and importlib.import_module(BLOCKS_PATH + '.' + self.name).Base        
         
         if self.base:
-            self.files.append(str(base_file))
+            # if type(self.base.files) == list:
+            #     self.files = self.base.files 
+                
+            # self.files.append(str(base_file))
 
             for mod, value in kwargs.items():
                 if type(value) == list:
@@ -48,37 +54,61 @@ class Build:
                     values = [str(values)]
 
                 for value in values:
-                    module_file = Path(BLOCKS_PATH) / block_dir / ('_' + mod) / (value + '.py')
-                    if module_file.exists():
-                        self.files.append(str(module_file))
-                        Module = importlib.import_module(BLOCKS_PATH + '.' + self.name + '._' + mod + '.' + value)
-                        self.models.append(Module.Modificator)
-                    else:
-                        self.props[mod] = value
-
+                    for mod_block_dir in set([block_dir]):
+                        module_file = Path(BLOCKS_PATH) / mod_block_dir / ('_' + mod) / (value + '.py')
+                        if module_file.exists():
+                            # self.files.append(str(module_file))
+                            Module = importlib.import_module(BLOCKS_PATH + '.' + mod_block_dir.replace('/', '.') + '._' + mod + '.' + value)
+                            self.models.append(Module.Modificator)
+                        else:
+                            self.props[mod] = value
+  
             for key, value in self.props.items():
                 del self.mods[key]
         else:
             self.props = kwargs
 
+    # self.files = list(set(self.files))
+    # Run once
+    def ancestors(self, ancestor=None):
+        if not ancestor:
+            self.inherited = []
+
+        ancestor = ancestor or self.base
+        mods = ancestor.mods if ancestor else self.mods
+        for parent in ancestor.inherited:
+            ParentBlock = parent(**mods)
+            self.inherited += getmro(ParentBlock)[1:-1]
+            self.ancestors(ParentBlock)
+
+        return list(OrderedDict.fromkeys(self.inherited))
+
     @property
     def block(self):
         if self.base:
             Models = self.models
+            
             Models.reverse()
+           
             if self.base not in Models:
                 Models.append(self.base)
-            Models = tuple(self.models)
-        else:
-            Models = (BaseBlock, )
 
+            Models += self.ancestors() 
+            
+        else:
+            Models = [BaseBlock]
+            
+        self.inherited = []
+        
+        # name = self.name[self.name.find('.') + 1:]
         Block = type(self.name,
-                    Models,
+                    tuple(Models),
                     {
                         'name': self.name,
+                        # 'inher': self.inherited,
                         'mods': self.mods,
                         'props': self.props,
-                        'files': self.files
+                        # 'files': self.files
                     })
 
         return Block

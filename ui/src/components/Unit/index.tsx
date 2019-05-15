@@ -4,6 +4,7 @@ import { IClassNameProps } from '@bem-react/core'
 import { cn } from '@bem-react/classname'
 import { MathMarkdown } from '../Block/Mathdown'
 import { Tooltip } from 'antd'
+const MathJax = require("../Block/mathjax-preview").default
 export interface IProps extends IClassNameProps {
     name: string,
     suffix?: string,
@@ -42,6 +43,10 @@ export const canonise = (value:number, suffix?: string) => {
     const absoluteValue = Math.abs(value)
     const log = Math.log(absoluteValue) / Math.log(1000)
     let power = Math.floor(log)
+    
+    value = typeof(value) === 'string'
+        ? parseFloat(value)
+        : value
     let fixedValue: string = value.toFixed(2)
     
     if(value !== 0) {
@@ -78,7 +83,7 @@ export const Unit = ({ name, suffix, value, description }: IProps): any => {
     
     const canonised = typeof value === 'number'
         ? canonise(value)
-        : value
+        : <MathJax math={value}/>
 
     return (
         <span className={cnUnit('Param')} key={name}> 

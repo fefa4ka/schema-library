@@ -11,10 +11,10 @@ from PySpice.Unit import u_A, u_Hz, u_ms, u_Ohm, u_s, u_V
 from PySpice.Unit.Unit import UnitValue
 from skidl import Circuit, Net, search, subcircuit, set_default_tool, set_backup_lib, KICAD, SPICE
 
-from bem import Build, get_bem_blocks
+from bem import Build, get_bem_packs
 from bem.model import Part, Param, Mod, Prop, Stock
 from bem.printer import Print
-from bem.simulator import Simulate
+from bem.simulator import Simulate, set_spice_enviroment
 from probe.read import get_sigrok_samples
 from probe import get_arg_units, get_minimum_period
 from probe.source import JDS6600, simulation_sources
@@ -81,7 +81,7 @@ def sources():
 
 @app.route('/api/blocks/', methods=['GET'])
 def blocks():
-    blocks = get_bem_blocks()
+    blocks = get_bem_packs()
 
     return blocks
 
@@ -105,7 +105,7 @@ def block(name):
     def build():
         params = request.args
         Block = Build(name, **params).block
-        props = Block.parse_args(Block, params)
+        props = Block.parse_arguments(Block, params)
         
         Instance = Block(**props)
         
@@ -167,7 +167,7 @@ def netlist(name):
     params = request.data
     
     Block = Build(name, **params['mods']).block
-    props = Block.parse_args(Block, params['args'])
+    props = Block.parse_arguments(Block, params['args'])
     kit = params.get('devices', [])
     
     netlist = Print(Block, props, kit).netlist()
@@ -178,10 +178,16 @@ def netlist(name):
 def simulate(name):
     params = request.data
     Block = Build(name, **params['mods']).block
-    Test = BuildTest(Block, **params['mods'])
-    simulation = Test.simulate(params['args'])
+    args = Block.parse_arguments(Block, params['args'])
+    Instance = Block(**args)
+    
+    sources = params.get('sources', None)
+    load = params.get('load', None)
+    
+    simulation = Instance.simulate(sources, load)
 
     return simulation 
+
 
 @app.route('/api/blocks/<name>/simulate/cases/', methods=['POST'])
 def simulate_cases(name):
@@ -191,6 +197,7 @@ def simulate_cases(name):
 
     cases = {}
     for name in Test.cases():
+        set_spice_enviroment()
         case = getattr(Test, name)
         cases[name] = case(params['args'])
         cases[name]['description'] = Test.description(name)
@@ -450,11 +457,16 @@ def get_part_params(name):
     params = request.args
     
     Block = Build(name, **params).block
+
+    props = {}
+    if Build(name).base:
+        props = Build(name).base.props
+        props = { key: value if type(value) == list else [value] for key, value in props.items() }
     
     return {
         'spice': Block.spice_params if hasattr(Block, 'spice_params') else {},
         'part': {**Block.get_arguments(Block), **Block.get_params(Block)},
-        'props': Build(name).base and Build(name).base.props
+        'props': props
     }
 
 if __name__ == "__main__":

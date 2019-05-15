@@ -1,21 +1,16 @@
 from bem import Block, Stockman
+from bem.abstract import Electrical
 
 class Base(Block):
+    inherited = [Electrical]
     model = ''
 
     template = None
 
     def willMount(self, model=None):
-        self.selected_part = self.select_part()
-        
-        if self.selected_part.model != model:
-            self.model = self.selected_part.model
-
-        if self.selected_part:
-            self.props['footprint'] = self.selected_part.footprint.replace('=', ':')
-
-        if not self.SIMULATION:
-            self.template = self.part_template()
+        if not hasattr(self, 'selected_part'):
+            selected_part = self.select_part()
+            self.apply_part(selected_part)
 
     def available_parts(self):
         parts = Stockman(self).suitable_parts()
@@ -35,7 +30,7 @@ class Base(Block):
       
     def select_part(self):
         available = list(self.available_parts())
-        model = self.props.get('model', None)
+        model = self.model
 
         if model:
             for part in available:
@@ -46,8 +41,24 @@ class Base(Block):
         
         return part
 
+    def apply_part(self, part):
+        self.selected_part = part
+        
+        if self.selected_part.model != self.model:
+            self.model = self.selected_part.model
+
+        if self.selected_part:
+            self.props['footprint'] = self.selected_part.footprint.replace('=', ':')
+
+        if not self.SIMULATION:
+            self.template = self.part_template()
+
     # Physical or Spice Part
     def part_template(self):
+        """
+            self.name or self.part should contains definition with ':', for example 'Device:R' 
+            or part_template method shoud redefined
+        """
         part = None
 
         if self.props.get('part', None) or self.name.find(':') != -1:
@@ -67,10 +78,8 @@ class Base(Block):
         if self.SIMULATION:
             return self.part_spice(*args, **kwargs)
 
+        # If IC assembly with multiply units available return free unit or new.
         return self.template(*args, **kwargs)
-
-    def part_spice(self, *args, **kwargs):
-        return None
 
     @property
     def footprint(self):

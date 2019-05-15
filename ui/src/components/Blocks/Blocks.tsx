@@ -1,13 +1,14 @@
-import React, { Component } from 'react';
+import React, { Component } from 'react'
 import { Block } from '../Block'
-import { Layout, Menu } from 'antd';
+import { Layout, Menu, Icon } from 'antd'
 import axios from 'axios'
 import { BrowserRouter as Router, Route, withRouter } from "react-router-dom";
 
 const {
   Header, Footer, Sider, Content,
-} = Layout;
-const { SubMenu } = Menu;
+} = Layout
+const { SubMenu } = Menu
+const MenuItemGroup = Menu.ItemGroup
 
 const initState = {
   blocks: {},
@@ -15,11 +16,20 @@ const initState = {
 }
 type State = {
   blocks: {
-    [name: string]: {
-      [mod:string]: string[]
+    [pack: string]: {
+      [name: string]: {
+        [mod: string]: string[]
+      }
     }
   },
   selectedBlock: string
+}
+
+const icons:any = {
+  'abstract': 'build',
+  'analog': 'rise',
+  'basic': 'sliders',
+  'digital': 'barcode'
 }
 
 export const insertSpaces = (string:string) => {
@@ -33,20 +43,24 @@ export const BlocksMenu= ({ onClick, onOpenChange, blocks }:any) =>
   <Menu
     mode="inline"
     defaultSelectedKeys={['1']}
-    defaultOpenKeys={['sub1']}
+    defaultOpenKeys={['basic']}
     style={{ height: '100%' }}
     onClick={onClick}
     onOpenChange={onOpenChange}
   >
-    {Object.keys(blocks).filter(block => block[block.length - 1] !== '.').map((block, index) =>
-        blocks[block + '.']
-        ? <SubMenu key={block} title={<span>{block}</span>}>
-          {Object.keys(blocks[block + '.']).map((element, index) =>
-            <Menu.Item key={block + '.' + element}>{insertSpaces(element)}</Menu.Item>
-          )}
-      </SubMenu>
-      : <Menu.Item key={block}>{insertSpaces(block)}</Menu.Item>
+    {Object.keys(blocks).map(pack =>
+      <SubMenu key={pack} title={<strong><Icon type={icons[pack]} /><span>{insertSpaces(pack)}</span></strong>}>
+        {Object.keys(blocks[pack]).filter(block => block[block.length - 1] !== '.').map((block, index) =>
+            blocks[pack][block + '.']
+            ? <SubMenu key={pack + '.' + block} title={<span>{block}</span>}>
+              {Object.keys(blocks[pack][block + '.']).map((element, index) =>
+                <Menu.Item key={pack + '.' + block + '.' + element}>{insertSpaces(element)}</Menu.Item>
+              )}
+          </SubMenu>
+          : <Menu.Item key={pack + '.' + block}>{insertSpaces(block)}</Menu.Item>
 
+        )}
+      </SubMenu>
     )}
   </Menu>
 export class Blocks extends Component<any> {
@@ -62,13 +76,11 @@ export class Blocks extends Component<any> {
   }
   render() {
     const { blocks } = this.state
-    const selectedBlock = (this.props.match && this.props.match.params.block) || 'Resistor'
+    const selectedBlock = (this.props.match && this.props.match.params.block) || 'basic.Resistor'
     let mods = {}
     
     if (Object.keys(blocks).length > 0) {
-      mods = selectedBlock.includes('.')
-        ? blocks[selectedBlock.split('.')[0] + '.'][selectedBlock.split('.')[1]]
-        : blocks[selectedBlock]
+      mods = selectedBlock.split('.').reduce((o:any, key:string)=>o[key], blocks)
     } 
     
     return (
@@ -76,9 +88,11 @@ export class Blocks extends Component<any> {
             <Sider className='App-Side'>
             <BlocksMenu 
               onClick={(param:any) => {
+                console.log(param.keys)
                 this.props.history.push('/block/' + param.key)
               }}
-              onOpenChange={(openKeys:any) => {
+            onOpenChange={(openKeys: any) => {
+                console.log(openKeys)
                 if (openKeys.length) {
                   this.props.history.push('/block/' + openKeys[openKeys.length - 1])
                 }

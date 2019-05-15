@@ -12,6 +12,48 @@ type State = {
     value: string | number
 }
 
+const LibTest = `EESchema-LIBRARY Version 2.3
+#encoding utf-8
+#
+# Amperemeter_AC
+#
+DEF Amperemeter_AC MES 0 1 N N 1 F N
+F0 "MES" -130 40 50 H V R CNN
+F1 "Amperemeter_AC" -130 -30 50 H V R CNN
+F2 "" 0 100 50 V I C CNN
+F3 "" 0 100 50 V I C CNN
+DRAW
+A -20 -54 21 -1633 -167 0 1 0 N -40 -60 0 -60
+A 20 -65 21 140 1660 0 1 0 N 40 -60 0 -60
+C 0 0 100 0 1 10 N
+T 0 0 25 100 0 0 0 A Normal 0 C C
+P 2 0 0 0 -125 -125 -75 -75 N
+P 2 0 0 0 75 75 125 125 N
+P 3 0 0 0 75 125 125 125 125 75 N
+X ~ 1 0 -200 100 U 50 50 1 1 P
+X ~ 2 0 200 100 D 50 50 1 1 P
+ENDDRAW
+ENDDEF
+#
+# Amperemeter_DC
+#
+DEF Amperemeter_DC MES 0 1 N N 1 F N
+F0 "MES" -130 40 50 H V R CNN
+F1 "Amperemeter_DC" -130 -30 50 H V R CNN
+F2 "" 0 100 50 V I C CNN
+F3 "" 0 100 50 V I C CNN
+DRAW
+C 0 0 100 0 1 10 N
+T 0 0 0 100 0 0 0 A Normal 0 C C
+P 2 0 0 0 -125 -125 -75 -75 N
+P 2 0 0 0 75 75 125 125 N
+P 3 0 0 0 75 125 125 125 125 75 N
+P 2 0 1 0 10 150 30 150 N
+P 2 0 1 0 20 160 20 140 N
+X - 1 0 -200 100 U 50 50 1 1 P
+X + 2 0 200 100 D 50 50 1 1 P
+ENDDRAW
+ENDDEF`
 export class Diagram extends React.Component<IProps, {}> {
     state: State = initialState
     private canvasRef = React.createRef<HTMLCanvasElement>()
@@ -111,7 +153,9 @@ export class Diagram extends React.Component<IProps, {}> {
     }
     render() {
 
-      
+        // const lib = Lib.Library.load(LibTest)
+        // console.log({lib})
+
 		return <canvas ref={this.canvasRef} />
       
     }

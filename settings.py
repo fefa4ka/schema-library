@@ -19,7 +19,7 @@ class Byte(Unit):
     __unit_name__ = 'byte'
     __unit_suffix__ = 'B'
     __quantity__ = 'byte'
-    __default_unit__ = True
+    __default_unit__ = False 
 
 _build_unit_shortcut(Byte())
 
@@ -52,7 +52,7 @@ test_sources =[{
 }]
     
 test_load = [{
-    'name': 'RLC',
+    'name': 'basic.RLC',
     'mods': {
         'series': ['R']
     },

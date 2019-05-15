@@ -4,7 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 import inspect
 
-from skidl import Net
+from bem import Net
 
 from bem import Block, Build, u_s
 from probe import get_arg_units, get_minimum_period
@@ -42,21 +42,17 @@ class Test:
         return description
 
     # Signal source configuration
-    _sources = None
     
     def sources(self):
-        if self._sources:
-            return self._sources
-        else:
-            sources = test_sources
-            
-            gnd = ['gnd']
-            if len(self.load()) == 0:
-                gnd.append('output')
+        sources = self._sources if hasattr(self, '_sources') and self._sources else test_sources
+        
+        gnd = ['gnd']
+        if len(self.load()) == 0:
+            gnd.append('output')
 
-            sources[0]['pins']['n'] = gnd
+        sources[0]['pins']['n'] = gnd
 
-            return sources
+        return sources
 
     def sources_circuit(self):
         sources = self.sources()
@@ -118,7 +114,9 @@ class Test:
     
     # Load configuration
     def load(self):
-        return test_load
+        load = self._load if hasattr(self, '_load') and self._load else test_load
+
+        return load
     
     def load_circuit(self):
         for load in self.load():
@@ -127,7 +125,7 @@ class Test:
                 mods = load['mods']
 
             LoadBlock = Build(load['name'], **mods).block
-            args = LoadBlock.parse_args(LoadBlock, load['args'])
+            args = LoadBlock.parse_arguments(LoadBlock, load['args'])
             Load = LoadBlock(**args)
             
             for load_pin in load['pins'].keys():
@@ -137,9 +135,8 @@ class Test:
 
     # Circuit for simulation
     def circuit(self, args):
-        
-        props = self.builder.parse_args(self.builder, args)
-        self.block = self.builder(**props)     
+        props = self.builder.parse_arguments(self.builder, args)
+        self.block = self.builder(**props)
 
         gnd = Net('0')
         gnd.fixed_name = True

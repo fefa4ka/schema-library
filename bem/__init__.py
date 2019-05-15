@@ -4,10 +4,42 @@ import importlib
 from pathlib import Path
 from collections import defaultdict
 
-from .base import Block, u, is_tolerated
+from .base import Block
+from .util import u, is_tolerated
+from .signal import Net
 from .builder import Build
 from .stockman import Stockman
 from PySpice.Unit import *
+
+
+def get_bem_packs(root='./blocks/*', parent=''):
+    blocks = defaultdict(dict)
+
+    for file in glob.glob(root + '/' + parent + '/*/__init__.py'):
+        root = '/'.join(file.split('/')[:-2])
+        tail = file.split('/') 
+        pack = tail[2]
+        element = tail[-2]
+        
+        blocks[pack][element] = defaultdict(list)
+        
+        for mod_type, mod_value in [(mod.split('/')[-2], mod.split('/')[-1]) for mod in glob.glob(root + '/%s/_*/*.py' % element)]:
+            if mod_value.find('_test.py') != -1:
+                continue
+
+            mod_type = mod_type[1:]
+            mod_value = mod_value.replace('.py', '')
+            
+            blocks[pack][element][mod_type].append(mod_value)
+        
+        
+        if not parent:
+            elements = get_bem_packs(root, element)
+            if len(elements.keys()):
+                blocks[pack][element + '.'] = elements[pack]
+
+    return blocks
+
 
 def get_bem_blocks(parent=''):
     blocks = defaultdict()
@@ -36,29 +68,29 @@ def get_bem_blocks(parent=''):
     return blocks
 
 
-# def u(unit):
-#     """Absolute float value of PySpice.Unit
-#     """
+packs = get_bem_packs()
 
-#     return float(unit.convert_to_power())
+for pack in packs.keys():
+    blocks = {}
+    
+    for name in packs[pack].keys():
+        if name[-1] == '.':
+            for element in packs[pack][name].keys():
+                element = name + element
+                def build(name=pack + '.' + element, *arg, **kwarg):
+                    return Build(name, *arg, **kwarg).block
 
-_self = sys.modules[__name__]
-
-blocks = get_bem_blocks()
-for name in blocks.keys():
-    if name[-1] == '.':
-        for element in blocks[name].keys():
-            element = name + element
-            def build(name=element, *arg, **kwarg):
+                block_name = element.replace('.', '_')
+                blocks[block_name] = build
+                
+        else:
+            def build(name=pack + '.' + name, *arg, **kwarg):
                 return Build(name, *arg, **kwarg).block
 
-            setattr(_self, element.replace('.', '_'), build)
-            
-    else:
-        def build(name=name, *arg, **kwarg):
-            return Build(name, *arg, **kwarg).block
+            blocks[name] = build
 
-        setattr(_self, name, build)
-    
+
+    sys.modules[__name__ + '.' + pack] = type(pack, (object,), blocks)
+        
     
     

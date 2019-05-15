@@ -1,11 +1,13 @@
-from bem import u
-from ..Physical import Base as Block
-from bem.model import Param
-import numpy as np
-from PySpice.Unit import SiUnits
-from PySpice import Spice
 import inspect
 
+import numpy as np
+from PySpice import Spice
+from PySpice.Unit import FrequencyValue, PeriodValue, SiUnits
+from PySpice.Unit.Unit import UnitValue
+
+from bem import Block, u
+from bem.abstract import Physical
+from bem.model import Param
 
 si_units = inspect.getmembers(SiUnits, lambda a: not (inspect.isroutine(a)))
 prefixes = {prefix[1].__prefix__: prefix[1].__power__ for prefix in si_units if hasattr(prefix[1], '__prefix__')}
@@ -14,7 +16,36 @@ prefixes['0'] = 0
 
 
 class Base(Block):
+    inherited = [Physical]
     increase = True
+    value = 0
+
+    def __init__(self, *args, **kwargs):
+        value = self.value
+
+        if len(args) > 0 and 'value' not in kwargs.keys():
+            value = args[0]
+            args = args[1:]
+
+        if kwargs.get('value', None):
+            value = kwargs['value']
+
+        if type(value) in [UnitValue, PeriodValue, FrequencyValue]:
+            kwargs['value'] = value
+        elif type(self.value) in [UnitValue, PeriodValue, FrequencyValue]:
+            self.value._value = float(value)
+            kwargs['value'] = self.value
+        else:
+            kwargs['value'] = value
+
+        super().__init__(*args, **kwargs)
+
+    def willMount(self, value):
+        pass
+
+    # def unit_value(self):
+    #     if type(self.value) in [str, int, float]:
+    #         self.value._value = float(self.value)
 
     def values(self):
         values = []
@@ -46,6 +77,8 @@ class Base(Block):
                 
     def select_part(self):
         available_parts = self.available_parts()
+        
+        # self.unit_value()
         for part in available_parts:
             for value in self.part_values(part):
                 if value == self.value:

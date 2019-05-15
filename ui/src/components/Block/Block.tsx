@@ -1,5 +1,6 @@
 import * as React from 'react';
 import axios from 'axios';
+import Iframe from 'react-iframe';
 import { canonise, siPrefix, Unit } from '../Unit';
 import { cn } from '@bem-react/classname';
 import { Code } from '../Code';
@@ -8,6 +9,7 @@ import {
     Icon,
     Modal,
     Row,
+    Select,
     Tabs,
     Tooltip
     } from 'antd';
@@ -21,7 +23,8 @@ import { Source, TSource } from '../Source';
 import { UnControlled as CodeMirror } from 'react-codemirror2';
 import { UnitInput } from '../UnitInput';
 import './Block.css';
-import { Slider, Divider, Tag, Button, Input, TreeSelect,} from 'antd'
+const Option = Select.Option
+import { Slider, Divider, Tag, Button, Input, TreeSelect } from 'antd'
 const TabPane = Tabs.TabPane;
 const TreeNode = TreeSelect.TreeNode;
 const { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ReferenceLine} = require('recharts')
@@ -36,12 +39,18 @@ const cnBlock = cn('Block')
 const initialState = {
     name: '',
     description: [''],
+    available: [],
     params_description: {},
     selectedMods: [],
     args: {},
     nets: {},
     pins: {},
     params: {},
+    props: {},
+    spiceAttrs: {},
+    debug: '',
+    debugUrl: '',
+    modalDebugVisible: false,
     modalSourceVisible: false,
     modalLoadVisible: false,
     modalDeviceVisible: false,
@@ -105,6 +114,11 @@ type TSimulationCase = {
 type State = {
     name: string,
     description: string[],
+    available: {
+        footprint: string,
+        model: string,
+        id: number
+    }[],
     params_description: {
         [name:string]: string
     },
@@ -133,6 +147,16 @@ type State = {
             }
         }
     },
+    props: IProps['mods'],
+    spiceAttrs: {
+        [name:string]: {
+            value: number | string,
+            unit: {
+                name: string,
+                suffix: string
+            }
+        }
+    },
     load: TSource[],
     editableLoad: TSource,
     editableSource: TSource,
@@ -148,6 +172,9 @@ type State = {
     editableDevice: TDevice,
     editableDeviceType: string,
     devices: TDevice[],
+    debug: string,
+    debugUrl: string,
+    modalDebugVisible: boolean,
     modalSourceVisible: boolean,
     modalLoadVisible: boolean,
     modalDeviceVisible: boolean,
@@ -201,7 +228,6 @@ export class Block extends React.Component<IProps, {}> {
                 load: []
             }, this.loadBlock)
         }
-
         return true
     }
     loadSimulation() {
@@ -240,7 +266,7 @@ export class Block extends React.Component<IProps, {}> {
                         simulationStopTime: simulationData.length ? simulationData[simulationData.length - 1].time : 0
                     }
                 })
-            })
+            })//.catch(this.catchError)
     }
     loadSimulationCases() {
         const { args, sources, load, } = this.state
@@ -260,7 +286,7 @@ export class Block extends React.Component<IProps, {}> {
                 const simulationCase = res.data
                 
                 this.setState({ simulationCase })
-            })
+            })//.catch(this.catchError)
     }
     loadProbes() {
         const { sources, probes, simulationStopTime } = this.state
@@ -295,9 +321,9 @@ export class Block extends React.Component<IProps, {}> {
                         simulationStopTime: probeData.length ? probeData[probeData.length - 1].time : 0
                     }
                 })
-            })
+            })//.catch(this.catchError)
     }
-    loadBlock() {
+    urlParams() {
         const selectedMods: { [name:string]: string[] } = this.state.selectedMods.reduce((mods: { [name:string]: string[] }, mod) => {
             const [type, value] = mod.split(':')
             mods[type] = mods[type] || []
@@ -309,24 +335,30 @@ export class Block extends React.Component<IProps, {}> {
         const modsUrlParam = Object.keys(selectedMods).map((mod:string) => mod + '=' + selectedMods[mod].join(','))
         const argsUrlParam = Object.keys(this.state.args).filter(arg => this.state.args[arg].value).map(arg => arg + '=' + this.state.args[arg].value)
         
-        let urlParams = '?' + modsUrlParam.concat(argsUrlParam).join('&')
-        // if (argsUrlParam.length === 0) {
-        //     urlParams = ''
-        // }
-    
-            
-        axios.get('/api/blocks/' + this.props.name + '/' + urlParams)
+        return '?' + modsUrlParam.concat(argsUrlParam).join('&') 
+    }
+    loadBlock() {
+        
+        
+        axios.get('/api/blocks/' + this.props.name + '/' + this.urlParams())
             .then(res => {
-                const { name, description, params_description, args, params, mods, pins, files, nets, sources, parts, load, devices } = res.data               
+                const { name, description, available, params_description, args, params, mods, props, pins, files, nets, sources, parts, load, devices } = res.data               
                 
                 const selectedMods = Object.keys(mods).reduce((selected, type) =>
                     selected.concat(
-                        mods[type].map((value: string) => type + ':' + value)
+                        Array.isArray(mods[type])
+                            ? mods[type].map((value: string) => type + ':' + value)
+                            : [type + ':' + mods[type]]
                     ), [])
                 
                 const codeUnits = Object.keys(args).map(arg => args[arg].unit.suffix).filter((value, index, self) => self.indexOf(value) === index).map(item => 'u_' + item).join(', ')
                 const codeArgs = Object.keys(args).map(arg => arg + ' = ' + args[arg].value + (args[arg].unit.suffix ? ' @ u_' + args[arg].unit.suffix : '')).join(',\n\t')
-                const codeMods = Object.keys(mods).map((mod:string) => mod + "=['" + mods[mod].join("', '") + "']").join(', ')
+                const codeMods = Object.keys(mods).map((type: string) =>
+                        type + "=['" + 
+                            (Array.isArray(mods[type]) 
+                                ? mods[type].join("', '") 
+                                : mods[type])
+                        + "']").join(', ')
                 
                 const blockImportName = name.replace('.', '_')
                 const codeExample = `from bem import ${blockImportName}${codeUnits ? '\nfrom bem import ' + codeUnits : ''}
@@ -352,8 +384,10 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                    
                     return {
                         description,
+                        available, 
                         params_description,
                         mods,
+                        props,
                         args,
                         params, 
                         nets,
@@ -365,12 +399,36 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                         ...elements
                     }
                 }, this.loadSimulation)
-            })
+            }).catch(this.catchError)
+    }
+    catchError = (error: any) => {
+        const url = error.response.config.url
+        
+        function escapeRegExp(str: string) {
+            return str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+        }
+        function replaceAll(str: string, find: string, replace: string) {
+            return str.replace(new RegExp(escapeRegExp(find), 'g'), replace);
+        }
+        const html = replaceAll(error.response.data, '?__debugger__', error.response.config.url + '__debugger__')
+        const base = `<base href='${url}'/>`
+
+        
+        this.setState({
+            modalDebugVisible: true,
+            debugUrl: url,
+            debug: html + base
+        })
     }
     showModal = (name:string) => {
         this.setState({
             [`modal${name}Visible`]: true,
-        });
+        })
+    }
+    handleDebugOk = () => {
+        this.setState({
+            modalDebugVisible: false
+        })
     }
     handleSourceOk = () => {
         this.setState(({ sources, editableSource }: State) => {
@@ -480,14 +538,35 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                 link.setAttribute('download', filename)
                 document.body.appendChild(link)
                 link.click()
-            })
+            }).catch(this.catchError)
         
     }
+    // loadProps = () => {
+    //     axios.get('/api/blocks/' + this.props.name + '/part_params/' + this.urlParams())
+    //         .then(res => {
+    //             const { spice, props } = res.data
+
+    //             this.setState(({ params_description }: State) => ({
+    //                 spiceAttrs: spice,
+    //                 params_description: {
+    //                     ...params_description,
+    //                     ...Object.keys(spice).reduce((spiceDescription: State['params_description'], param:string) => { 
+    //                         spiceDescription[param] = spice[param].description
+
+    //                         return spiceDescription
+    //                     }, {})
+    //                 },
+    //                 props: props
+    //             }), this.loadSimulation)
+    //         })
+    // }
     render() {
         const { mods } = this.props
-        const { simulationData, simulationCase} = this.state
+        const { simulationData, simulationCase, props } = this.state
         const simulationCases = Object.keys(simulationCase)
         const description = this.state.description.join('\n\n')
+
+        const BlockMods: IProps['mods'] = { ...mods, ...props }
         // const description = this.state.description.map((description, index) =>
         //         <Markdown
         //             key={index}
@@ -505,7 +584,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
             return string
           }
 
-        const attributes = Object.keys(this.state.args).map(name => {
+        const attributes = Object.keys(this.state.args).filter(name => name !== 'model').map(name => {
             const isExists = this.state.args.hasOwnProperty(name)
 
             if (isExists && this.state.args[name].unit.name === 'network') {
@@ -587,6 +666,10 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
             simulationMarks[step] = (labelStep.toString().length - 2 - getPrecision(labelStep) > 3 ? labelStep.toFixed(3) : labelStep) + ' ' + prefix + 's'
         }
 
+        const allParams = {
+            ...this.state.params,
+            ...this.state.spiceAttrs
+        }
         
         const Params = ({ include, exclude }:{ include?:string[], exclude?: string[]}):any =>
             Object.keys(this.state.params).filter(name => include ? include.includes(name) : true)
@@ -616,15 +699,26 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
 
         return (
             <div className={this.props.className || cnBlock()}>
+                <Modal
+                    title="Debug Console"
+                    visible={this.state.modalDebugVisible}
+                    onOk={this.handleDebugOk}
+                    onCancel={this.handleDebugOk}
+                    className={cnBlock('DebugModal')}
+               >
+                    <IframeContainer content={this.state.debug} url={this.state.debugUrl} />
+                </Modal>
+
                 <Row>
+                    SCRIPT
                     <Col span={12} className={cnBlock('Title')}>
                         <h1>
                             {insertSpaces(this.props.name || '')}
                         </h1>
                     </Col>
-                        
+
                     <Col span={12} className={cnBlock('Modificator')}>
-                        {mods && Object.keys(mods).length 
+                        {BlockMods && Object.keys(BlockMods).length
                             ? <TreeSelect
                                 showSearch
                                 style={{ width: '100%' }}
@@ -635,9 +729,9 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                 treeDefaultExpandAll
                                 onChange={selectedMods => this.setState({ selectedMods, sources: [], load: [] }, this.loadBlock)}
                             >
-                                {Object.keys(mods).map(type =>
+                                {Object.keys(BlockMods).map(type =>
                                     <TreeNode value={type} title={type} key={type}>
-                                        {mods[type].map(value => 
+                                        {Array.isArray(BlockMods[type]) && BlockMods[type].map(value => 
                                             <TreeNode value={type + ':' + value} title={value} key={type + ':' + value} />
                                         )}
                                     </TreeNode>
@@ -679,7 +773,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                             </Col>
                             <Col span={5}>
                                 <Divider orientation="left">Characteristics</Divider>
-                                <Params exclude={['Load', 'R_load', 'I_load', 'P_load', 'ref', 'footprint']}/>
+                                <Params exclude={['Power', 'P', 'I', 'Z', 'Load', 'R_load', 'I_load', 'P_load', 'ref', 'footprint', 'model']}/>
                             </Col>
                             <Col span={6} push={1}>
                                 <Divider orientation="left">
@@ -722,9 +816,6 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                 )} <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableSourceType: 'source', editableSource: { index: -1 } }, () => this.showModal('Source'))}><Icon type="api" /> Add</Tag>
 
                                 <Divider orientation="left">Load</Divider>
-                                <div className={cnBlock('InlineParams')}>
-                                    <Params include={['R_load', 'I_load', 'P_load']} />
-                                </div>
                                 {this.state.load.map((source, index) => 
                                     <Tag
                                         key={source.name + index.toString()}
@@ -743,9 +834,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                         {source.name}
                                     </Tag>
                                 )}<Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableLoad: { index: -1 } }, () => this.showModal('Load'))}><Icon type="api" /> Add</Tag>
-
                                
-                                
                                 <Modal
                                     title="Add Load"
                                     visible={this.state.modalLoadVisible}
@@ -761,20 +850,33 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                         />
                                 </Modal>
 
-                                <br />
-                                
+                                <div className={cnBlock('InlineParams')}>
+                                    <Params include={['R_load', 'I_load', 'P_load']} />
+                                </div> 
                                 
                             </Col>
                        
                             <Col span={6} push={1}>
-                                <Divider orientation="left">PCB Parts</Divider>
-                                <Params include={['footprint']}/>
+                                <Divider orientation="left">PCB Part</Divider>
+                                <Select 
+                                    placeholder="Select a model"
+                                    value={this.state.args.model ? this.state.args.model.value : ''}
+                                    className={cnBlock('AvailableParts')}
+                                    onChange={value => this.setState(({ args }: State) => ({ args: { ...args, model: { value, unit: { name: 'string', suffix: '' }} }}), this.loadBlock)}
+                                >
+                                    {this.state.available.map(model =>
+                                        <Option value={model.model} key={model.model}>{model.model} {model.footprint}</Option>)}
+                                </Select>
+                                <div className={cnBlock('InlineParams')}>
+                                    <Params include={['P', 'I', 'Z']} />
+                                </div>
+                                <Divider orientation="left">Body Kit</Divider>
                                 <Modal
                                     title="Add Device"
                                     visible={this.state.modalDeviceVisible}
                                     onOk={this.handleDeviceOk}
                                     onCancel={() => this.handleModalCancel('Device')}
-                                    >
+                                >
                                         <Device 
                                             type={this.state.editableDeviceType}
                                             device={this.state.editableDevice}
@@ -1040,21 +1142,82 @@ function DiscreteChart(props: any) {
             />
             <CartesianGrid strokeDasharray="3 3"/>
             <ChartTooltip
-                formatter={(value: number) => canonise(value, x.unit)}
+                formatter={(value: number) => canonise(value, y.unit)}
                 labelFormatter={(value: number) => canonise(value, x.unit)}
             />
             <ReferenceLine x={0} stroke="black"/>
             <ReferenceLine y={0} stroke="black" />
             {chartLabels.map(label =>
                 <Line
+                    connectNulls
                     type="monotone"
                     key={label.name}
                     dataKey={label.name}
                     stroke={label.color}
                     dot={false}
-                    unit={x.unit}
                     animationDuration={300}
                 />)}
         </LineChart>
     </ResponsiveContainer>
 }
+
+/**
+ * React component which renders the given content into an iframe.
+ * Additionally an array of stylesheet urls can be passed. They will 
+ * also be loaded into the iframe.
+ */
+
+type IframeProps = {
+    content: string,
+    url?: string
+}
+export class IframeContainer extends React.Component<IframeProps, {}> {
+     /**
+     * Called after mounting the component. Triggers initial update of
+     * the iframe
+     */
+    iframeRef = React.createRef<HTMLIFrameElement>()
+
+    componentDidMount() {
+        this._updateIframe();
+    }
+
+    // /**
+    //  * Called each time the props changes. Triggers an update of the iframe to
+    //  * pass the new content
+    //  */
+    componentDidUpdate() {
+        this._updateIframe();
+    }
+
+    /**
+     * Updates the iframes content and inserts stylesheets.
+     * TODO: Currently stylesheets are just added for proof of concept. Implement
+     * and algorithm which updates the stylesheets properly.
+     */
+    _updateIframe() {
+        const iframe = this.iframeRef.current
+        if (iframe && iframe.contentWindow) {
+            const document = iframe.contentWindow.document 
+            if (document) {
+                if (this.props.url) {
+                    iframe.src = this.props.url
+                    // iframe.contentWindow.history.replaceState('', '', this.props.url)
+                } else {
+                    document.open()
+                    document.write(this.props.content)
+                    document.close()
+                }
+            }
+        }
+    }
+
+    /**
+     * This component renders just and iframe
+     */
+    render() {
+        return <iframe className={cnBlock('DebugIframe')} ref={this.iframeRef}/>
+    }
+
+}
+
