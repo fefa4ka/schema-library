@@ -1,5 +1,6 @@
 from bem.abstract import Electrical, Network
-from bem.basic import Transistor_Field, Diode
+from bem.basic import Diode
+from bem.basic.transistor import Field
 from bem import Net, u_V
 from collections import defaultdict
 
@@ -15,7 +16,7 @@ class Base(Electrical(), Network(port='two')):
     }
 
     def circuit(self):
-        Transistor = Transistor_Field(type='mosfet', channel='n')
+        Transistor = Field(type='mosfet', channel='n')
         D = Diode(type='generic')
 
         for valign in ['top', 'bottom']:

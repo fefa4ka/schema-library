@@ -4,7 +4,7 @@ import { Row, Col, Layout, Menu, Table, Button, Modal, Divider, Form, Icon, Inpu
 import axios from 'axios'
 import { Select, Tooltip, TreeSelect } from 'antd'
 import { cn } from '@bem-react/classname'
-import { BlocksMenu, insertSpaces } from '../Blocks/Blocks'
+import { BlocksMenu, insertSpaces, resolveBlock } from '../Blocks/Blocks'
 import './Stock.css'
 import { Unit } from '../Unit'
 
@@ -17,7 +17,7 @@ const { SubMenu } = Menu
 const initState = {
     blocks: {},
     parts: [],
-    selectedType: '',
+    selectedBlock: '',
     addPartModalVisible: false,
     addPartData: {}
 }
@@ -26,6 +26,10 @@ type Blocks = {
       [mod:string]: string[] | { [block: string]: string[] }
   }
 }
+type Mods = {
+      [mod:string]: string[] 
+}
+
 type State = {
     blocks: Blocks,
     parts: {
@@ -33,7 +37,7 @@ type State = {
             [mod:string]: string | number
         } | string | number
     }[],
-    selectedType: string,
+    selectedBlock: string,
     addPartModalVisible: boolean,
     addPartData: any
 }
@@ -41,7 +45,6 @@ type State = {
 const cnStock = cn('Stock')
  
 const initFormState = {
-  selectedBlock: '',
   selectedBlockProps: {},
   selectedMods: [],
   selectedProps: [],
@@ -66,7 +69,6 @@ type Params = {
 }
 
 type FormState = {
-  selectedBlock: string,
   selectedBlockProps: {
     [name:string]: string[]
   },
@@ -82,7 +84,7 @@ type FormState = {
 }
 
 
-class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {}> {
+class AddForm extends React.Component<{ form: any, selectedBlock: string, mods: Mods, data:any }, {}> {
   state: FormState = initFormState
   canvasRef = React.createRef<HTMLCanvasElement>()
   kicadviewer: any = null
@@ -111,7 +113,6 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
 
 
       this.setState({
-        selectedBlock: data.block,
         selectedMods: data.mods || [],
         selectedProps: data.props || [],
         footprint: data.footprint,
@@ -134,7 +135,7 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
       setFieldsValue
     } = this.props.form
     const modsUrlParam = Object.keys(selectedMods).map((mod: string) => mod + '=' + selectedMods[mod].join(','))
-    axios.get('/api/blocks/' + this.state.selectedBlock + '/part_params/?' + modsUrlParam)
+    axios.get('/api/blocks/' + this.props.selectedBlock + '/part_params/?' + modsUrlParam)
       .then(res => {
         const { part, spice, props } = res.data
         const paramsValue = partData ? partData.params || {} : Object.keys(part).reduce((params:any, param) => {
@@ -186,19 +187,9 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
   }
   
   render() {
-    const blocks:string[] = Object.keys(this.props.blocks).reduce((blocks:string[], block) => {
-      if (block.indexOf('.') === block.length - 1) {
-        Object.keys(this.props.blocks[block]).forEach(subBlock => {
-          blocks.push(block + subBlock)
-        })
-      } else {
-        blocks.push(block)
-      }
-
-      return blocks
-    }, [])
-
-    const mods:any = this.props.blocks[this.state.selectedBlock]
+    const { selectedBlock, mods } = this.props
+    const category: string = selectedBlock.slice(0, selectedBlock.indexOf('.'))
+    const block:string = selectedBlock.slice(selectedBlock.indexOf('.') + 1) 
     const props = this.state.selectedBlockProps
     const footprints: any = this.state.footprints
 
@@ -225,6 +216,7 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
       if(value === '') {
         value = undefined
       }
+
        return getFieldDecorator(`params[${name}]`, {})(<Select
           key={name}
           mode="tags"
@@ -266,15 +258,6 @@ class AddForm extends React.Component<{ form: any, blocks: Blocks, data:any }, {
         <Divider orientation="left">Part</Divider>
         <Row>
           <Col span={12}>
-            <Form.Item>
-              {getFieldDecorator('block', {
-              })(
-                <Select placeholder='Block' style={{ width: '205px'}} onChange={value => this.setState({ selectedBlock: value }, this.loadBlock)}>
-                  {blocks.map((block, index) =>
-                    <Option value={block} key={block}>{insertSpaces(block)}</Option>)}
-                </Select>
-              )}
-            </Form.Item>
             <Form.Item>
             {mods && Object.keys(mods).length 
               ? getFieldDecorator('mods', {})(
@@ -448,7 +431,7 @@ export class Stock extends Component {
     }
   
     loadStock() {
-      axios.get('/api/parts/?block=' + this.state.selectedType)
+      axios.get('/api/parts/?block=' + this.state.selectedBlock)
         .then(res => {
             this.setState({
                 parts: res.data
@@ -466,7 +449,8 @@ export class Stock extends Component {
         const prevData = this.state.addPartData
         axios.post('/api/parts/', {
           ...values,
-          id: prevData.id
+          id: prevData.id,
+          block: this.state.selectedBlock
         }).then(res => this.loadStock())
         form.resetFields()
 
@@ -535,12 +519,13 @@ export class Stock extends Component {
           </div>
       }]
     
+      
     return (
         <Layout>
             <Sider className='App-Side'>
               <BlocksMenu
                 onClick={(param:any) => {
-                  this.setState({ selectedType: param.key }, this.loadStock)
+                  this.setState({ selectedBlock: param.key }, this.loadStock)
                 }}
                 onOpenChange={() => { }}
                 blocks={this.state.blocks}
@@ -554,13 +539,14 @@ export class Stock extends Component {
                     onOk={this.handleAddPartOk}
                     onCancel={this.handleAddPartCancel}
                 >
-                <WrappedAddForm
-                  wrappedComponentRef={this.saveFormRef}
-                  data={this.state.addPartData}
-                  blocks={this.state.blocks} />
+                  <WrappedAddForm
+                    wrappedComponentRef={this.saveFormRef}
+                    selectedBlock={this.state.selectedBlock}
+                    data={this.state.addPartData}
+                    mods={resolveBlock(this.state.selectedBlock, this.state.blocks)} />
                 </Modal>
                             
-                <Divider orientation='left'>Stock of {insertSpaces(this.state.selectedType || '')} Parts</Divider>
+                <Divider orientation='left'>Stock of {insertSpaces(this.state.selectedBlock || '')} Parts</Divider>
                 <Table dataSource={this.state.parts} columns={columns} rowKey='id' />
             </Content>
           </Layout>

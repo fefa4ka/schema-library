@@ -44,6 +44,7 @@ class Test:
     # Signal source configuration
     
     def sources(self):
+        # sources = test_sources
         sources = self._sources if hasattr(self, '_sources') and self._sources else test_sources
         
         gnd = ['gnd']
@@ -55,7 +56,7 @@ class Test:
         return sources
 
     def sources_circuit(self):
-        sources = self.sources()
+        sources =  self.sources()
         series_sources = defaultdict(list)
         series_sources_allready = []
         
@@ -147,9 +148,10 @@ class Test:
 
     def simulate(self, args, end_time=None, step_time=None):
         self.circuit(args)
+        sources = self.sources()
     
         if not (end_time and step_time):
-            period = get_minimum_period(self.sources())
+            period = get_minimum_period(sources)
             end_time = period * 10
             step_time = period / 50
 
@@ -208,4 +210,5 @@ def BuildTest(Block, *args, **kwargs):
         else:
             Tests = (Test,)
 
+        print(name, Tests)
         return type(name + 'Test', Tests, {})(Block)

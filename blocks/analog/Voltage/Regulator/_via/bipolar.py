@@ -1,5 +1,6 @@
 from .. import Base
-from bem.basic import Transistor_Bipolar, Resistor
+from bem.basic import Resistor
+from bem.basic.transistor import Bipolar
 
 from PySpice.Unit import u_Ohm, u_V, u_A, u_F
 
@@ -17,7 +18,7 @@ class Modificator(Base):
 
         self.R_protect = self.R_load / 10
         
-        follower = Transistor_Bipolar(type='npn', follow='emitter')(
+        follower = Bipolar(type='npn', follow='emitter')(
             base = Resistor()(self.R_protect, **self.load_args),
             **self.load_args
         )

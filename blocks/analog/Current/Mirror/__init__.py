@@ -1,7 +1,8 @@
 
 from bem.abstract import Electrical, Network
-from bem.analog import Voltage_Divider
-from bem.basic import Transistor_Bipolar, Resistor
+from bem.basic import Resistor
+from bem.basic.transistor import Bipolar
+
 from bem import u, u_ms, u_Ohm, u_A, u_V
 
 from settings import params_tolerance
@@ -37,7 +38,7 @@ class Base(Electrical(), Network(port='two')):
         self.load(self.V_ref)
 
     def circuit(self, **kwargs):
-        programmer = Transistor_Bipolar(type='pnp', follow='collector', common='base')()
+        programmer = Bipolar(type='pnp', follow='collector', common='base')()
 
         self.V_drop += (programmer.selected_part.spice_params.get('VJE', None) or 0.6) @ u_V
 
@@ -49,7 +50,7 @@ class Base(Electrical(), Network(port='two')):
 
     def mirror(self, programmer):
         self.R_g = (self.V_ref - self.V_drop) / self.I_load 
-        mirror = Transistor_Bipolar(type='pnp', follow='collector', common='base')()
+        mirror = Bipolar(type='pnp', follow='collector', common='base')()
         mirroring = mirror.base & programmer.base
         generator = Resistor()(self.R_g, ref='R_g')
         sink = self.ref() & programmer & programmer.base & generator & self.gnd 

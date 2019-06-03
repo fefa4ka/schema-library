@@ -1,5 +1,6 @@
 from bem.abstract import Electrical, Network
-from bem.basic import Resistor, Transistor_Bipolar
+from bem.basic import Resistor
+from bem.basic.transistor import Bipolar
 from bem import Net, u, u_Ohm, u_V, u_A
 
 class Base(Electrical(), Network(port='two')):
@@ -59,7 +60,7 @@ class Base(Electrical(), Network(port='two')):
         self.G_cm = u(-1 * self.R_c / (2 * self.R_out + self.R_e + self.r_e))
         self.CMMR = u(self.R_out / (self.R_e + self.r_e))
 
-        amplifier = Transistor_Bipolar(
+        amplifier = Bipolar(
             type='npn',
             common='emitter', follow='collector'
         )

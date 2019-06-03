@@ -376,10 +376,10 @@ class jds6600:
 	# end set action
 
 	###################
-	# DEBUG functions #
+	# SIMULATION functions #
 	###################
 
-	def DEBUG_readregister(self,register,count):
+	def SIMULATION_readregister(self,register,count):
 		if self.ser.is_open == True:
 			regtxt=self.__reg2txt(register)
 			tosend=":r"+regtxt+"="+str(count)+"."+chr(0x0a)
@@ -393,7 +393,7 @@ class jds6600:
 		# end if
 	# end readregister
 		
-	def DEBUG_writeregister(self,register,value):
+	def SIMULATION_writeregister(self,register,value):
 		if self.ser.is_open == True:
 			regtxt=self.__reg2txt(register)
 			if type(value) == int:

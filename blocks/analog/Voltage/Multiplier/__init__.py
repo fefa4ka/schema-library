@@ -1,5 +1,5 @@
 from bem.abstract import Electrical 
-from bem.analog import Voltage_Rectifier
+from bem.analog.voltage import Rectifier
 from bem import Net
 from PySpice.Unit import u_ms, u_V, u_A, u_Hz, u_Ohm
 
@@ -26,7 +26,7 @@ class Base(Electrical()):
         self.load(self.V * self.scale)
 
     def circuit(self):
-        HalfBridge = Voltage_Rectifier(wave='half', rectifier='full')
+        HalfBridge = Rectifier(wave='half', rectifier='full')
         
         sections = []
         

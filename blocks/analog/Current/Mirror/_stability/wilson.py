@@ -1,5 +1,6 @@
 from .. import Base
-from bem.basic import Transistor_Bipolar, Resistor, Capacitor
+from bem.basic import Resistor, Capacitor
+from bem.basic.transistor import Bipolar
 from bem import Net, u, u_V
 from math import pi
 
@@ -10,8 +11,8 @@ class Modificator(Base):
     """
 
     def mirror(self, programmer):
-        mirror = Transistor_Bipolar(type='pnp', follow='collector', common='base')()
-        stabilizer = Transistor_Bipolar(type='pnp', follow='collector', common='base')()
+        mirror = Bipolar(type='pnp', follow='collector', common='base')()
+        stabilizer = Bipolar(type='pnp', follow='collector', common='base')()
         mirroring = mirror.base & programmer.base & stabilizer
 
         V_je = (stabilizer.selected_part.spice_params.get('VJE', None) or 0.6) @ u_V

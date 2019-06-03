@@ -11,13 +11,14 @@ from PySpice.Unit import u_A, u_Hz, u_ms, u_Ohm, u_s, u_V
 from PySpice.Unit.Unit import UnitValue
 from skidl import Circuit, Net, search, subcircuit, set_default_tool, set_backup_lib, KICAD, SPICE
 
-from bem import Build, get_bem_packs
+from bem import Build, bem_scope
+from bem.abstract import Physical
 from bem.model import Part, Param, Mod, Prop, Stock
 from bem.printer import Print
 from bem.simulator import Simulate, set_spice_enviroment
 from probe.read import get_sigrok_samples
 from probe import get_arg_units, get_minimum_period
-from probe.source import JDS6600, simulation_sources
+from probe.source import JDS6600, KA3005P, simulation_sources
 from bem.tester import BuildTest
 
 try:
@@ -63,7 +64,7 @@ def devices():
         return result
 
     if name:
-        device = Build(name.replace('.lib', '')).element
+        device = Physical(part=name.replace('.lib', ''))().element
 
         return {
             'library': device.lib,
@@ -81,7 +82,7 @@ def sources():
 
 @app.route('/api/blocks/', methods=['GET'])
 def blocks():
-    blocks = get_bem_packs()
+    blocks = bem_scope()
 
     return blocks
 
@@ -372,6 +373,7 @@ def get_probes():
     sources = req.get('sources', [])
     for source in sources:
         port = source.get('port', None)
+        device = source.get('device', None)
         if port:
             args = {}
             part_name = source['name'].split('_')[0]
@@ -384,9 +386,13 @@ def get_probes():
                     except:
                         args[arg] = source['args'][arg]['value']
             
-            device = JDS6600(port=port)
-            if hasattr(device, source['name']):
-                generator = getattr(device, source['name'])
+            if device == 'jds6600':
+                device = JDS6600(port=port)
+            else:
+                device = KA3005P(port=port)
+                
+            if hasattr(device, part_name):
+                generator = getattr(device, part_name)
                 generator(
                     channel=source.get('channel', 1),
                     **args)
@@ -467,6 +473,7 @@ def get_part_params(name):
         'spice': Block.spice_params if hasattr(Block, 'spice_params') else {},
         'part': {**Block.get_arguments(Block), **Block.get_params(Block)},
         'props': props
+
     }
 
 if __name__ == "__main__":

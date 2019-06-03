@@ -1,9 +1,9 @@
 from .. import Base
-from bem.basic import Transistor_Bipolar, Resistor
-
+from bem.basic import Resistor
+from bem.basic.transistor import Bipolar
 from PySpice.Unit import u_Ohm, u_V, u_A
 
-class Base(Base):
+class Modificator(Base):
     """**AND Gate**
     
     If either transistor is turned off, then the output at the second transistor’s collector will be pulled low. If both transistors are “on” (bases both high), then the output of the circuit is also high.
@@ -19,7 +19,7 @@ class Base(Base):
 
         for signal in signals:
 
-            and_input = Transistor_Bipolar(type='npn', follow='emitter')(
+            and_input = Bipolar(type='npn', follow='emitter')(
                 collector = v_ref,
                 base = Resistor()(10000)
             )

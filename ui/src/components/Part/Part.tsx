@@ -2,13 +2,12 @@ import * as React from 'react'
 import { IProps, TSource, TArgs } from './index'
 import { cn } from '@bem-react/classname'
 import axios from 'axios'
-import { Button, Select, TreeSelect} from 'antd'
+import { Select, TreeSelect} from 'antd'
 import { Form, Divider, Tabs, Row, Col, Modal } from 'antd'
-import Markdown from 'react-markdown'
-const { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceArea } = require('recharts')
-const TabPane = Tabs.TabPane;
+import { MathMarkdown } from '../Block/Mathdown';
 import './Part.css'
 import { UnitInput } from '../UnitInput'
+import { BlocksMenu, insertSpaces, resolveBlock } from '../Blocks/Blocks'
 
 const TreeNode = TreeSelect.TreeNode;
 const { Option, OptGroup } = Select
@@ -178,6 +177,7 @@ export class Part extends React.Component<IProps, {}> {
         const { type, onChange } = this.props
         const { parts, part, name } = this.state
 
+
         const args: any = part
             ? part.args
             : {}
@@ -243,15 +243,29 @@ export class Part extends React.Component<IProps, {}> {
             </Form>
 
         const description = part && part.description.map((description, index) =>
-            <Markdown key={index} source={description}/>
+            <MathMarkdown key={index} value={description}/>
         )
-        const mods:any = this.state.parts[name]
+
+        const mods:any = name && resolveBlock(name, this.state.parts)
 
         return (
             <div className={cnPart()}>
                 <Row>
-                    <Col span={mods && Object.keys(mods).length ? 12 : 24}>
-                    <Select
+                    <Col span={8}>
+                    <BlocksMenu
+                        onClick={(param:any) => {
+                            this.setState({
+                                name: param.key
+                            }, () =>
+                                    this.loadPart(
+                                        () => onChange(this.getCurrentLoad())
+                                    )
+                            )
+                        }}
+                        onOpenChange={() => { }}
+                        blocks={parts}
+                    /></Col>
+                    {/* <Select
                         style={{ width: '100%' }}
                         placeholder='Select Load'
                         value={this.state.name}
@@ -266,40 +280,48 @@ export class Part extends React.Component<IProps, {}> {
                         }
                     >   
                         {Object.keys(parts).map(item => <Option value={item} key={item}>{item}</Option>)}
-                    </Select>
+                    </Select> */}
+                    <Col span={16} className={cnPart('Modificator')}>
+                        <Row>
+                            <Col span={12} className={cnPart('Title')}>
+                                <h2>{insertSpaces(name || 'Select Block')}</h2>
+                            </Col>
+                            <Col span={12}>
+                                {mods && Object.keys(mods).length  
+                                ?  <TreeSelect
+                                    showSearch
+                                    style={{ width: '100%' }}
+                                    value={this.state.selectedMods}
+                                    placeholder="Modificators"
+                                    treeCheckable={true}
+                                    multiple
+                                    treeDefaultExpandAll
+                                    onChange={selectedMods => this.setState({ selectedMods }, this.loadPart)}
+                                >
+                                    {Object.keys(mods).map(type =>
+                                        <TreeNode value={type} title={type} key={type}>
+                                            {mods[type].map((value:any) => 
+                                                <TreeNode value={type + ':' + value} title={value} key={type + ':' + value} />
+                                            )}
+                                        </TreeNode>
+                                    )}
+                                </TreeSelect>
+                                : ''}
+                            </Col>
+                        </Row>
+                        
+                        
+                        {description}
+                        <Divider orientation="left">Properties</Divider>
+                        <div className={cnPart('Attributes')}>
+                            {attributes}
+                        </div>
+                        <Divider orientation="left">Pins</Divider>
+                        {Pins}
                     </Col>
-                    {mods && Object.keys(mods).length  
-                    ? <Col span={12} className={cnPart('Modificator')}>
-                            <TreeSelect
-                                showSearch
-                                style={{ width: '100%' }}
-                                value={this.state.selectedMods}
-                                placeholder="Modificators"
-                                treeCheckable={true}
-                                multiple
-                                treeDefaultExpandAll
-                                onChange={selectedMods => this.setState({ selectedMods }, this.loadPart)}
-                            >
-                                {Object.keys(mods).map(type =>
-                                    <TreeNode value={type} title={type} key={type}>
-                                        {mods[type].map((value:any) => 
-                                            <TreeNode value={type + ':' + value} title={value} key={type + ':' + value} />
-                                        )}
-                                    </TreeNode>
-                                )}
-                            </TreeSelect>
-                        </Col>
-                    : ''}
-                    
                 </Row>
                 
-                {description}
-                <Divider orientation="left">Properties</Divider>
-                <div className={cnPart('Attributes')}>
-                    {attributes}
-                </div>
-                <Divider orientation="left">Pins</Divider>
-                {Pins}
+                
             </div>
         )
     }

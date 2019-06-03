@@ -29,6 +29,7 @@ const TabPane = Tabs.TabPane;
 const TreeNode = TreeSelect.TreeNode;
 const { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ReferenceLine} = require('recharts')
 const ChartTooltip = require('recharts').Tooltip
+import { insertSpaces } from '../Blocks/Blocks'
 
 require('codemirror/lib/codemirror.css')
 require('codemirror/mode/python/python')
@@ -213,6 +214,8 @@ type State = {
 export class Block extends React.Component<IProps, {}> {
     state: State = initialState
     codeInstance: any
+    loadBlockTimeout: any = 0 
+
     componentWillMount() {
         this.loadBlock()
     }
@@ -226,7 +229,7 @@ export class Block extends React.Component<IProps, {}> {
                 parts: [],
                 devices: [],
                 load: []
-            }, this.loadBlock)
+            }, this.updateBlock)
         }
         return true
     }
@@ -337,11 +340,18 @@ export class Block extends React.Component<IProps, {}> {
         
         return '?' + modsUrlParam.concat(argsUrlParam).join('&') 
     }
+    updateBlock() {
+
+        console.log(this.loadBlockTimeout)
+        if (this.loadBlockTimeout === 0) {
+            this.loadBlockTimeout = setTimeout(() => this.loadBlock(), 3000)
+        }
+    }
     loadBlock() {
-        
-        
         axios.get('/api/blocks/' + this.props.name + '/' + this.urlParams())
             .then(res => {
+                this.loadBlockTimeout = 0
+
                 const { name, description, available, params_description, args, params, mods, props, pins, files, nets, sources, parts, load, devices } = res.data               
                 
                 const selectedMods = Object.keys(mods).reduce((selected, type) =>
@@ -351,8 +361,9 @@ export class Block extends React.Component<IProps, {}> {
                             : [type + ':' + mods[type]]
                     ), [])
                 
-                const codeUnits = Object.keys(args).map(arg => args[arg].unit.suffix).filter((value, index, self) => self.indexOf(value) === index).map(item => 'u_' + item).join(', ')
-                const codeArgs = Object.keys(args).map(arg => arg + ' = ' + args[arg].value + (args[arg].unit.suffix ? ' @ u_' + args[arg].unit.suffix : '')).join(',\n\t')
+                const argsKeys = Object.keys(args).filter(arg => args[arg].unit.suffix)
+                const codeUnits = argsKeys.map(arg => args[arg].unit.suffix).filter((value, index, self) => self.indexOf(value) === index).map(item => 'u_' + item).join(', ')
+                const codeArgs =  argsKeys.map(arg => arg + ' = ' + args[arg].value + (args[arg].unit.suffix ? ' @ u_' + args[arg].unit.suffix : '')).join(',\n\t')
                 const codeMods = Object.keys(mods).map((type: string) =>
                         type + "=['" + 
                             (Array.isArray(mods[type]) 
@@ -360,10 +371,11 @@ export class Block extends React.Component<IProps, {}> {
                                 : mods[type])
                         + "']").join(', ')
                 
-                const blockImportName = name.replace('.', '_')
-                const codeExample = `from bem import ${blockImportName}${codeUnits ? '\nfrom bem import ' + codeUnits : ''}
+                const blockQuery = name.split('.')
+                const blockName = blockQuery[blockQuery.length - 1]
+                const codeExample = `from bem.${blockQuery.slice(0, blockQuery.length - 1).join('.')} import ${blockName}${codeUnits ? '\nfrom bem import ' + codeUnits : ''}
 
-${blockImportName}(${codeMods})${codeArgs ? `(
+${blockName}(${codeMods})${codeArgs ? `(
 	${codeArgs}
 )` : '()'}`
 
@@ -402,6 +414,8 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
             }).catch(this.catchError)
     }
     catchError = (error: any) => {
+        this.loadBlockTimeout = 0
+
         const url = error.response.config.url
         
         function escapeRegExp(str: string) {
@@ -578,11 +592,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
         //         />
         // )
         
-        function insertSpaces(string:string) {
-            string = string.replace(/([a-z])([A-Z])/g, '$1 $2');
-            string = string.replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
-            return string
-          }
+   
 
         const attributes = Object.keys(this.state.args).filter(name => name !== 'model').map(name => {
             const isExists = this.state.args.hasOwnProperty(name)
@@ -608,7 +618,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                     
                     return prevState
                 }, () => {
-                    parseFloat(value) > 0 && this.loadBlock()
+                    parseFloat(value) > 0 && this.updateBlock()
                 })
             }
 
@@ -710,7 +720,6 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                 </Modal>
 
                 <Row>
-                    SCRIPT
                     <Col span={12} className={cnBlock('Title')}>
                         <h1>
                             {insertSpaces(this.props.name || '')}
@@ -727,7 +736,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                 treeCheckable={true}
                                 multiple
                                 treeDefaultExpandAll
-                                onChange={selectedMods => this.setState({ selectedMods, sources: [], load: [] }, this.loadBlock)}
+                                onChange={selectedMods => this.setState({ selectedMods, sources: [], load: [] }, this.updateBlock)}
                             >
                                 {Object.keys(BlockMods).map(type =>
                                     <TreeNode value={type} title={type} key={type}>
@@ -741,7 +750,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                     </Col>
                 </Row>
             
-                <Tabs defaultActiveKey="1" onChange={(key) => key === '1' && this.loadBlock()} className={cnBlock('BlockTabs')}>
+                <Tabs defaultActiveKey="1" onChange={(key) => key === '1' && this.updateBlock()} className={cnBlock('BlockTabs')}>
                     <TabPane tab="Simulation" key="1">
                         <Divider orientation="left">
                             Description
@@ -809,7 +818,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                                 sources.splice(index, 1)
                                                 
                                                 return { sources }
-                                            }, this.loadBlock)
+                                            }, this.updateBlock)
                                     }}>
                                         {source.name}
                                     </Tag>
@@ -829,7 +838,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                                 load.splice(index, 1)
                                                 
                                                 return { load }
-                                            }, this.loadBlock)
+                                            }, this.updateBlock)
                                     }}>
                                         {source.name}
                                     </Tag>
@@ -840,6 +849,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                     visible={this.state.modalLoadVisible}
                                     onOk={this.handleLoadOk}
                                     onCancel={() => this.handleModalCancel('Load')}
+                                    width={'60%'}
                                     >
                                         <Part
                                             source={this.state.editableLoad}
@@ -862,7 +872,7 @@ ${blockImportName}(${codeMods})${codeArgs ? `(
                                     placeholder="Select a model"
                                     value={this.state.args.model ? this.state.args.model.value : ''}
                                     className={cnBlock('AvailableParts')}
-                                    onChange={value => this.setState(({ args }: State) => ({ args: { ...args, model: { value, unit: { name: 'string', suffix: '' }} }}), this.loadBlock)}
+                                    onChange={value => this.setState(({ args }: State) => ({ args: { ...args, model: { value, unit: { name: 'string', suffix: '' }} }}), this.updateBlock)}
                                 >
                                     {this.state.available.map(model =>
                                         <Option value={model.model} key={model.model}>{model.model} {model.footprint}</Option>)}

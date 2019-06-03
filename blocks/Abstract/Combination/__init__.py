@@ -77,14 +77,23 @@ class Base(Block):
                 
     def select_part(self):
         available_parts = self.available_parts()
-        
+        suited_parts = []
+
         # self.unit_value()
         for part in available_parts:
             for value in self.part_values(part):
                 if value == self.value:
-                    return part
+                    suited_parts.append(part)
         
-        return available_parts[0]
+        if len(suited_parts) == 0:
+            suited_parts = [available_parts[0]]
+
+        if self.model:
+            for part in suited_parts:
+                if part.model == self.model:
+                    return part
+
+        return suited_parts[0]
 
     def values_optimal(self, desire, error=10):
         # return [desire]

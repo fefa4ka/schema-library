@@ -1,6 +1,8 @@
 from bem.abstract import Electrical, Network
-from bem.analog import Voltage_Divider
-from bem.basic import Transistor_Bipolar, Resistor
+from bem.analog.voltage import Divider
+from bem.basic import Resistor
+from bem.basic.transistor import Bipolar
+
 from bem import Net, u, u_Ohm, u_V, u_A
 
 class Base(Electrical(), Network(port='two')):
@@ -52,7 +54,7 @@ class Base(Electrical(), Network(port='two')):
             self.R_e = self.R_e * 2
         
         
-        amplifier = Transistor_Bipolar(
+        amplifier = Bipolar(
             type='npn',
             common='emitter',
             follow='emitter')(
@@ -67,7 +69,7 @@ class Base(Electrical(), Network(port='two')):
         self.R_in_base_dc = self.Beta * self.R_e
         self.R_in_base_ac = self.Beta * ((self.R_e * self.R_load) / (self.R_e + self.R_load)) 
 
-        stiff_voltage = Voltage_Divider(type='resistive')(
+        stiff_voltage = Divider(type='resistive')(
             V = self.V_ref,
             V_out = self.V_b,
             Load = self.I_in
@@ -77,7 +79,7 @@ class Base(Electrical(), Network(port='two')):
         self.R_in = R.parallel(R, [self.R_in_base_ac if is_ac else self.R_in_base_dc, stiff_voltage.R_in, stiff_voltage.R_out])
 
         if is_compensating:
-            compensator = Transistor_Bipolar(
+            compensator = Bipolar(
                 type='pnp',
                 common='collector',
                 follow='emitter')(

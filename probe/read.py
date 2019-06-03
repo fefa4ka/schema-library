@@ -25,6 +25,10 @@ class Sigrok:
                 self.channels[ch] += data
     
     def prepare(self):
+        channels = self.channels
+        step_time = self.step_time
+        end_time = self.end_time
+
         desire_samples = int(u(end_time) / u(step_time))
 
         for ch in channels.keys():
@@ -37,7 +41,14 @@ class Sigrok:
 
 
 class RigolDS(Sigrok):
+    # Try https://gist.github.com/pklaus/7e4cbac1009b668eafab"
+    # http://www.righto.com/2013/07/rigol-oscilloscope-hacks-with-python.html
+    # https://github.com/eevidtron/eevt002
+    
     def __init__(self, channel, step_time, end_time):
+        self.step_time = step_time
+        self.end_time = end_time
+        
         sample_rate = 1 / u(step_time)
 
         timebase = '500us'
@@ -63,6 +74,9 @@ class RigolDS(Sigrok):
                   
 class LogicAnalyzer(Sigrok):
     def __init__(self, channel, step_time, end_time):
+        self.step_time = step_time
+        self.end_time = end_time
+
         sample_rate = 1 / u(step_time)
 
         for index, rate in enumerate(rates):

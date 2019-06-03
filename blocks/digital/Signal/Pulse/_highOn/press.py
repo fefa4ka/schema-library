@@ -1,6 +1,6 @@
 from .. import Base
-from bem import Transistor_Bipolar, Resistor, Capacitor, RLC
-
+from bem import Resistor, Capacitor, RLC
+from bem.basic.transistor import Bipolar
 from PySpice.Unit import u_Ohm, u_V, u_A, u_F
 
 class Modificator(Base):
@@ -18,7 +18,7 @@ class Modificator(Base):
     def circuit(self):
         super().circuit()
         
-        sensor = Transistor_Bipolar(type='npn', common='emitter')(
+        sensor = Bipolar(type='npn', common='emitter')(
             base = Resistor()(self.R_sensor_in),
             collector = Resistor()(self.R_sensor_collector),
         )
@@ -31,7 +31,7 @@ class Modificator(Base):
         sensor.v_ref += self.v_ref, pulsar_width.v_ref
         sensor.gnd += self.gnd
 
-        pulsar = Transistor_Bipolar(type='npn', common='emitter')(
+        pulsar = Bipolar(type='npn', common='emitter')(
             base = pulsar_width,
             collector = Resistor()(self.R_pulse_collector)
         )

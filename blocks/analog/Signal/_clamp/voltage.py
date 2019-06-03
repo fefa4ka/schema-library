@@ -1,5 +1,5 @@
 from bem import u, u_A, u_Ohm, u_V
-from bem.analog import Voltage_Divider
+from bem.analog.voltage import Divider
 from bem.basic import Diode, Resistor
 
 from .. import Base
@@ -29,7 +29,7 @@ class Modificator(Base):
 
         Rref = None
         if self.V_out and self.V_ref and self.V_ref >  self.V_out:
-            Rref = Voltage_Divider(type='resistive')(
+            Rref = Divider(type='resistive')(
                 V = self.V_ref,
                 V_out = self.V_out,
                 Load=self.I_ref)

@@ -1,6 +1,6 @@
 import io
 from contextlib import redirect_stdout
-
+from numpy.fft import fft
 from PySpice.Unit import u_ms, u_s
 from skidl import (KICAD, SPICE, Circuit, Net, search, set_default_tool, set_backup_lib,
                    subcircuit)
@@ -64,6 +64,11 @@ class Simulate:
         for branch in current_branches:
             current[branch] = -analysis[branch]
 
+        # voltage_fft = {}
+        # for key in voltage.keys():
+        #     voltage[key] = fft(voltage[key])
+
+
         data = []
         for index, entity in enumerate(index):
             entry = {
@@ -71,14 +76,15 @@ class Simulate:
             }
             
             for key in voltage.keys():
-                entry['V_' + key] = voltage[key][index].scale * voltage[key][index].value
+                entry['V_' + key] = u(voltage[key][index])
                 
             for key in current.keys():
-                entry['I_' + key] = current[key][index].scale * current[key][index].value
+                entry['I_' + key] = u(current[key][index])
 
             data.append(entry)
-
+       
         return data
+
 
     def transient(self, step_time=0.01 @ u_ms, end_time=200 @ u_ms):
         self.simulation = self.circuit.simulator()

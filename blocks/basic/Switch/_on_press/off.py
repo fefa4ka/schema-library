@@ -1,6 +1,6 @@
 from .. import Base
-from bem import Transistor_Bipolar, Resistor
-
+from bem import Resistor
+from bem.basic.transistor import Bipolar
 from PySpice.Unit import u_Ohm, u_V, u_A
 
 class Modificator(Base):
@@ -13,7 +13,7 @@ class Modificator(Base):
         
         rc = self \
             & Resistor()(10000) \
-                & Transistor_Bipolar(
+                & Bipolar(
                     type='pnp',
                     common='collector',
                     follow='collector'

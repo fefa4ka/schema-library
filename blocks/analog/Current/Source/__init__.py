@@ -1,7 +1,8 @@
 
 from bem.abstract import Electrical, Network
-from bem.analog import Voltage_Divider
-from bem.basic import Transistor_Bipolar, Resistor
+from bem.analog.voltage import Divider
+from bem.basic import Resistor
+from bem.basic.transistor import Bipolar
 from bem import u, u_ms, u_Ohm, u_A, u_V
 
 from settings import params_tolerance
@@ -43,7 +44,7 @@ class Base(Electrical(), Network(port='two')):
         self.load(self.V_ref)
 
     def circuit(self, **kwargs):
-        generator = Transistor_Bipolar(type='npn', follow='emitter')()
+        generator = Bipolar(type='npn', follow='emitter')()
         # self.Beta = generator.selected_part.spice_params['BF']
         self.V_je = (generator.selected_part.spice_params.get('VJE', None) or 0.6) @ u_V
 
@@ -54,7 +55,7 @@ class Base(Electrical(), Network(port='two')):
         generator.collector += self.output_n
         
         
-        controller = Voltage_Divider(type='resistive')(
+        controller = Divider(type='resistive')(
             V = self.V_ref,
             V_out = self.V_b,
             Load = self.I_load

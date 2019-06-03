@@ -133,8 +133,14 @@ class Base(Block):
         
     def simulate(self, sources=None, load=None):
         Test = BuildTest(self.__class__, **(self.mods))
-        Test._sources = sources
-        Test._load = load
+        
+        def method_sources():
+            return sources
+        def method_load():
+            return load
+            
+        Test.sources = method_sources
+        Test.load = method_load
 
         arguments = self.__class__.get_arguments(self.__class__, self)
         simulation = Test.simulate(arguments)

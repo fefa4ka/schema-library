@@ -1,6 +1,7 @@
-from bem.basic import Resistor, Transistor_Bipolar
+from bem.basic import Resistor
 from bem import Net, u_Ohm
 from bem.abstract import Electrical
+from bem.basic.transistor import Bipolar
 
 class Base(Electrical()):
     """**Schmitt Trigger**
@@ -19,12 +20,12 @@ class Base(Electrical()):
         self.v_ref = Net()
         self.output = Net()
 
-        regenerative = Transistor_Bipolar(type='npn', common='emitter')(
+        regenerative = Bipolar(type='npn', common='emitter')(
             base = Resistor()(self.R_in),
             collector = Resistor()(self.R_collector)
         )
 
-        hysteresis = Transistor_Bipolar(type='npn', common='emitter')(
+        hysteresis = Bipolar(type='npn', common='emitter')(
             collector = Resistor()(self.R_collector),
             emitter = Resistor()(self.R_out)
         )

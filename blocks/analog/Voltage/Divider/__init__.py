@@ -19,3 +19,4 @@ class Base(Electrical()):
            V_out -- Note that the output voltage is always less than (or equal to) the input voltage; that’s why it’s called a divider.
         """
         self.load(self.V_out)
+    

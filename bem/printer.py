@@ -1,5 +1,6 @@
 from bem import Block, Build
 from skidl import Circuit, set_default_tool, KICAD, set_backup_lib
+from bem.abstract import Physical
 
 try:
     import __builtin__ as builtins
@@ -29,7 +30,7 @@ class Print:
         for device in self.kit:
             device_name = device['library'] + ':' + device['name'][:device['name'].rfind('_')]
             ref = device['library'] + ':' + device['name'][device['name'].rfind('_'):] 
-            DeviceBlock = Build(device_name, footprint=device['footprint'], ref=ref).element
+            DeviceBlock = Physical(part=device_name, footprint=device['footprint'])(ref = ref).element
             
             for device_pin_name in device['pins'].keys():
                 for pin in device['pins'][device_pin_name]:

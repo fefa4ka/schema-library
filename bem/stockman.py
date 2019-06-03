@@ -27,7 +27,8 @@ class Stockman:
         return params, values
         
     def related_parts(self):
-        parts = Part.select().where(Part.block == self.block.name)
+        name = self.block.name
+        parts = Part.select().where(Part.block == name)
         
         return parts
 
@@ -43,8 +44,6 @@ class Stockman:
         available = []
 
         parts = self.related_parts()
-        if hasattr(self, 'model') and self.block.model:
-            parts = parts.where(Part.model.contains(self.block.model))
         
         for part in parts:
             if self.is_part_proper(part):

@@ -1,6 +1,6 @@
 from .. import Base
-from bem import Transistor_Bipolar, Resistor
-
+from bem import Resistor
+from bem.basic.transistor import Bipolar
 from PySpice.Unit import u_Ohm, u_kOhm, u_A, u_V
 
 
@@ -12,7 +12,7 @@ class Modificator(Base):
     def circuit(self):
         self.input = self.output = Net('DigitalInput')
         amplified = Net('DigitalAmplifiedInput')
-        switch = self & Transistor_Bipolar(
+        switch = self & Bipolar(
             type='npn',
             common='emitter',
             follow='emitter')(

@@ -1,6 +1,7 @@
 from bem.abstract import Electrical, Network
-from bem.basic import Transistor_Bipolar, Resistor, Capacitor
-from bem.analog import Voltage_Divider
+from bem.basic import Resistor, Capacitor
+from bem.basic.transistor import Bipolar
+from bem.analog.voltage import Divider
 from math import pi
 from bem import Net, u, u_F, u_Ohm, u_V, u_Hz, u_A
 
@@ -61,7 +62,7 @@ class Base(Network(port='two'), Electrical()):
         
         R = Resistor()
 
-        amplifier = Transistor_Bipolar(
+        amplifier = Bipolar(
             common='emitter',
             follow='collector'
         )(
@@ -72,7 +73,7 @@ class Base(Network(port='two'), Electrical()):
         self.Beta = amplifier.selected_part.spice_params.get('BF', 100)
         self.V_je = (amplifier.selected_part.spice_params.get('VJE', None) or 0.6) @ u_V
 
-        stiff_voltage = Voltage_Divider(type='resistive')(
+        stiff_voltage = Divider(type='resistive')(
             V = self.V_ref,
             V_out = self.V_e + self.V_je,
             Load = self.Beta * self.R_e

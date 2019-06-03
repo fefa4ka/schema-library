@@ -3,10 +3,14 @@
 }
 
 .Part .ant-input-group-addon:first-child {
-    min-width: 160px;
+    /* min-width: 160px; */
     text-align: left;
 }
 
 .Part-Modificator {
     padding-left: 16px;
+}
+
+.Part-Title {
+    text-transform: capitalize; 
 }

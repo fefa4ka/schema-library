@@ -247,16 +247,19 @@ export class Part extends React.Component<IProps, {}> {
                     <RadioButton value='jds6600'>Signal Generator</RadioButton>
                     <RadioButton value='ka3005d'>Laboratory Voltage Supply</RadioButton>
                 </RadioGroup>
-                <Divider/>
-                <Select
-                    className={cnPart('SerialPort')}
-                    value={this.state.port}
-                    style={{ width: '100%' }}
-                    onChange={port => this.setState({ port }, () => onChange(this.getCurrentSource()))}
-                >
-                    {this.state.serial.map(item => <Option value={item.port} key={item.port}>{item.port} {item.desc}</Option>)}
+                {this.state.device &&
+                    <>
+                    <Divider />
+                    <Select
+                        className={cnPart('SerialPort')}
+                        value={this.state.port}
+                        style={{ width: '100%' }}
+                        onChange={port => this.setState({ port }, () => onChange(this.getCurrentSource()))}
+                    >
+                        {this.state.serial.map(item => <Option value={item.port} key={item.port}>{item.port} {item.desc}</Option>)}
                     
-                </Select>
+                    </Select>
+                    </>}
                 {this.state.device === 'jds6600' &&
                 <RadioGroup onChange={e => this.setState({ channel: e.target.value }, () => onChange(this.getCurrentSource()))} defaultValue="0">
                     <RadioButton value="0">None</RadioButton>

@@ -1,5 +1,6 @@
-from bem.basic import Resistor, Transistor_Bipolar, Capacitor
-from bem.analog import Voltage_Divider
+from bem.basic import Resistor, Capacitor
+from bem.basic.transistor import Bipolar
+from bem.analog.voltage import Divider
 from bem import Net, u, u_Ohm, u_V, u_A, u_F, u_Hz
 from math import pi
 from .. import Base
@@ -35,7 +36,7 @@ class Modificator(Base):
         super().circuit()
         
         R = Resistor()
-        stiff_voltage = Voltage_Divider(type='resistive')(
+        stiff_voltage = Divider(type='resistive')(
             V = self.V_ref,
             V_out = self.V_split + 0.6 @ u_V,
             Load = self.I_b
@@ -44,7 +45,7 @@ class Modificator(Base):
         stiff_voltage.gnd += self.gnd
         stiff_voltage.v_ref += self.v_ref
 
-        splitter = Transistor_Bipolar(
+        splitter = Bipolar(
             type='npn',
             common='emitter',
             follow='collector'

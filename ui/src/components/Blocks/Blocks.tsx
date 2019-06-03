@@ -35,9 +35,27 @@ const icons:any = {
 export const insertSpaces = (string:string) => {
   string = string.replace(/([a-z])([A-Z])/g, '$1 $2');
   string = string.replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+  string = string.replace(/\./g,' ')
 
   return string
 }
+
+export const resolveBlock = (path: string | string[], blocks: any) => {
+  const properties = Array.isArray(path) ? path : path.split('.')
+  return properties.reduce((prev, curr) => prev && prev[curr], blocks)
+}
+
+const ScopeMenu = ({ blocks, parent='' }: any) => 
+    Object.keys(blocks).map(scope =>
+      scope.charAt(0).toUpperCase() === scope.charAt(0) 
+        ? <Menu.Item key={parent ? parent + '.' + scope : scope}>{insertSpaces(scope)}</Menu.Item>
+        : <SubMenu 
+            key={scope} 
+            title={<strong>{icons[scope] ? <Icon type={icons[scope]} /> : null}<span>{insertSpaces(scope)}</span></strong>}
+          >
+            {ScopeMenu({ blocks: blocks[scope], parent: parent ? parent + '.' + scope : scope })}
+          </SubMenu>
+    )
 
 export const BlocksMenu= ({ onClick, onOpenChange, blocks }:any) => 
   <Menu
@@ -48,21 +66,9 @@ export const BlocksMenu= ({ onClick, onOpenChange, blocks }:any) =>
     onClick={onClick}
     onOpenChange={onOpenChange}
   >
-    {Object.keys(blocks).map(pack =>
-      <SubMenu key={pack} title={<strong><Icon type={icons[pack]} /><span>{insertSpaces(pack)}</span></strong>}>
-        {Object.keys(blocks[pack]).filter(block => block[block.length - 1] !== '.').map((block, index) =>
-            blocks[pack][block + '.']
-            ? <SubMenu key={pack + '.' + block} title={<span>{block}</span>}>
-              {Object.keys(blocks[pack][block + '.']).map((element, index) =>
-                <Menu.Item key={pack + '.' + block + '.' + element}>{insertSpaces(element)}</Menu.Item>
-              )}
-          </SubMenu>
-          : <Menu.Item key={pack + '.' + block}>{insertSpaces(block)}</Menu.Item>
-
-        )}
-      </SubMenu>
-    )}
+    {ScopeMenu({ blocks })} 
   </Menu>
+  
 export class Blocks extends Component<any> {
   state: State = initState
 
@@ -91,11 +97,11 @@ export class Blocks extends Component<any> {
                 console.log(param.keys)
                 this.props.history.push('/block/' + param.key)
               }}
-            onOpenChange={(openKeys: any) => {
-                console.log(openKeys)
-                if (openKeys.length) {
-                  this.props.history.push('/block/' + openKeys[openKeys.length - 1])
-                }
+              onOpenChange={(openKeys: any) => {
+                  // console.log(openKeys)
+                  // if (openKeys.length) {
+                  //   this.props.history.push('/block/' + openKeys[openKeys.length - 1])
+                  // }
               }}
               blocks={blocks}
             />

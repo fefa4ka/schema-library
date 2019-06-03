@@ -1,4 +1,5 @@
 import sys
+import os
 import glob
 import importlib
 from pathlib import Path
@@ -11,86 +12,60 @@ from .builder import Build
 from .stockman import Stockman
 from PySpice.Unit import *
 
-
-def get_bem_packs(root='./blocks/*', parent=''):
+def bem_scope(root='./blocks'):
     blocks = defaultdict(dict)
 
-    for file in glob.glob(root + '/' + parent + '/*/__init__.py'):
-        root = '/'.join(file.split('/')[:-2])
-        tail = file.split('/') 
-        pack = tail[2]
-        element = tail[-2]
-        
-        blocks[pack][element] = defaultdict(list)
-        
-        for mod_type, mod_value in [(mod.split('/')[-2], mod.split('/')[-1]) for mod in glob.glob(root + '/%s/_*/*.py' % element)]:
-            if mod_value.find('_test.py') != -1:
+    # Get Blocks from current root scopes
+    scopes = [ name for name in os.listdir(root) if os.path.isdir(os.path.join(root, name)) ]
+    scopes = [ name for name in scopes if name[0].islower() ]
+
+    for scope in scopes:
+        # Get Blocks from current root
+        scope_root = root + '/' + scope
+        for file in glob.glob(scope_root + '/*/__init__.py'):
+            tail = file.split('/') 
+            element = tail[-2]
+            if element[0].isupper() == False:
                 continue
-
-            mod_type = mod_type[1:]
-            mod_value = mod_value.replace('.py', '')
             
-            blocks[pack][element][mod_type].append(mod_value)
-        
-        
-        if not parent:
-            elements = get_bem_packs(root, element)
-            if len(elements.keys()):
-                blocks[pack][element + '.'] = elements[pack]
-
-    return blocks
-
-
-def get_bem_blocks(parent=''):
-    blocks = defaultdict()
-    block = './blocks/' + parent
-
-    for file in glob.glob(block + '/*/__init__.py'):        
-        element = file.split('/')[-2]
-        
-        blocks[element] = defaultdict(list)
-        
-        for mod_type, mod_value in [(mod.split('/')[-2], mod.split('/')[-1]) for mod in glob.glob(block + '/%s/_*/*.py' % element)]:
-            if mod_value.find('_test.py') != -1:
-                continue
-
-            mod_type = mod_type[1:]
-            mod_value = mod_value.replace('.py', '')
+            blocks[scope][element] = defaultdict(list)
             
-            blocks[element][mod_type].append(mod_value)
-        
-        
-        if not parent:
-            elements = get_bem_blocks(element)
-            if len(elements.keys()):
-                blocks[element + '.'] = elements
+            for mod_type, mod_value in [(mod.split('/')[-2], mod.split('/')[-1]) for mod in glob.glob(scope_root + '/%s/_*/*.py' % element)]:
+                if mod_value.find('_test.py') != -1:
+                    continue
 
-    return blocks
-
-
-packs = get_bem_packs()
-
-for pack in packs.keys():
-    blocks = {}
-    
-    for name in packs[pack].keys():
-        if name[-1] == '.':
-            for element in packs[pack][name].keys():
-                element = name + element
-                def build(name=pack + '.' + element, *arg, **kwarg):
-                    return Build(name, *arg, **kwarg).block
-
-                block_name = element.replace('.', '_')
-                blocks[block_name] = build
+                mod_type = mod_type[1:]
+                mod_value = mod_value.replace('.py', '')
                 
-        else:
-            def build(name=pack + '.' + name, *arg, **kwarg):
-                return Build(name, *arg, **kwarg).block
+                blocks[scope][element][mod_type].append(mod_value)
+       
+        inner_blocks = bem_scope(scope_root)
+        blocks[scope] = {
+            **blocks[scope],
+            **inner_blocks
+        }
 
-            blocks[name] = build
+    return blocks
 
 
-    sys.modules[__name__ + '.' + pack] = type(pack, (object,), blocks)
-        
+def bem_scope_module(scopes, root=''):
+    blocks = defaultdict(dict)
+
+    # Get Blocks from current root scopes
+    scopes_keys = [ name for name in scopes.keys() if name[0].islower() ]
+    blocks_keys = [ name for name in scopes.keys() if name[0].isupper() ]
+
+    for scope in scopes_keys:
+        bem_scope_module(scopes[scope], '.'.join([root, scope]))
+
+    for block in blocks_keys:
+        def build(name=root[1:] + '.' + block, *arg, **kwarg):
+            return Build(name, *arg, **kwarg).block
+
+        blocks[block] = build 
+
+    if root:
+        sys.modules[__name__ + root] = type(root, (object,), blocks)
     
-    
+root = bem_scope()
+bem_scope_module(root)

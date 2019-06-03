@@ -1,5 +1,5 @@
 from . import get_arg_units
-from bem import u, u_V, u_Hz, u_s
+from bem import u, u_V, u_Hz, u_s, u_A
 
 class Device:
     name = ''
@@ -43,6 +43,16 @@ class JDS6600(Device):
             'channels': channels_status,
             'phase': self.device.getphase()
         }
+
+
+    def set_channel(self, channel, waveform='sine', amplitude=5 @ u_V, frequency=100 @ u_Hz, offset=0 @ u_V, duty_cycle=50):
+        print(channel, waveform, frequency, amplitude, offset, duty_cycle)
+        channel = int(channel)
+        self.device.setfrequency(channel, u(frequency))
+        self.device.setwaveform(channel, waveform)
+        self.device.setamplitude(channel, u(amplitude))
+        self.device.setoffset(channel, u(offset))
+        self.device.setdutycycle(channel, duty_cycle)
 
     @property
     def waveforms(self):
@@ -100,15 +110,6 @@ class JDS6600(Device):
     def SINEV(self, channel, amplitude, frequency, offset=0 @ u_V):
         self.set_channel(channel, 'sine', amplitude, frequency, offset)
 
-    def set_channel(self, channel, waveform='sine', amplitude=5 @ u_V, frequency=100 @ u_Hz, offset=0 @ u_V, duty_cycle=50):
-        print(channel, waveform, frequency, amplitude, offset, duty_cycle)
-        channel = int(channel)
-        self.device.setfrequency(channel, u(frequency))
-        self.device.setwaveform(channel, waveform)
-        self.device.setamplitude(channel, u(amplitude))
-        self.device.setoffset(channel, u(offset))
-        self.device.setdutycycle(channel, duty_cycle)
-
     def PULSEV(self, channel, initial_value, pulsed_value, pulse_width, period):
         frequency = (1 / u(period)) @ u_Hz
         offset = (pulsed_value / 2) + initial_value
@@ -125,6 +126,64 @@ class JDS6600(Device):
         duty_cycle = (u(rise_time_constant) / period) * 100
         
         self.set_channel(channel, 'exp-rize', amplitude, frequency, offset, duty_cycle)
+
+
+
+class KA3005P(Device):
+    channels = 1
+    device = None
+
+    def __init__(self, port):
+        from .driver.ka3005d import KoradSerial
+
+        self.device = KoradSerial(port)
+        self.name = self.serial_number = self.device.model
+
+    @property
+    def channels(self):
+        ch = self.device.channel[0]
+
+        channel = {
+            'waveform': 'V',
+            'value': ch.output_voltage,
+            'current': ch.output_current
+        }
+
+        return {
+            'status': self.device.status,
+            'channels': { 'OUT': channel }
+        }
+
+
+    def set_channel(self, channel, waveform='V', value=0 @ u_V, current = 0 @ u_A):
+        """ 200 ms time for channel setting """
+        channel = self.device.channels[0]
+        channel.voltage = u(value)
+        self.device.output.on()
+
+    @property
+    def waveforms(self):
+        waveforms = {}
+
+        waveforms['V'] = {
+            'name': 'V',
+            'pins': ['output', 'gnd'],
+            'args': {
+                'value': {
+                    'value': '',
+                    'unit': {
+                        'name': 'volt',
+                        'suffix': 'V'
+                    }
+                }
+            }
+        }
+
+        return waveforms
+
+    def V(self, channel, value=0 @ u_V):
+        self.set_channel(channel, 'V', value)
+
 
 def simulation_sources():
     from skidl.libs.pyspice_sklib import pyspice_lib

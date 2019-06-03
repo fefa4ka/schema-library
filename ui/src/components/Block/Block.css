@@ -2,6 +2,10 @@
     margin-top: -8px;
 }
 
+.Block-Title {
+    text-transform: capitalize; 
+}
+
 .Block-Characteristics .ant-input-group-wrapper {
     margin-bottom: 4px;
     padding: 0 4px;

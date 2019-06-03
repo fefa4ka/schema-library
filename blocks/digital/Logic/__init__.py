@@ -1,8 +1,8 @@
-from bem.abstract import Network
+from bem.abstract import Electrical
 from bem import Net
 
 
-class Base(Network()):
+class Base(Electrical()):
     inputs = []
     outputs = []
 

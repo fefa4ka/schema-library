@@ -1,20 +1,31 @@
 from bem import Block, Stockman
 from bem.abstract import Electrical
+from skidl import Part, TEMPLATE
 
-class Base(Block):
-    inherited = [Electrical]
+class Base(Electrical()):
     model = ''
 
     template = None
 
     def willMount(self, model=None):
+        part = self.props.get('part', None)
+
+        if part:
+            # library, device = part.split(':')
+            # part = {
+            #     model: device
+            # }
+
+            self.selected_part = part
+            self.template = self.part_template()
+            
         if not hasattr(self, 'selected_part'):
             selected_part = self.select_part()
             self.apply_part(selected_part)
 
     def available_parts(self):
         parts = Stockman(self).suitable_parts()
-
+        
         if len(parts) == 0:
             args = self.__class__.get_arguments(self.__class__, self)
             params = self.get_params()
@@ -25,6 +36,7 @@ class Base(Block):
             description = ', '.join([ arg + ' = ' + str(values[arg].get('value', '')) + values[arg]['unit'].get('suffix', '') for arg in values.keys()])
             
             raise LookupError("There are should be parts in stock for %s block with suitable characteristics\n%s" % (self.name, description))
+            
             
         return parts
       
@@ -71,7 +83,6 @@ class Base(Block):
                 part.set_pin_alias('p', 1)
                 part.set_pin_alias('n', 2)
     
-
         return part
 
     def part(self, *args, **kwargs):
