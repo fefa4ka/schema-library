@@ -1,9 +1,5 @@
-from .. import Base
 from bem import Net
+from bem.abstract import Network
 
-class Modificator(Base):
-    spice_params = {
-        'RF': {'title': 'β_f', 'description': 'Ideal maximum forward beta', 'unit': {'suffix': '', 'name': 'number'}, 'value': ''},
-    }
-
-    pass    
+class Modificator(Network(interface=['uart', 'spi', 'i2c'])): 
+    pass
