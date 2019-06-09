@@ -97,7 +97,18 @@ class Base(Physical()):
 
     def part_template(self):
         # TODO: Search for models and footprints using low level attributes of Block
-        part = Part('Transistor_BJT', self.selected_part.scheme or self.model, footprint=self.footprint, dest=TEMPLATE)
+        library = 'Transistor_BJT'
+
+        model = self.selected_part.scheme
+        if model:
+            pack = model.split(':')
+            if len(pack) == 2:
+                library = pack[0]
+                model = pack[1]
+        else:
+            model = self.model
+
+        part = Part(library, model, footprint=self.footprint, dest=TEMPLATE)
         part.set_pin_alias('collector', 1)
         part.set_pin_alias('base', 2)
         part.set_pin_alias('emitter', 3)

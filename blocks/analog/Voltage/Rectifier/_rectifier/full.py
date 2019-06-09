@@ -22,8 +22,6 @@ class Modificator(Base):
         If you assume that the load current stays constant (it will, for small ripple), you have
         `ΔV = I_(load)/(fC_(rippl\e))`
 
-        The capacitor value is chosen so that `R_(load)C_(rippl\e) ≫ 1/f`
-
         * Paul Horowitz and Winfield Hill. "1.6.3 Power-supply filtering" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 32-33
     """
     C_ripple = 0.01 @ u_F
@@ -36,7 +34,7 @@ class Modificator(Base):
         """
             V_ripple -- Periodic variations in voltage about the steady value
             frequency -- Input signal frequency
-            C_ripple -- A relatively large value capacitor; it charges up to the peak output voltage during the diode conduction
+            C_ripple -- A relatively large value capacitor; it charges up to the peak output voltage during the diode conduction.  The capacitor value is chosen so that `R_(load)C_(rippl\e) ≫ 1/f`
         """
         pass 
     

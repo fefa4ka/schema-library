@@ -4,31 +4,46 @@ from collections import defaultdict
 from bem import u, u_A, u_Degree
 
 class Case(Test):
-    def dc_source(self):
+    def dc_body_kit(self):
         return [{
-                'name': 'V',
-                'args': {
-                    'value': {
-                        'value': 5,
-                        'unit': {
-                            'name': 'volt',
-                            'suffix': 'V'
-                        }
+            'name': 'basic.source.VS',
+            'mods': {
+                'flow': ['V'],
+            },
+            'args': {
+                'V': {
+                    'value': 5,
+                    'unit': {
+                        'name': 'volt',
+                        'suffix': 'V'
                     }
-                },
-                'pins': {
-                    'p': ['input'],
-                    'n': ['gnd']
                 }
+            },
+            'pins': {
+                'input': ['input'],
+                'output': ['gnd']
+            }
+        }, {
+            'name': 'basic.RLC',
+            'mods': {
+                'series': ['R']
+            },
+            'args': {
+                'R_series': {
+                    'value': 1000,
+                }
+            },
+            'pins': {
+                'input': ['output'],
+                'output': ['gnd']
+            }
         }]
 
     def characteristics(self, args, temperature, voltage_sweep):
-        self._sources = self.dc_source()
+        self.body_kit = self.dc_body_kit
         self.circuit(args)
         
-        simulations = Simulate(self.block).dc({ 'VV': voltage_sweep }, temperature=temperature)
-        self._sources = None
-        
+        simulations = Simulate(self.block).dc({ 'V1': voltage_sweep }, temperature=temperature)
         
         chart = defaultdict(dict)
         for temp, simulation in simulations.items():
@@ -36,7 +51,7 @@ class Case(Test):
             for run in simulation:
                 index = run['sweep']
                 chart[index]['V_input'] = index
-                chart[index][label + ' I_vv'] = run['I_vv']
+                chart[index][label + ' I_v1'] = run['I_v1']
 
         sweep = list(chart.keys())
 

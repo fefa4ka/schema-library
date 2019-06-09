@@ -1,20 +1,22 @@
 from bem.tester import Test
 
 class Case(Test):
-    def sources(self):
+    def body_kit(self):
         return [{
-            'name': 'PULSEV',
-            'description': "Pulsed voltage source",
+            'name': 'basic.source.VS',
+            'mods': {
+                'flow': ['PULSEV'],
+            },
             'args': {
-                'initial_value': {
-                    'value': 0.1,
+                'V': {
+                    'value': 10,
                     'unit': {
                         'name': 'volt',
                         'suffix': 'V'
                     }
                 },
-                'pulsed_value': {
-                    'value': 10,
+                'initial_value': {
+                    'value': 0.1,
                     'unit': {
                         'name': 'volt',
                         'suffix': 'V'
@@ -36,28 +38,28 @@ class Case(Test):
                 }
             },
             'pins': {
-                'p': ['input'],
-                'n': ['gnd']
+                'input': ['input'],
+                'output': ['gnd']
             }
         }, {
-                'name': 'V',
-                'args': {
-                    'value': {
-                        'value': 15,
-                        'unit': {
-                            'name': 'volt',
-                            'suffix': 'V'
-                        }
+            'name': 'basic.source.VS',
+            'mods': {
+                'flow': ['V'],
+            },
+            'args': {
+                'V': {
+                    'value': 15,
+                    'unit': {
+                        'name': 'volt',
+                        'suffix': 'V'
                     }
-                },
-                'pins': {
-                    'p': ['v_ref'],
-                    'n': ['gnd']
                 }
-        }]
-    
-    def load(self):
-        return [{
+            },
+            'pins': {
+                'input': ['v_ref'],
+                'output': ['gnd']
+            }
+        }, {
                 'name': 'basic.RLC',
                 'mods': {
                     'series': ['R']

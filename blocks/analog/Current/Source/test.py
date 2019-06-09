@@ -1,9 +1,12 @@
 from bem.tester import Test
 
 class Case(Test):
-    def sources(self):
+    def body_kit(self):
         return [{
-                'name': 'V',
+                'name': 'basic.source.VS',
+                'mods': {
+                    'flow': ['V']
+                },
                 'args': {
                     'value': {
                         'value': 10,
@@ -17,10 +20,7 @@ class Case(Test):
                     'p': ['v_ref'],
                     'n': ['gnd']
                 }
-        }]
-
-    def load(self):
-        return [{
+        }, {
                 'name': 'basic.RLC',
                 'mods': {
                     'series': ['R']

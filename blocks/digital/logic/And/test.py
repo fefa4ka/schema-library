@@ -9,7 +9,7 @@ class Case(Test):
             },
             'args': {
                 'V': {
-                    'value': 1,
+                    'value': 5,
                     'unit': {
                         'name': 'volt',
                         'suffix': 'V'
@@ -38,7 +38,7 @@ class Case(Test):
                 }
             },
             'pins': {
-                'input': ['input'],
+                'input': ['input_a'],
                 'output': ['gnd']
             }
         }, {
@@ -48,7 +48,7 @@ class Case(Test):
             },
             'args': {
                 'V': {
-                    'value': 10,
+                    'value': 5,
                     'unit': {
                         'name': 'volt',
                         'suffix': 'V'
@@ -56,7 +56,7 @@ class Case(Test):
                 }
             },
             'pins': {
-                'input': ['v_ref'],
+                'input': ['v_ref', 'input_b'],
                 'output': ['gnd']
             }
         }, {
@@ -74,7 +74,7 @@ class Case(Test):
                     }
                 },
                 'pins': {
-                    'input': ['v_ref'],
-                    'output': ['output']
+                    'input': ['output'],
+                    'output': ['gnd']
                 }
         }]

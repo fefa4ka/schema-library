@@ -1,5 +1,5 @@
-from .. import Base
-from bem import Resistor
+from .. import Base, Net
+from bem.basic import Resistor
 from bem.basic.transistor import Bipolar
 from PySpice.Unit import u_Ohm, u_kOhm, u_A, u_V
 

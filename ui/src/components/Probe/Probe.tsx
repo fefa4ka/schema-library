@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { IProps, TProbe, TArgs } from './index'
+import { IProps, TProbeBlock } from './index'
 import { cn } from '@bem-react/classname'
 import axios from 'axios'
 import { Button, Select, TreeSelect} from 'antd'
@@ -21,17 +21,8 @@ const initialState = {
     parts: [],
 }
 
-// type State = typeof initialState
-
-type TPart = {
-    name: string,
-    description: string,
-    pins: string[],
-    args: TArgs
-}
-
 type State = {
-    parts: TPart[]
+    parts: TProbeBlock[]
 }
 
 
@@ -79,6 +70,7 @@ export class Part extends React.Component<IProps, {}> {
                         style={{ width: '100%' }}
                         placeholder='Select Power Probe'
                         value={pin_state && pin_state.name}
+                        defaultValue=''
                         onChange={name => onChange(({ probes }: any) => {
                             const pins = probes || {}
                             pins[pin] = pins[pin] || {}

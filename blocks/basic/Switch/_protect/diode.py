@@ -1,5 +1,5 @@
 from .. import Base
-from bem import Diode
+from bem.basic import Diode
 
 class Modificator(Base):
     """**Suppression Diode**

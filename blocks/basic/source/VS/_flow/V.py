@@ -4,9 +4,6 @@ from lcapy import Vdc
 from sympy import Float
 
 class Modificator(Base):
-    def part_spice(self, *args, **kwargs):
-        return Build('V').spice(*args, **kwargs)
-
     # def transfer(self, time=0 @ u_s):
     #     return Float(u(self.value))
 
@@ -16,3 +13,11 @@ class Modificator(Base):
     def circuit(self):
         super().circuit(value=self.V)
     
+    def devices(self):
+        return {
+            'ka3005d': {
+                'title': 'Laboratory Power Supply',
+                'port': 'serial',
+                'channels': []
+            }
+        }

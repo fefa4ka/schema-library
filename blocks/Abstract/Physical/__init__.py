@@ -27,7 +27,7 @@ class Base(Electrical()):
         parts = Stockman(self).suitable_parts()
         
         if len(parts) == 0:
-            args = self.__class__.get_arguments(self.__class__, self)
+            args = self.get_arguments()
             params = self.get_params()
             values = {
                 **args,
@@ -96,4 +96,12 @@ class Base(Electrical()):
     def footprint(self):
         return self.props.get('footprint', None)
     
+    def set_pins_aliases(self, pins):
+        for pin in pins.keys():
+            aliases = pins[pin]
+            aliases = [aliases] if type(aliases) == str else aliases
+            for alias in aliases:
+                self.template.set_pin_alias(alias, pin)
+
+            self.template[pin].aliases = { alias for alias in aliases }
 

@@ -14,14 +14,19 @@ const initState = {
   blocks: {},
   selectedBlock: ''
 }
+
+type TBlock = {
+  [mod:string]: string[]
+}
+
+export type TBlocksScope = {
+  [scope: string]: {
+    [block: string]: TBlock | TBlocksScope
+  }
+}
+
 type State = {
-  blocks: {
-    [pack: string]: {
-      [name: string]: {
-        [mod: string]: string[]
-      }
-    }
-  },
+  blocks: TBlocksScope,
   selectedBlock: string
 }
 
@@ -38,6 +43,15 @@ export const insertSpaces = (string:string) => {
   string = string.replace(/\./g,' ')
 
   return string
+}
+
+export const loadBlocks = (callback: (blocks: TBlocksScope) => void) => {
+  axios.get('/api/blocks/')
+    .then(res => {
+        const { data } = res
+      
+        callback(data)
+    })
 }
 
 export const resolveBlock = (path: string | string[], blocks: any) => {
@@ -73,12 +87,9 @@ export class Blocks extends Component<any> {
   state: State = initState
 
   componentWillMount() {    
-    axios.get('/api/blocks/')
-      .then(res => {
-          this.setState({
-              blocks: res.data
-          })
-      })
+    loadBlocks((blocks: TBlocksScope) => 
+      this.setState({ blocks })
+    )
   }
   render() {
     const { blocks } = this.state
@@ -94,14 +105,7 @@ export class Blocks extends Component<any> {
             <Sider className='App-Side'>
             <BlocksMenu 
               onClick={(param:any) => {
-                console.log(param.keys)
                 this.props.history.push('/block/' + param.key)
-              }}
-              onOpenChange={(openKeys: any) => {
-                  // console.log(openKeys)
-                  // if (openKeys.length) {
-                  //   this.props.history.push('/block/' + openKeys[openKeys.length - 1])
-                  // }
               }}
               blocks={blocks}
             />

@@ -1,5 +1,5 @@
 from .. import Base
-from bem import Build, u_V, u_Hz, u_V, u_s 
+from bem import Build, u, u_V, u_Hz, u_V, u_s 
 from lcapy import Vac, pi, f, t, sin, sqrt 
 from sympy import Integer, Float
 from numpy import linspace
@@ -10,18 +10,15 @@ class Modificator(Base):
     dc_offset = 0 @ u_V
     offset = 0 @ u_V
     delay = 0 @ u_s
-    damping_factor = None
+    damping_factor = 0
 
-    def willMount(self, amplitude, frequency, dc_offset=@ u_V, offset=0 @ u_V, delay=0 @ u_s, damping_factor=None):
-        pass
-
-    def part_spice(self, *args, **kwargs):
-        return Build('SINEV').spice(*args, **kwargs)
+    def willMount(self, frequency, dc_offset=0@ u_V, offset=0 @ u_V, delay=0 @ u_s, damping_factor=0):
+        self.amplitude = self.V
 
     def circuit(self):
         arguments = {}
         for arg in ['amplitude', 'frequency', 'dc_offset', 'offset', 'delay', 'damping_factor']:
-            arguments[arg] = u(getattr(self, arg))
+            arguments[arg] = getattr(self, arg)
 
         super().circuit(**arguments)
 
@@ -57,3 +54,12 @@ class Modificator(Base):
 
     def value_avg(self):
         return 2 * self.value_peak() / pi
+
+    def devices(self):
+        return {
+            'jds6600': {
+                'title': 'Signal Generator',
+                'port': 'serial',
+                'channels': ['CH1', 'CH2']
+            }
+        }

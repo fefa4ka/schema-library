@@ -1,6 +1,7 @@
 from bem import Block, Net, Build, u_V, u_s
 from sympy import Integer
 import inspect
+from skidl import Bus
 from skidl.Net import Net as NetType
 from skidl.NetPinList import NetPinList
 
@@ -18,6 +19,10 @@ class Base(Block):
         transfer = self.transfer()
         if transfer:
             self.H = transfer.latex_math()
+
+        # for pin in self.pins.keys():
+        #     net = getattr(self, pin)
+        #     net.fixed_name = False
 
     # Link Routines
     def __getitem__(self, *pin_ids, **criteria):
@@ -100,6 +105,9 @@ class Base(Block):
             
             related_nets = [pin]
 
+            # pin = True, str -- Net(pin_name | str)
+            # pin = Int -- Bus(pin_name, Int)
+            original_net = None
             if type(pin_description) in [list, tuple]: 
                 for pin_data in pin_description:
                     if type(pin_data) == str:
@@ -108,9 +116,14 @@ class Base(Block):
                     if type(pin_data) == list:
                         related_nets += pin_data
             else:
-                net_name = device_name + pin_description 
+                if type(pin_description) == int:
+                    original_net = Bus(pin, pin_description)
+                else:
+                    net_name = device_name + pin_description
             
-            original_net = Net(net_name)
+
+            if not original_net:
+                original_net = Net(net_name)
             
             # if not hasattr(self, 'model') and pin.find('output') != -1:
                 # print(net_name.replace('.', ))

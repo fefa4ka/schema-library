@@ -25,7 +25,7 @@ class Build:
         self.props = {}
         self.models = []
         self.inherited = []
-        # self.files = []
+        self.files = []
         
         block_dir = self.name.replace('.', '/')
 
@@ -33,10 +33,10 @@ class Build:
         self.base = base_file.exists() and importlib.import_module(BLOCKS_PATH + '.' + self.name).Base        
         
         if self.base:
-            # if type(self.base.files) == list:
-            #     self.files = self.base.files 
-                
-            # self.files.append(str(base_file))
+            if type(self.base.files) == list:
+                self.files = list(self.base.files)
+            
+            self.files.append(str(base_file))
 
             for mod, value in kwargs.items():
                 if type(value) == list:
@@ -57,9 +57,15 @@ class Build:
                     for mod_block_dir in set([block_dir]):
                         module_file = Path(BLOCKS_PATH) / mod_block_dir / ('_' + mod) / (value + '.py')
                         if module_file.exists():
-                            # self.files.append(str(module_file))
+                            self.files.append(str(module_file))
                             Module = importlib.import_module(BLOCKS_PATH + '.' + mod_block_dir.replace('/', '.') + '._' + mod + '.' + value)
                             self.models.append(Module.Modificator)
+                            mods = Module.Modificator.mods if hasattr(Module.Modificator, 'mods') else None
+                            if mods:
+                                self.mods = {
+                                    **mods,
+                                    **self.mods
+                                }
                         else:
                             self.props[mod] = value
   
@@ -68,17 +74,20 @@ class Build:
         else:
             self.props = kwargs
 
-    # self.files = list(set(self.files))
+        self.files = list(set(self.files))
+
     # Run once
     def ancestors(self, ancestor=None):
         if not ancestor:
             self.inherited = []
 
         ancestor = ancestor or self.base
-        mods = ancestor.mods if ancestor else self.mods
-        for parent in ancestor.inherited:
+        mods = ancestor.mods if ancestor and hasattr(ancestor, 'mods') else self.mods
+        inherited = ancestor.inherited if hasattr(ancestor, 'inherited') else []
+        for parent in inherited:
             ParentBlock = parent(**mods)
-            self.inherited += getmro(ParentBlock)[1:-1]
+            parent_models = getmro(ParentBlock)[1:-1] 
+            self.inherited += parent_models
             self.ancestors(ParentBlock)
 
         return list(OrderedDict.fromkeys(self.inherited))
@@ -100,15 +109,13 @@ class Build:
             
         self.inherited = []
         
-        # name = self.name[self.name.find('.') + 1:]
         Block = type(self.name,
                     tuple(Models),
                     {
                         'name': self.name,
-                        # 'inher': self.inherited,
                         'mods': self.mods,
                         'props': self.props,
-                        # 'files': self.files
+                        'files': self.files
                     })
 
         return Block

@@ -1,13 +1,52 @@
-from bem import u_V
 from bem.tester import Test
 
 class Case(Test):
-    def sources(self):
-        sources = super().sources()[:]
-        sources[0]['args']['amplitude']['value'] = 25
-
-        return sources
-
+    def body_kit(self):
+        return [{
+            'name': 'basic.source.VS',
+            'mods': {
+                'flow': ['SINEV']
+            },
+            'args': {
+                'V': {
+                    'value': 19,
+                    'unit': {
+                        'name': 'volt',
+                        'suffix': 'V'
+                    }
+                },
+                'frequency': {
+                    'value': 60,
+                    'unit': {
+                        'name': 'herz',
+                        'suffix': 'Hz'
+                    }
+                }
+            },
+            'pins': {
+                'input': ['input'],
+                'output': ['gnd']
+            }
+        }, {
+            'name': 'basic.RLC',
+            'mods': {
+                'series': ['R']
+            },
+            'args': {
+                'R_series': {
+                    'value': 1000,
+                    'unit': {
+                        'name': 'ohm',
+                        'suffix': 'Ω'
+                    }
+                }
+            },
+            'pins': {
+                'input': ['output'],
+                'output': ['gnd']
+            }
+        }]
+   
     def conditions(self, probes):
         block = self.block
         V_input = (probes['V_input'] @ u_V).canonise()

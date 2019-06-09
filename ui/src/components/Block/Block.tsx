@@ -15,10 +15,10 @@ import {
     } from 'antd';
 import { Device, TDevice } from '../Device';
 import { Diagram } from './Diagram';
-import { IProps } from './index';
+import { IProps, IBlock, NullBlock } from './index';
 import { MathMarkdown } from './Mathdown';
-import { Part } from '../Part';
-import { Probe, TProbe } from '../Probe';
+import { BlockLight } from '../BlockLight';
+import { Probe, TProbeState } from '../Probe';
 import { Source, TSource } from '../Source';
 import { UnControlled as CodeMirror } from 'react-codemirror2';
 import { UnitInput } from '../UnitInput';
@@ -38,16 +38,10 @@ const cnBlock = cn('Block')
 
 
 const initialState = {
-    name: '',
-    description: [''],
     available: [],
     params_description: {},
     selectedMods: [],
-    args: {},
-    nets: {},
-    pins: {},
     params: {},
-    props: {},
     spiceAttrs: {},
     debug: '',
     debugUrl: '',
@@ -81,19 +75,9 @@ const initialState = {
         index: -1
     },
     editableDeviceType: '',
-    devices: [],
-    editableLoad: {
-        name: '',
-        description: '',
-        args: {},
-        pins: {},
-        device: '',
-        port: '',
-        channel: 0,
-        index: -1
-    },
-    load: [],
-    mods: {},
+    pcb_body_kit: [],
+    editableBlock: NullBlock,
+    body_kit: [],
     example: '',
     files: [],
     simulationData: [],
@@ -112,9 +96,7 @@ type TSimulationCase = {
     domain?: number[]
 }
 
-type State = {
-    name: string,
-    description: string[],
+interface IState extends IBlock {
     available: {
         footprint: string,
         model: string,
@@ -124,31 +106,7 @@ type State = {
         [name:string]: string
     },
     selectedMods: string[],
-    nets: {
-        [name:string]: string[]
-    },
-    pins: {
-        [name:string]: string[]
-    },
-    args: {
-        [name:string]: {
-            value: number | string,
-            unit: {
-                name: string,
-                suffix: string
-            }
-        }
-    },
-    params: {
-        [name:string]: {
-            value: number | string,
-            unit: {
-                name: string,
-                suffix: string
-            }
-        }
-    },
-    props: IProps['mods'],
+    
     spiceAttrs: {
         [name:string]: {
             value: number | string,
@@ -158,21 +116,15 @@ type State = {
             }
         }
     },
-    load: TSource[],
-    editableLoad: TSource,
+    body_kit: IBlock[],
+    editableBlock: IBlock,
     editableSource: TSource,
     editableSourceType: string,
     parts : TSource[],
-    sources: TSource[],
-    probes: {
-        [name: string]: {
-            name: string,
-            channel: string
-        }
-    },
+    probes: TProbeState,
     editableDevice: TDevice,
     editableDeviceType: string,
-    devices: TDevice[],
+    pcb_body_kit: TDevice[],
     debug: string,
     debugUrl: string,
     modalDebugVisible: boolean,
@@ -181,9 +133,6 @@ type State = {
     modalDeviceVisible: boolean,
     modalTestVisible: boolean,
     modalConfirmLoading: boolean,
-    mods?: {
-        [name:string]: string[]
-    },
     example: string,
     files: string[],
     simulationData: {
@@ -212,29 +161,31 @@ type State = {
 
 
 export class Block extends React.Component<IProps, {}> {
-    state: State = initialState
+    state: IState = {
+        ...NullBlock,
+        ...initialState
+    }
     codeInstance: any
     loadBlockTimeout: any = 0 
 
     componentWillMount() {
         this.loadBlock()
     }
-    componentDidUpdate(prevProps: IProps, prevState: State) {
+    componentDidUpdate(prevProps: IProps, prevState: IState) {
         if (prevProps.name !== this.props.name) {
             this.setState({
                 selectedMods: [],
                 args: {},
                 charData: [],
-                sources: [],
                 parts: [],
-                devices: [],
-                load: []
+                pcb_body_kit: [],
+                body_kit: []
             }, this.updateBlock)
         }
         return true
     }
     loadSimulation() {
-        const { args, sources, load, simulationStopTime } = this.state
+        const { args, body_kit, simulationStopTime } = this.state
         
         axios.post('/api/blocks/' + this.props.name + '/simulate/',
         {
@@ -244,8 +195,7 @@ export class Block extends React.Component<IProps, {}> {
                 
                 return result
             }, {}),
-            sources,
-            load,
+            body_kit,
             simulationTime: simulationStopTime
         })
             .then(res => {
@@ -256,7 +206,7 @@ export class Block extends React.Component<IProps, {}> {
                 
                 this.loadSimulationCases() 
                 
-                this.setState(({ showLabels }:State) => {
+                this.setState(({ showLabels }: IState) => {
                     return {
                         simulationData,
                         showLabels: labels.reduce((labels: any, label) => {
@@ -272,7 +222,7 @@ export class Block extends React.Component<IProps, {}> {
             })//.catch(this.catchError)
     }
     loadSimulationCases() {
-        const { args, sources, load, } = this.state
+        const { args, body_kit, } = this.state
         
         axios.post('/api/blocks/' + this.props.name + '/simulate/cases/',
         {
@@ -282,8 +232,7 @@ export class Block extends React.Component<IProps, {}> {
                 
                 return result
             }, {}),
-            sources,
-            load,
+            body_kit,
         })
             .then(res => {
                 const simulationCase = res.data
@@ -292,13 +241,12 @@ export class Block extends React.Component<IProps, {}> {
             })//.catch(this.catchError)
     }
     loadProbes() {
-        const { sources, probes, simulationStopTime } = this.state
+        const { probes, simulationStopTime } = this.state
         this.setState({
             probeLoading: true,
         })
         axios.post('/api/probes/',
         {
-            sources,
             probes,
             simulationTime: simulationStopTime
         })
@@ -309,7 +257,7 @@ export class Block extends React.Component<IProps, {}> {
                     : []
                 
                 
-                this.setState(({ showLabels }:State) => {
+                this.setState(({ showLabels }: IState) => {
                     return {
                         probeData,
                         probeLoading: false,
@@ -327,6 +275,7 @@ export class Block extends React.Component<IProps, {}> {
             })//.catch(this.catchError)
     }
     urlParams() {
+        console.log({lala: this.state})
         const selectedMods: { [name:string]: string[] } = this.state.selectedMods.reduce((mods: { [name:string]: string[] }, mod) => {
             const [type, value] = mod.split(':')
             mods[type] = mods[type] || []
@@ -341,8 +290,6 @@ export class Block extends React.Component<IProps, {}> {
         return '?' + modsUrlParam.concat(argsUrlParam).join('&') 
     }
     updateBlock() {
-
-        console.log(this.loadBlockTimeout)
         if (this.loadBlockTimeout === 0) {
             this.loadBlockTimeout = setTimeout(() => this.loadBlock(), 3000)
         }
@@ -352,7 +299,7 @@ export class Block extends React.Component<IProps, {}> {
             .then(res => {
                 this.loadBlockTimeout = 0
 
-                const { name, description, available, params_description, args, params, mods, props, pins, files, nets, sources, parts, load, devices } = res.data               
+                const { name, description, available, params_description, args, params, mods, props, pins, files, nets, parts, body_kit, pcb_body_kit } = res.data               
                 
                 const selectedMods = Object.keys(mods).reduce((selected, type) =>
                     selected.concat(
@@ -379,19 +326,15 @@ ${blockName}(${codeMods})${codeArgs ? `(
 	${codeArgs}
 )` : '()'}`
 
-                this.setState((prevState:State) => {
+                this.setState((prevState: IState) => {
                     const elements:any = {}
-                    if (prevState.sources.length === 0 && sources.length) {
-                        elements.sources = sources.map((item:any, index:number) => ({ ...item, description: '', index }))
-                    }
-
-                    if(prevState.load.length === 0 && load.length) {
-                        elements.load = load.map((item:any, index:number) => ({ ...item, description: '', index }))
+                    if(prevState.body_kit.length === 0 && body_kit.length) {
+                        elements.body_kit = body_kit.map((item:any, index:number) => ({ ...item, description: '', index }))
                     }
 
 
-                    if(prevState.devices.length === 0 && devices.length) {
-                        elements.devices = devices.map((item:any, index:number) => ({ ...item, description: '', index }))
+                    if(prevState.pcb_body_kit.length === 0 && pcb_body_kit.length) {
+                        elements.pcb_body_kit = pcb_body_kit.map((item:any, index:number) => ({ ...item, description: '', index }))
                     }
                    
                     return {
@@ -444,43 +387,14 @@ ${blockName}(${codeMods})${codeArgs ? `(
             modalDebugVisible: false
         })
     }
-    handleSourceOk = () => {
-        this.setState(({ sources, editableSource }: State) => {
-            if (editableSource.index >= 0) {
-                sources[editableSource.index] = editableSource
-            } else {
-                const lastId = sources.reduce((id, source) => {
-                    if (source.name.includes(editableSource.name)) {
-                        let [name, number] = source.name.split('_')
-                        if (number && parseInt(number) > id) {
-                            id = parseInt(number)
-                        }
-                    }
-
-                    return id
-                }, 0)
-                editableSource.name += '_' + (lastId + 1)
-                sources = sources.concat([{
-                    ...editableSource,
-                    index: sources.length
-                }])
-            }
-
-            return {
-                modalConfirmLoading: false,
-                sources,
-                editableSource: {},
-                modalSourceVisible: false,
-            }
-        }, this.loadSimulation)
-    }
+   
     handleDeviceOk = () => {
-        this.setState(({ devices, editableDevice }: State) => {
+        this.setState(({ pcb_body_kit, editableDevice }: IState) => {
             if (editableDevice.index >= 0) {
                 editableDevice.name += '_' + 1
-                devices[editableDevice.index] = editableDevice
+                pcb_body_kit[editableDevice.index] = editableDevice
             } else {
-                const lastId = devices.reduce((id, device) => {
+                const lastId = pcb_body_kit.reduce((id, device) => {
                     if (device.name.includes(editableDevice.name)) {
                         let [name, number] = device.name.split('_')
                         if (number && parseInt(number) > id) {
@@ -491,33 +405,33 @@ ${blockName}(${codeMods})${codeArgs ? `(
                     return id
                 }, 0)
                 editableDevice.name += '_' + (lastId + 1)
-                devices = devices.concat([{
+                pcb_body_kit = pcb_body_kit.concat([{
                     ...editableDevice,
-                    index: devices.length
+                    index: pcb_body_kit.length
                 }])
             }
 
             return {
                 modalConfirmLoading: false,
-                devices,
+                pcb_body_kit,
                 editableDevice: {},
                 modalDeviceVisible: false,
             }
         })
     }
     handleLoadOk = () => {
-        this.setState(({ load, editableLoad }: State) => {
+        this.setState(({ body_kit, editableBlock }: IState) => {
             
-            if (editableLoad.index >= 0) {
-                load[editableLoad.index] = editableLoad
+            if (editableBlock.index >= 0) {
+                body_kit[editableBlock.index] = editableBlock
             } else {
-                load = load.concat([editableLoad])
+                body_kit = body_kit.concat([editableBlock])
             }
 
             return {
                 modalConfirmLoading: false,
-                load,
-                editableLoad: {},
+                body_kit,
+                editableBlock: {},
                 modalLoadVisible: false,
             }
         }, this.loadSimulation)
@@ -532,7 +446,7 @@ ${blockName}(${codeMods})${codeArgs ? `(
         })
     }
     downloadNetlist = () => {
-        const { args, devices } = this.state
+        const { args, pcb_body_kit } = this.state
         const filename = this.props.name + '.net'
 
         axios.post('/api/blocks/' + this.props.name + '/netlist/',
@@ -543,7 +457,7 @@ ${blockName}(${codeMods})${codeArgs ? `(
                 
                 return result
             }, {}),
-            devices
+            pcb_body_kit
         })
             .then(response => {
                 const url = window.URL.createObjectURL(new Blob([response.data]))
@@ -560,11 +474,11 @@ ${blockName}(${codeMods})${codeArgs ? `(
     //         .then(res => {
     //             const { spice, props } = res.data
 
-    //             this.setState(({ params_description }: State) => ({
+    //             this.setState(({ params_description }: IState) => ({
     //                 spiceAttrs: spice,
     //                 params_description: {
     //                     ...params_description,
-    //                     ...Object.keys(spice).reduce((spiceDescription: State['params_description'], param:string) => { 
+    //                     ...Object.keys(spice).reduce((spiceDescription: IState['params_description'], param:string) => { 
     //                         spiceDescription[param] = spice[param].description
 
     //                         return spiceDescription
@@ -610,7 +524,7 @@ ${blockName}(${codeMods})${codeArgs ? `(
             const [arg_title, arg_sub] = name.split('_')
 
             const save = (value:string) => {
-                this.setState((prevState: State) => {
+                this.setState((prevState: IState) => {
                     const floated = parseFloat(value)
                     prevState.args[name].value = isNaN(floated)
                         ? value
@@ -736,7 +650,7 @@ ${blockName}(${codeMods})${codeArgs ? `(
                                 treeCheckable={true}
                                 multiple
                                 treeDefaultExpandAll
-                                onChange={selectedMods => this.setState({ selectedMods, sources: [], load: [] }, this.updateBlock)}
+                                onChange={selectedMods => this.setState({ selectedMods, body_kit: [] }, this.updateBlock)}
                             >
                                 {Object.keys(BlockMods).map(type =>
                                     <TreeNode value={type} title={type} key={type}>
@@ -777,7 +691,7 @@ ${blockName}(${codeMods})${codeArgs ? `(
    
                         <Row className={cnBlock('Characteristics')}>
                             <Col span={5}>
-                                <Divider orientation="left">Attributes</Divider>
+                                <Divider orientation="left">Arguments</Divider>
                                 {attributes}
                             </Col>
                             <Col span={5}>
@@ -785,77 +699,38 @@ ${blockName}(${codeMods})${codeArgs ? `(
                                 <Params exclude={['Power', 'P', 'I', 'Z', 'Load', 'R_load', 'I_load', 'P_load', 'ref', 'footprint', 'model']}/>
                             </Col>
                             <Col span={6} push={1}>
-                                <Divider orientation="left">
-                                    Signal Sources 
-                                </Divider>
-                                
-                                <Modal
-                                    title="Add Signal Source"
-                                    visible={this.state.modalSourceVisible}
-                                    onOk={this.handleSourceOk}
-                                    onCancel={() => this.handleModalCancel('Source')}
-                                    >
-                                        <Source
-                                            type={this.state.editableSourceType}
-                                            source={this.state.editableSource}
-                                            pins={Object.keys(this.state.pins)}
-                                            onChange={(source:TSource) =>
-                                                this.setState({ editableSource: source }, () => console.log('change', this.state))
-                                            }
-                                        />
-                                </Modal>
-
-                                {this.state.sources.map((source, index) => 
+                                <Divider orientation="left">Body Kit</Divider>
+                                {this.state.body_kit.map((source, index) => 
                                     <Tag
                                         key={source.name + index.toString()}
                                         closable
                                         onClick={_ => {
-                                            this.setState({ editableSource: { ...this.state.sources[index], index } }, () => this.showModal('Source'))
+                                            this.setState({ editableBlock: this.state.body_kit[index] }, () => this.showModal('Load'))
                                         }}
                                         onClose={() => {
-                                            this.setState(({ sources }: State) => {
+                                            this.setState(({ body_kit }: IState) => {
+                                                body_kit.splice(index, 1)
+                                                console.log('close', body_kit)
                                                 
-                                                sources.splice(index, 1)
-                                                
-                                                return { sources }
+                                                return { body_kit }
                                             }, this.updateBlock)
                                     }}>
                                         {source.name}
                                     </Tag>
-                                )} <Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableSourceType: 'source', editableSource: { index: -1 } }, () => this.showModal('Source'))}><Icon type="api" /> Add</Tag>
-
-                                <Divider orientation="left">Load</Divider>
-                                {this.state.load.map((source, index) => 
-                                    <Tag
-                                        key={source.name + index.toString()}
-                                        closable
-                                        onClick={_ => {
-                                            this.setState({ editableLoad: this.state.load[index] }, () => this.showModal('Load'))
-                                        }}
-                                        onClose={() => {
-                                            this.setState(({ load }: State) => {
-                                                
-                                                load.splice(index, 1)
-                                                
-                                                return { load }
-                                            }, this.updateBlock)
-                                    }}>
-                                        {source.name}
-                                    </Tag>
-                                )}<Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableLoad: { index: -1 } }, () => this.showModal('Load'))}><Icon type="api" /> Add</Tag>
+                                )}<Tag className={cnBlock('AddPart')} onClick={() => this.setState({ editableBlock: { index: -1 } }, () => this.showModal('Load'))}><Icon type="api" /> Add block</Tag>
                                
                                 <Modal
-                                    title="Add Load"
+                                    title="Add Block"
                                     visible={this.state.modalLoadVisible}
                                     onOk={this.handleLoadOk}
                                     onCancel={() => this.handleModalCancel('Load')}
                                     width={'60%'}
                                     >
-                                        <Part
-                                            source={this.state.editableLoad}
+                                        <BlockLight
+                                            block={this.state.editableBlock}
                                             pins={Object.keys(this.state.pins)}
-                                            onChange={(load: TSource) =>
-                                                this.setState({ editableLoad: load }, () => console.log('change', this.state))
+                                            onChange={(body_kit: TSource) =>
+                                                this.setState({ editableBlock: body_kit }, () => console.log('change', this.state))
                                             }
                                         />
                                 </Modal>
@@ -867,20 +742,25 @@ ${blockName}(${codeMods})${codeArgs ? `(
                             </Col>
                        
                             <Col span={6} push={1}>
-                                <Divider orientation="left">PCB Part</Divider>
-                                <Select 
-                                    placeholder="Select a model"
-                                    value={this.state.args.model ? this.state.args.model.value : ''}
-                                    className={cnBlock('AvailableParts')}
-                                    onChange={value => this.setState(({ args }: State) => ({ args: { ...args, model: { value, unit: { name: 'string', suffix: '' }} }}), this.updateBlock)}
-                                >
-                                    {this.state.available.map(model =>
-                                        <Option value={model.model} key={model.model}>{model.model} {model.footprint}</Option>)}
-                                </Select>
+                                {this.state.available.length 
+                                    ?
+                                    <>
+                                        <Divider orientation="left">PCB Part</Divider>
+                                        <Select
+                                            placeholder="Select a model"
+                                            value={this.state.args.model ? this.state.args.model.value : ''}
+                                            className={cnBlock('AvailableParts')}
+                                            onChange={value => this.setState(({ args }: IState) => ({ args: { ...args, model: { value, unit: { name: 'string', suffix: '' } } } }), this.updateBlock)}
+                                        >
+                                            {this.state.available.map(model =>
+                                                <Option value={model.model} key={model.model}>{model.model} {model.footprint}</Option>)}
+                                        </Select>
+                                    </>
+                                    : null}
                                 <div className={cnBlock('InlineParams')}>
                                     <Params include={['P', 'I', 'Z']} />
                                 </div>
-                                <Divider orientation="left">Body Kit</Divider>
+                                <Divider orientation="left">PCB Body Kit</Divider>
                                 <Modal
                                     title="Add Device"
                                     visible={this.state.modalDeviceVisible}
@@ -897,18 +777,18 @@ ${blockName}(${codeMods})${codeArgs ? `(
                                         />
                                 </Modal>
 
-                                {this.state.devices.map((device, index) => 
+                                {this.state.pcb_body_kit.map((device, index) => 
                                     <Tag
                                         key={device.name + index.toString()}
                                         closable
                                         onClick={_ => {
-                                            this.setState({ editableDevice: { ...this.state.devices[index], index } }, () => this.showModal('Device'))
+                                            this.setState({ editableDevice: { ...this.state.pcb_body_kit[index], index } }, () => this.showModal('Device'))
                                         }}
                                         onClose={() => {
-                                            this.setState(({ devices }: State) => {
-                                                devices.splice(index, 1)
+                                            this.setState(({ pcb_body_kit }: IState) => {
+                                                pcb_body_kit.splice(index, 1)
                                                 
-                                                return { devices }
+                                                return { pcb_body_kit }
                                             })
                                     }}>
                                         {device.name}
@@ -929,7 +809,7 @@ ${blockName}(${codeMods})${codeArgs ? `(
                                     showLabels={this.state.showLabels}
                                     startTime={this.state.simulationStartTime}
                                     stopTime={this.state.simulationStopTime}
-                                    onLegendClick={(e: any) => this.setState(({ showLabels }:State) => {
+                                    onLegendClick={(e: any) => this.setState(({ showLabels }: IState) => {
                                         showLabels[e.dataKey] = !showLabels[e.dataKey]
                     
                                         return showLabels
@@ -962,7 +842,7 @@ ${blockName}(${codeMods})${codeArgs ? `(
                                     showLabels={this.state.showLabels}
                                     startTime={this.state.simulationStartTime}
                                     stopTime={this.state.simulationStopTime}
-                                    onLegendClick={(e: any) => this.setState(({ showLabels }:State) => {
+                                    onLegendClick={(e: any) => this.setState(({ showLabels }: IState) => {
                                         showLabels[e.dataKey] = !showLabels[e.dataKey]
                     
                                         return showLabels
@@ -998,12 +878,10 @@ ${blockName}(${codeMods})${codeArgs ? `(
                         <Diagram
                             pins={this.state.pins}
                             nets={this.state.nets}
-                            sources={this.state.sources}
-                            load={this.state.load}
+                            load={this.state.body_kit}
                             parts={this.state.parts}
                         />
 
-                    
                         {simulationCases.map(name => 
                             <React.Fragment key={name}>
                                 <Divider orientation="left">{insertSpaces(name)}</Divider>
@@ -1020,9 +898,6 @@ ${blockName}(${codeMods})${codeArgs ? `(
                             </React.Fragment>
                         )}
                         
-
-        
-                        
                     </TabPane>
                     <TabPane tab="Code" key="2" className={cnBlock('Code')}>
                         <Tabs key={'dsad'} type="card">
@@ -1030,7 +905,8 @@ ${blockName}(${codeMods})${codeArgs ? `(
                             <TabPane tab={file.replace('blocks/' + this.props.name + '/', '')} key={file}>
                                 <Code
                                     file={file}
-                                    onChange={(value:string) => axios.post('/api/files/', { name: file.replace('blocks/' + this.props.name + '/', ''), content: value})}
+                                    onChange={(value: string) =>
+                                        axios.post('/api/files/', { name: file.replace('blocks/' + this.props.name + '/', ''), content: value })}
                                 />
                             </TabPane>
                         )}

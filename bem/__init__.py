@@ -12,6 +12,18 @@ from .builder import Build
 from .stockman import Stockman
 from PySpice.Unit import *
 
+from skidl import set_default_tool, set_backup_lib, KICAD
+set_backup_lib('.')
+set_default_tool(KICAD)
+
+try:
+    import __builtin__ as builtins
+except ImportError:
+    import builtins
+
+builtins.SIMULATION = False
+
+
 def bem_scope(root='./blocks'):
     blocks = defaultdict(dict)
 

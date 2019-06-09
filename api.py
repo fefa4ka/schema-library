@@ -106,7 +106,7 @@ def block(name):
     def build():
         params = request.args
         Block = Build(name, **params).block
-        props = Block.parse_arguments(Block, params)
+        props = Block.parse_arguments(params)
         
         Instance = Block(**props)
         
@@ -133,10 +133,16 @@ def block(name):
         RawBlock = Build(Block.name)
         props = RawBlock.base and RawBlock.base.props
         Test = BuildTest(Block, **params)
+
         if hasattr(Instance, 'selected_part'):
             available = [{'id':part.id, 'model':part.model, 'footprint':part.footprint} for part in Instance.available_parts()]
         else:
             available = []
+        
+        if hasattr(Instance, 'devices'):
+            devices = Instance.devices()
+        else:
+            devices = []
             
         params = {
             'name': Block.name,
@@ -144,16 +150,16 @@ def block(name):
             'props': props,
             'description': Block.get_description(Block),
             'params_description': Block.get_params_description(Block),
-            'args':  Block.get_arguments(Block, Instance),
+            'args':  Instance.get_arguments(),
             'params': Instance.get_params(),
             'pins': Instance.get_pins(),
             'files': Block.files,
             'parts': parts,
             'nets': nets,
-            'sources': params.get('sources', Test.sources()),
-            'load': params.get('load', Test.load()),
-            'devices': params.get('devices', Print.additional_devices(Instance)),
-            'available': available
+            'body_kit': params.get('body_kit', Test.body_kit()),
+            'pcb_body_kit': params.get('pcb_body_kit', Print.body_kit(Instance)),
+            'available': available,
+            'devices': devices
         }
 
         params['params'] = {param: params['params'][param] for param in params['params'].keys() if not params['args'].get(param, None)}
@@ -168,10 +174,10 @@ def netlist(name):
     params = request.data
     
     Block = Build(name, **params['mods']).block
-    props = Block.parse_arguments(Block, params['args'])
-    kit = params.get('devices', [])
+    props = Block.parse_arguments(params['args'])
+    body_kit = params.get('pcb_body_kit', [])
     
-    netlist = Print(Block, props, kit).netlist()
+    netlist = Print(Block, props, body_kit).netlist()
 
     return netlist
 
@@ -179,13 +185,12 @@ def netlist(name):
 def simulate(name):
     params = request.data
     Block = Build(name, **params['mods']).block
-    args = Block.parse_arguments(Block, params['args'])
+    args = Block.parse_arguments(params['args'])
     Instance = Block(**args)
     
-    sources = params.get('sources', None)
-    load = params.get('load', None)
+    body_kit = params.get('load', None)
     
-    simulation = Instance.simulate(sources, load)
+    simulation = Instance.simulate(body_kit)
 
     return simulation 
 

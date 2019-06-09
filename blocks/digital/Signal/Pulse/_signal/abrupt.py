@@ -1,6 +1,6 @@
-from .. import Base
+from .. import Base, Net
 from bem.basic import Resistor, Capacitor, RLC
-from bem.digital import Signal_SchmittTrigger
+from bem.digital.signal import SchmittTrigger
 
 from PySpice.Unit import u_Ohm, u_V, u_A, u_F
 
@@ -16,7 +16,7 @@ class Modificator(Base):
         # signal = self.output
         
         
-        abrupt_translation = Signal_SchmittTrigger()()
+        abrupt_translation = SchmittTrigger()()
         signal = self & abrupt_translation
         # self.output = Net('onHightAbruptPulse')x
         self.output = abrupt_translation.output

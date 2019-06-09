@@ -42,7 +42,7 @@ class Print:
         return self.scheme.generate_netlist()
 
     @classmethod    
-    def additional_devices(self, block):
+    def body_kit(self, block):
         pins = block.get_pins() or []
         connected = [pin for pin in pins.keys() if len(pins[pin]) > 0]
         

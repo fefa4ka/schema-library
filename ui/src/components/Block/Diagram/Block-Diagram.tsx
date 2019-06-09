@@ -59,7 +59,7 @@ export class Diagram extends React.Component<IProps, {}> {
     private canvasRef = React.createRef<HTMLCanvasElement>()
 
     componentDidUpdate() {
-        const { nets, pins, sources, load } = this.props
+        const { nets, pins, load } = this.props
 
         const get_name = (pin: string, index: number) => {
             const [_, data] = pin.split(' ')
@@ -68,13 +68,13 @@ export class Diagram extends React.Component<IProps, {}> {
             return vars[index]
         }
 
-        const connectedSourcePins = sources.reduce((pins:string[], source) => {
-            const sourcePins: string[] = Object.keys(source.pins).reduce((pins: string[], pin) => 
-                pins.concat(source.pins[pin])
-                , [])
+        // const connectedSourcePins = sources.reduce((pins:string[], source) => {
+        //     const sourcePins: string[] = Object.keys(source.pins).reduce((pins: string[], pin) => 
+        //         pins.concat(source.pins[pin])
+        //         , [])
 
-            return pins.concat(sourcePins)
-        }, []).filter((value, index, self) => self.indexOf(value) === index)
+        //     return pins.concat(sourcePins)
+        // }, []).filter((value, index, self) => self.indexOf(value) === index)
 
         const connectedLoadPins = load.reduce((pins:string[], source) => {
             const sourcePins: string[] = Object.keys(source.pins).reduce((pins: string[], pin) => 
@@ -84,7 +84,7 @@ export class Diagram extends React.Component<IProps, {}> {
             return pins.concat(sourcePins)
         }, []).filter((value, index, self) => self.indexOf(value) === index)
         
-        const connectedPins = connectedSourcePins.concat(connectedLoadPins)
+        const connectedPins = connectedLoadPins
 
         
         const network = Object.keys(nets).map((net, index) => {
@@ -118,22 +118,22 @@ export class Diagram extends React.Component<IProps, {}> {
         }).filter(item => item).join(';')
 
         
-        const sourcesNet = sources.map(source => {
-            const name = source.name
-            const args = Object.keys(source.args).filter(arg => source.args[arg].value).map(arg => `${arg} = ${source.args[arg].value} ${source.args[arg].unit.suffix}`).join(';')
+        // const sourcesNet = sources.map(source => {
+        //     const name = source.name
+        //     const args = Object.keys(source.args).filter(arg => source.args[arg].value).map(arg => `${arg} = ${source.args[arg].value} ${source.args[arg].unit.suffix}`).join(';')
             
-            const diagram = [`[<source>${name}${source.description ? '|' + source.description : ''}|${args}]`]
-            Object.keys(source.pins).forEach(pin => {
-                source.pins[pin].forEach((input:string) =>
-                    diagram.push(`[${name}]${pin}-[${input}]`)
-                )
-            })
+        //     const diagram = [`[<source>${name}${source.description ? '|' + source.description : ''}|${args}]`]
+        //     Object.keys(source.pins).forEach(pin => {
+        //         source.pins[pin].forEach((input:string) =>
+        //             diagram.push(`[${name}]${pin}-[${input}]`)
+        //         )
+        //     })
 
-            return diagram.join(';')
-        }).join(';')
+        //     return diagram.join(';')
+        // }).join(';')
 
-        const loadNet = load.map(source => {
-            const { name } = source
+        const loadNet = load.map((source, index) => {
+            let { name } = source
             const args = Object.keys(source.args).filter(arg => source.args[arg].value).map(arg => `${arg} = ${source.args[arg].value} ${source.args[arg].unit.suffix}`).join(';')
             
             const diagram = [`[<load>${name}|${args}]`]
@@ -147,7 +147,7 @@ export class Diagram extends React.Component<IProps, {}> {
         }).join(';')
 
         const settings = ['#font: routed', "#fontSize: 10", '#stroke: #000000', '#.load: stroke=#b9b9b9 fill=#fafafa', '#.source: stroke=#1890ff fill=#fafafa', '#direction: right', '#fill: #ffffff', '#lineWidth: 1', '#.unwired: stroke=red visual=none bold', '#.unwiredgnd: stroke=red visual=end empty '].join('\n')
-        const graph = settings + '\n' + [network, `[<${connectedPins.includes('gnd') ? 'end' : 'unwiredgnd'}>gnd]`, pinsNet, sourcesNet, loadNet].filter(_=>_).join(';')
+        const graph = settings + '\n' + [network, `[<${connectedPins.includes('gnd') ? 'end' : 'unwiredgnd'}>gnd]`, pinsNet, loadNet].filter(_=>_).join(';')
         
         nomnoml.draw(this.canvasRef.current, graph);
     }

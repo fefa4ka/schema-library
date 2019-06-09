@@ -51,7 +51,7 @@ test_sources =[{
     }
 }]
     
-test_load = [{
+test_body_kit = [{
     'name': 'basic.RLC',
     'mods': {
         'series': ['R']
@@ -67,6 +67,31 @@ test_load = [{
     },
     'pins': {
         'input': ['output'],
+        'output': ['gnd']
+    }
+}, {
+    'name': 'basic.source.VS',
+    'mods': {
+        'flow': ['SINEV']
+    },
+    'args': {
+        'V': {
+            'value': 12,
+            'unit': {
+                'name': 'volt',
+                'suffix': 'V'
+            }
+        },
+        'frequency': {
+            'value': 60,
+            'unit': {
+                'name': 'herz',
+                'suffix': 'Hz'
+            }
+        }
+    },
+    'pins': {
+        'input': ['input'],
         'output': ['gnd']
     }
 }]

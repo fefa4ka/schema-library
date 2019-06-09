@@ -43,22 +43,15 @@ class Base(Electrical()):
 
     # @subcircuit
     def circuit(self):
-        R_in_value = self.R_in.value * self.R_in.scale
-        C_out_value = self.C_out.value * self.C_out.scale
 
-        if not (R_in_value and C_out_value):
+        if not (self.R_in and self.C_out):
             self.R_in = (self.V / self.I_load) @ u_Ohm
-            R_in_value = self.R_in.value * self.R_in.scale
 
-        Time_to_V_out = self.Time_to_V_out.value * self.Time_to_V_out.scale
-        V = self.V.value * self.V.scale
-        V_out = self.V_out.value * self.V_out.scale
+        if self.R_in and not self.C_out:        
+            self.C_out = (self.Time_to_V_out / (self.R_in * log(self.V / (self.V - self.V_out)))) @ u_F
         
-        if R_in_value and not C_out_value:        
-            self.C_out = (Time_to_V_out / (R_in_value * log(V / (V - V_out)))) @ u_F
-        
-        if C_out_value and not R_in_value:
-            self.R_in = (Time_to_V_out / (C_out_value * log(V / (V - V_out)))) @ u_Ohm
+        if self.V_out and not self.R_in:
+            self.R_in = (self.Time_to_V_out / (self.C_Out * log(self.V / (self.V - self.V_out)))) @ u_Ohm
         
         rlc = RLC(series=['R'], gnd=['C'])(
             R_series = self.R_in,

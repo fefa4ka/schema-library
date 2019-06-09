@@ -1,5 +1,5 @@
 from .. import Base
-from bem import Build, Net, u_Ohm, u_A, u_V
+from bem import Build, u_Ohm, u_A, u_V
 from skidl import Part, TEMPLATE
 from bem.abstract import Physical
 

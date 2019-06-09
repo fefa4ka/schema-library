@@ -1,15 +1,11 @@
-from bem import u, Block
+from bem import u
 from bem.abstract import Network
 from bem.tester import BuildTest
 from PySpice.Unit import u_V, u_Ohm, u_A, u_W, u_S, u_s
 from lcapy import R
 
-class Base(Block):
-    inherited = [Network]
-    mods = {
-        'port': 'one'
-    }
 
+class Base(Network(port='one')):
     V = 10 @ u_V
     Power = 0 @ u_W
     Load = 1000 @ u_Ohm  # [0 @ u_Ohm, 0 @ u_A, 0 @ u_W]
@@ -131,18 +127,15 @@ class Base(Block):
     def part_spice(self, *args, **kwargs):
         return None
         
-    def simulate(self, sources=None, load=None):
+    def simulate(self, body_kit):
         Test = BuildTest(self.__class__, **(self.mods))
         
-        def method_sources():
-            return sources
         def method_load():
-            return load
+            return body_kit
             
-        Test.sources = method_sources
         Test.load = method_load
 
-        arguments = self.__class__.get_arguments(self.__class__, self)
+        arguments = self.get_arguments()
         simulation = Test.simulate(arguments)
 
         return simulation

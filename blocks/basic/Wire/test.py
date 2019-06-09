@@ -1,27 +1,46 @@
 from bem.tester import Test
 
 class Case(Test):
-    def sources(self):
+    def body_kit(self):
         return [{
-                'name': 'SINEV',
-                'args': {
-                    'amplitude': {
-                        'value': 10,
-                        'unit': {
-                            'name': 'volt',
-                            'suffix': 'V'
-                        }
-                    },
-                    'frequency': {
-                        'value': 1000000000,
-                        'unit': {
-                            'name': 'herz',
-                            'suffix': 'Hz'
-                        }
+            'name': 'basic.source.VS',
+            'mods': { 'flow': ['SINEV'] },
+            'args': {
+                'V': {
+                    'value': 10,
+                    'unit': {
+                        'name': 'volt',
+                        'suffix': 'V'
                     }
                 },
-                'pins': {
-                    'p': ['input'],
-                    'n': ['gnd']
+                'frequency': {
+                    'value': 1000000000,
+                    'unit': {
+                        'name': 'herz',
+                        'suffix': 'Hz'
+                    }
                 }
-        }]
+            },
+            'pins': {
+                'input': ['input'],
+                'output': ['gnd']
+            }
+        }, {
+            'name': 'basic.RLC',
+            'mods': {
+                'series': ['R']
+            },
+            'args': {
+                'R_series': {
+                    'value': 1000,
+                    'unit': {
+                        'name': 'ohm',
+                        'suffix': 'Ω'
+                    }
+                }
+            },
+            'pins': {
+                'input': ['output'],
+                'output': ['gnd']
+            }
+            }]

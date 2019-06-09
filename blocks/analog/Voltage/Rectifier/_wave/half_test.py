@@ -1,10 +1,10 @@
 from bem.tester import Test
 
 class Case(Test):
-    def load(self):
-        load = super().load()
+    def body_kit(self):
+        body_kit = super().body_kit()
 
-        return load + [{
+        return body_kit + [{
                 'name': 'basic.RLC',
                 'mods': {
                     'series': ['R']

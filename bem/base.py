@@ -113,11 +113,19 @@ class Block:
 
 
     # Virtual Part
-    def get_arguments(self, Instance=None):
+    def get_arguments(self):
+        # Instance = self if isinstance(self, type(self)) else self.__class__
         arguments = {}
         args = []
 
-        classes = list(inspect.getmro(self))
+        classes = []
+        try:
+            classes += list(inspect.getmro(self))
+        except:
+            pass
+
+        classes += list(inspect.getmro(self.__class__))
+        
         classes.reverse()
         for cls in classes:
             if hasattr(cls, 'willMount'):
@@ -127,7 +135,7 @@ class Block:
             if arg in ['self']:
                 continue
 
-            default = getattr(Instance or self, arg)
+            default = getattr(self, arg)
             if type(default) in [UnitValue, PeriodValue, FrequencyValue]:
                 arguments[arg] = {
                     'value': default.value * default.scale,
@@ -174,7 +182,8 @@ class Block:
                 }
 
         return arguments
-    
+
+    @classmethod
     def parse_arguments(self, args):
         arguments = self.get_arguments(self)
         props = {}

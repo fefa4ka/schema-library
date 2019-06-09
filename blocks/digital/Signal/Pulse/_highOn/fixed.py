@@ -1,5 +1,5 @@
-from .. import Base
-from bem import Resistor, Capacitor, RLC
+from .. import Base, Net
+from bem.basic import Resistor, Capacitor, RLC
 from bem.basic.transistor import Bipolar
 from PySpice.Unit import u_Ohm, u_V, u_A, u_F
 
@@ -28,7 +28,7 @@ class Modificator(Base):
             base = Resistor()( self.R_holder_base)
         )
 
-        self.C_width = (self.width.value * self.width.scale / self.R_pulse_base.value * self.R_pulse_base.scale) * 1.4
+        self.C_width = (self.width / self.R_pulse_base) * 1.4
         pulsar_width = RLC(series='C', vref='R')(
             C_series = self.C_width,
             R_vref = self.R_pulse_base)

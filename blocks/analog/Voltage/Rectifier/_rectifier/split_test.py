@@ -1,9 +1,9 @@
 from bem.tester import Test
 
 class Case(Test):
-    def load(self):
+    def body_kit(self):
         return [{
-                'name': 'Resistor',
+                'name': 'basic.Resistor',
                 'args': {
                     'value': {
                         'value': 1000,

@@ -8,7 +8,7 @@ from bem import Net
 
 from bem import Block, Build, u_s
 from probe import get_arg_units, get_minimum_period
-from settings import BLOCKS_PATH, test_load, test_sources
+from settings import BLOCKS_PATH, test_body_kit, test_sources
 
 from .simulator import Simulate, set_spice_enviroment
 
@@ -43,115 +43,113 @@ class Test:
 
     # Signal source configuration
     
-    def sources(self):
-        # sources = test_sources
-        sources = self._sources if hasattr(self, '_sources') and self._sources else test_sources
+    # def sources(self):
+    #     # sources = test_sources
+    #     sources = self._sources if hasattr(self, '_sources') and self._sources else test_sources
         
-        gnd = ['gnd']
-        if len(self.load()) == 0:
-            gnd.append('output')
+    #     gnd = ['gnd']
+    #     if len(self.body_kit()) == 0:
+    #         gnd.append('output')
 
-        sources[0]['pins']['n'] = gnd
+    #     sources[0]['pins']['n'] = gnd
 
-        return sources
+    #     return sources
 
-    def sources_circuit(self):
-        sources =  self.sources()
-        series_sources = defaultdict(list)
-        series_sources_allready = []
+    # def sources_circuit(self):
+    #     sources =  self.sources()
+    #     series_sources = defaultdict(list)
+    #     series_sources_allready = []
         
-        periods = []  # frequency, time, delay, duration
+    #     periods = []  # frequency, time, delay, duration
         
-        # Get Series Source with same input
-        for source in sources:
-            pins = source['pins'].keys()
-            hash_name = str(source['pins']['p']) + str(source['pins']['n'])
+    #     # Get Series Source with same input
+    #     for source in sources:
+    #         pins = source['pins'].keys()
+    #         hash_name = str(source['pins']['p']) + str(source['pins']['n'])
         
-            for source_another_index, source_another in enumerate(sources):
-                is_same_connection = True
-                for source_pin in pins:
-                    for index, pin in enumerate(source['pins'][source_pin]):
-                        if source_another['pins'][source_pin][index] != pin:
-                            is_same_connection = False
-                            break
+    #         for source_another_index, source_another in enumerate(sources):
+    #             is_same_connection = True
+    #             for source_pin in pins:
+    #                 for index, pin in enumerate(source['pins'][source_pin]):
+    #                     if source_another['pins'][source_pin][index] != pin:
+    #                         is_same_connection = False
+    #                         break
                 
-                if is_same_connection and source_another_index not in series_sources_allready:
-                    series_sources_allready.append(source_another_index)
-                    series_sources[hash_name].append(source_another)
+    #             if is_same_connection and source_another_index not in series_sources_allready:
+    #                 series_sources_allready.append(source_another_index)
+    #                 series_sources[hash_name].append(source_another)
 
         
-        for series in series_sources.keys():
-            last_source = None
+    #     for series in series_sources.keys():
+    #         last_source = None
 
-            for source in series_sources[series]:
-                part_name = source['name'].split('_')[0]
-                # part = get_part(part_name)
-                part = Build(part_name).spice
-                args = {}
-                for arg in source['args'].keys():
-                    if source['args'][arg]['value']:
-                        try: 
-                            args[arg] = float(source['args'][arg]['value']) @ get_arg_units(part, arg)
-                        except:
-                            try:
-                                args[arg] = float(source['args'][arg]['value'])
-                                if args[arg] == int(source['args'][arg]['value']):
-                                    args[arg] = int(args[arg])
-                            except:
-                                args[arg] = source['args'][arg]['value'] 
+    #         for source in series_sources[series]:
+    #             part_name = source['name'].split('_')[0]
+    #             # part = get_part(part_name)
+    #             part = Build(part_name).spice
+    #             args = {}
+    #             for arg in source['args'].keys():
+    #                 if source['args'][arg]['value']:
+    #                     try: 
+    #                         args[arg] = float(source['args'][arg]['value']) @ get_arg_units(part, arg)
+    #                     except:
+    #                         try:
+    #                             args[arg] = float(source['args'][arg]['value'])
+    #                             if args[arg] == int(source['args'][arg]['value']):
+    #                                 args[arg] = int(args[arg])
+    #                         except:
+    #                             args[arg] = source['args'][arg]['value'] 
 
-                signal = Build(part_name).spice(ref='V' + source['name'], **args)
+    #             signal = Build(part_name).spice(ref='V' + source['name'], **args)
 
-                if not last_source:
-                    for pin in source['pins']['n']:
-                        signal['n'] += getattr(self.block, pin)
-                else:
-                    last_source['p'] += signal['n']
+    #             if not last_source:
+    #                 for pin in source['pins']['n']:
+    #                     signal['n'] += getattr(self.block, pin)
+    #             else:
+    #                 last_source['p'] += signal['n']
 
-                last_source = signal
+    #             last_source = signal
             
-            for pin in source['pins']['p']:
-                signal['p'] += getattr(self.block, pin)
+    #         for pin in source['pins']['p']:
+    #             signal['p'] += getattr(self.block, pin)
     
     # Load configuration
-    def load(self):
-        load = self._load if hasattr(self, '_load') and self._load else test_load
+    def body_kit(self):
+        body_kit = self._body_kit if hasattr(self, '_body_kit') and self._body_kit else test_body_kit
 
-        return load
+        return body_kit
     
-    def load_circuit(self):
-        for load in self.load():
+    def body_kit_circuit(self):
+        for body_kit in self.body_kit():
             mods = {}
-            if load.get('mods', None):
-                mods = load['mods']
+            if body_kit.get('mods', None):
+                mods = body_kit['mods']
 
-            LoadBlock = Build(load['name'], **mods).block
-            args = LoadBlock.parse_arguments(LoadBlock, load['args'])
+            LoadBlock = Build(body_kit['name'], **mods).block
+            args = LoadBlock.parse_arguments(body_kit['args'])
             Load = LoadBlock(**args)
             
-            for load_pin in load['pins'].keys():
-                for pin in load['pins'][load_pin]:
-                    Load_pin = getattr(Load, load_pin)
+            for body_kit_pin in body_kit['pins'].keys():
+                for pin in body_kit['pins'][body_kit_pin]:
+                    Load_pin = getattr(Load, body_kit_pin)
                     Load_pin += getattr(self.block, pin)
 
     # Circuit for simulation
     def circuit(self, args):
-        props = self.builder.parse_arguments(self.builder, args)
+        props = self.builder.parse_arguments(args)
         self.block = self.builder(**props)
 
         gnd = Net('0')
         gnd.fixed_name = True
         self.block.gnd += gnd
 
-        self.sources_circuit()
-        self.load_circuit()
+        self.body_kit_circuit()
 
     def simulate(self, args, end_time=None, step_time=None):
         self.circuit(args)
-        sources = self.sources()
     
         if not (end_time and step_time):
-            period = get_minimum_period(sources)
+            period = get_minimum_period(self.body_kit())
             end_time = period * 10
             step_time = period / 50
 
@@ -210,5 +208,4 @@ def BuildTest(Block, *args, **kwargs):
         else:
             Tests = (Test,)
 
-        print(name, Tests)
         return type(name + 'Test', Tests, {})(Block)
