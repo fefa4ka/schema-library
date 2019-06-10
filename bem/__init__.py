@@ -7,12 +7,10 @@ from collections import defaultdict
 
 from .base import Block
 from .util import u, is_tolerated
-from .signal import Net
 from .builder import Build
 from .stockman import Stockman
 from PySpice.Unit import *
-
-from skidl import set_default_tool, set_backup_lib, KICAD
+from skidl import Net, set_default_tool, set_backup_lib, KICAD
 set_backup_lib('.')
 set_default_tool(KICAD)
 
