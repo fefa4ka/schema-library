@@ -1,6 +1,6 @@
 from bem.abstract import Network
 
-class Base(Network(port='one')):
+class Base(Network(port='two')):
     def __init__(self, *args, **kwargs):
         self.set_pins()
 

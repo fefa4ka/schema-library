@@ -1,10 +1,10 @@
-from bem import Build, Net
-from bem.abstract import Physical
-from skidl import Part, TEMPLATE
+from bem import Build 
+from bem.abstract import Physical, Network
+from skidl import Part, Net, TEMPLATE
 from skidl.Net import Net as NetType
 from PySpice.Unit import u_Ohm, u_uF, u_H, u_kHz
 
-class Base(Physical()):
+class Base(Physical(), Network(port='two')):
     """**Field Transistor**
     
     """
@@ -65,7 +65,7 @@ class Base(Physical()):
         part = None
 
         if is_spice_subciruit:
-            part = Build(self.selected_part.scheme or self.model + ':' + self.model).spice
+            part = Build((self.selected_part.symbol or self.model) + ':' + self.model).spice
         else:
             part = Build('M').spice
 
@@ -77,26 +77,23 @@ class Base(Physical()):
 
     def part_template(self):
         # TODO: Search for models and footprints using low level attributes of Block
-        part = Part('Transistor_FET', self.selected_part.scheme or self.model, footprint=self.footprint, dest=TEMPLATE)
-        part.set_pin_alias('drain', 1)
-        part.set_pin_alias('gate', 2)
+        part = super().part_template()
+        
+        part.set_pin_alias('drain', 2)
+        part.set_pin_alias('gate', 1)
         part.set_pin_alias('source', 3)
 
         return part
 
     def circuit(self):
-        self.input = Net('FETInput')
-        self.output = Net('FETOutput')
-        self.input_n = Net('FETInputN')
-        self.output_n = Net('FETOutputN')
-
-        self.v_ref = Net()
-        self.gnd = Net()
         transistor = self.element = self.part(model=self.model)
 
         common = self.props.get('common', 'source')
         follow = self.props.get('follow', 'drain')
 
+        if not self.gnd:
+            self.gnd = Net('FieldGnd')
+            
         common_end = self.gnd
         if not common:
             common_end = Net('NC')

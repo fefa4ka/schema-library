@@ -15,12 +15,12 @@ class Modificator(Base):
     def willMount(self, frequency, dc_offset=0@ u_V, offset=0 @ u_V, delay=0 @ u_s, damping_factor=0):
         self.amplitude = self.V
 
-    def circuit(self):
+    def part(self):
         arguments = {}
         for arg in ['amplitude', 'frequency', 'dc_offset', 'offset', 'delay', 'damping_factor']:
             arguments[arg] = getattr(self, arg)
 
-        super().circuit(**arguments)
+        return super().part(**arguments)
 
     def network(self):
         return Vac(self.amplitude)

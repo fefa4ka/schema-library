@@ -13,7 +13,7 @@ from skidl import Circuit, Net, search, subcircuit, set_default_tool, set_backup
 
 from bem import Build, bem_scope
 from bem.abstract import Physical
-from bem.model import Part, Param, Mod, Prop, Stock
+from bem.model import Part, Pin, Param, Mod, Prop, Stock
 from bem.printer import Print
 from bem.simulator import Simulate, set_spice_enviroment
 from probe.read import get_sigrok_samples
@@ -92,7 +92,7 @@ def block(name):
     set_backup_lib('.')
     set_default_tool(KICAD) 
     builtins.SIMULATION = False
-    
+
     scheme = Circuit()
     builtins.default_circuit.reset(init=True)
     del builtins.default_circuit
@@ -113,7 +113,7 @@ def block(name):
         parts = []
         nets = {}
 
-        if Instance.input:
+        if hasattr(Instance, 'input') and Instance.input:
             if type(Instance.input) == list:
                 circuit = Instance.input[0].circuit
             else:
@@ -188,7 +188,7 @@ def simulate(name):
     args = Block.parse_arguments(params['args'])
     Instance = Block(**args)
     
-    body_kit = params.get('load', None)
+    body_kit = params.get('body_kit', None)
     
     simulation = Instance.simulate(body_kit)
 
@@ -254,16 +254,27 @@ def get_parts():
         for param in part.params:
             params[param.name].append(param.value)
 
+        pins = defaultdict(lambda: defaultdict(list)) 
+        for pin in part.pins:
+            # pins[pin.block_pin].append({
+            #     'pin': pin.pin,
+            #     'unit': pin.unit
+            # })
+            pins[pin.unit][pin.block_pin].append(pin.pin)
+
         parts.append({
             'id': part.id,
             'block': part.block,
             'model': part.model,
-            'scheme': part.scheme,
+            'library': part.library,
+            'symbol': part.symbol,
             'footprint': part.footprint,
             'mods': [mod.name + ':' + mod.value for mod in part.mods],
             'props': [prop.name + ':' + prop.value for prop in part.props],
             'params': params,
+            'spice': '',
             'spice': part.spice,
+            'pins': pins,
             'spice_params': part.spice_params,
             'description': part.description,
             'datasheet': part.datasheet,
@@ -281,7 +292,8 @@ def add_part():
 
     part = Part(block=data['block'],
         model=data['model'],
-        scheme=data.get('scheme', ''),
+        library=data.get('library', ''),
+        symbol=data.get('symbol', ''),
         footprint=data['footprint'],
         datasheet=data.get('datasheet', ''),
         description=data.get('description', ''),
@@ -289,6 +301,16 @@ def add_part():
     )
     part.save()
     
+    units = data.get('pins', {})
+    for unit in units.keys():
+        pins = units[unit].keys()
+        for block_pin in pins:
+            part_pins = units[unit][block_pin]
+            for part_pin in part_pins:
+                pin = Pin(unit=unit, pin=part_pin, block_pin=block_pin)
+                pin.save()
+                part.pins.add(pin)
+
     mods = []
     for mod in data.get('mods', []):
         name, value = mod.split(':')
@@ -315,11 +337,17 @@ def add_part():
     stock.save()
     part.stock.add(stock)
 
-    spice_file = open('./spice/' + part.model + '.lib', 'w')
-    spice_file.write('*\n' + part.spice + '\n*')
-    spice_file.close()
+    spice = defaultdict(str)
+    for part in Part.select():
+        if part.spice:
+            spice[part.symbol] += '\n*\n' + part.spice
 
-    return  { 'part': part.id}
+    for symbol in spice.keys():
+        spice_file = open('./spice/' + symbol + '.lib', 'w')
+        spice_file.write('*\n' + spice[symbol] + '\n*')
+        spice_file.close()
+
+    return  { 'part': part.id }
 
 def __stock_delete_part(part_id):
     part = Part.get_or_none(id=part_id)
@@ -329,6 +357,7 @@ def __stock_delete_part(part_id):
         part.mods.clear()
         part.props.clear()
         part.stock.clear()
+        part.pins.clear()
     
         part.delete_instance()
 
@@ -428,6 +457,21 @@ def get_probes():
         
     return chartData
 
+
+@app.route('/api/parts/pins/', methods=['GET'])
+def get_pins():
+    from skidl import Part
+    set_default_tool(KICAD)
+    builtins.SIMULATION = False
+
+    library = request.args.get('library', None)
+    symbol = request.args.get('symbol', None)
+
+    part = Part(library, symbol)
+
+    return [str(pin) for pin in part.pins]
+    
+
 @app.route('/api/parts/footprint/', methods=['GET'])
 def get_footprint():
     name = request.args.get('name', None)
@@ -444,7 +488,6 @@ def get_footprint():
             data[category.replace('.pretty', '')].append(footprint.replace('.kicad_mod', ''))
     
     return data
-
 
 @app.route('/api/parts/footprints/', methods=['GET'])
 def get_footprints():
@@ -475,10 +518,10 @@ def get_part_params(name):
         props = { key: value if type(value) == list else [value] for key, value in props.items() }
     
     return {
-        'spice': Block.spice_params if hasattr(Block, 'spice_params') else {},
+        'spice': Block.spice_params if hasattr(Block, 'spice_params') else{},
+        'pins': list(Block.pins.keys()),
         'part': {**Block.get_arguments(Block), **Block.get_params(Block)},
         'props': props
-
     }
 
 if __name__ == "__main__":

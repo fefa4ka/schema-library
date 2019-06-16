@@ -46,17 +46,13 @@ class Base(Physical()):
     def part_spice(self, *args, **kwargs):
         return Build('D').spice(*args, **kwargs)
 
-    def part_template(self):
-        if self.model == 'D':
-            library = 'Device'
-        else:
-            library = 'Diode'
+    def part(self):
+        part = super().part(model=self.model)
+        if not part['A']:
+            part.set_pin_alias('A', 1)
 
-        part = Part(library, self.selected_part.scheme or self.model, footprint=self.footprint, dest=TEMPLATE)
-        part.set_pin_alias('A', 1)
-        part.set_pin_alias('K', 2)
-        
+        if not part['K']:
+            part.set_pin_alias('K', 2)
+
         return part
-
-    def circuit(self):
-        super().circuit(model=self.model)
+        

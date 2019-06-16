@@ -28,12 +28,12 @@ class Case(Test):
                 'output': ['gnd']
             }
         }, {
-            'name'{: 'basic.source.VS',
+            'name': 'basic.source.VS',
             'mods': {
                 'flow': ['V']
             },
             'args': {
-                'value': {
+                'V': {
                     'value': 3,
                     'unit': {
                         'name': 'volt',
@@ -42,8 +42,8 @@ class Case(Test):
                 }
             },
             'pins': {
-                'p': ['v_ref'],
-                'n': ['gnd']
+                'input': ['v_ref'],
+                'output': ['gnd']
             }}
         }, {
             'name': 'basic.RLC',

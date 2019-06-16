@@ -87,7 +87,6 @@ class Base(Block):
             self.v_ref += instance.v_ref
     
 
-
     # Pins
     def get_pins(self):
         pins = {}
@@ -107,7 +106,7 @@ class Base(Block):
 
             # pin = True, str -- Net(pin_name | str)
             # pin = Int -- Bus(pin_name, Int)
-            original_net = None
+            original_net = getattr(self, pin) if hasattr(self, pin) else None
             if type(pin_description) in [list, tuple]: 
                 for pin_data in pin_description:
                     if type(pin_data) == str:

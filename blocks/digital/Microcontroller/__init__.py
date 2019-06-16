@@ -22,26 +22,6 @@ class Base(Physical()):
     def willMount(self, frequency=0 @ u_Hz):
         pass
 
-    def part_spice(self):
-        return None
-
-    def part_template(self):
-        part = Part('MCU_' + self.vendor(), self.model, footprint=self.footprint, dest=TEMPLATE)
-    
-        return part
-
-    def vendor(self):
-        vendor = self.mods['vendor']
-        vendor = vendor[0] if type(vendor) == list else vendor
-       
-        return vendor
-
-    def series(self):
-        series = self.mods['series']
-        series = series[0] if type(series) == list else series
-       
-        return series
-
     def circuit(self):
         self.element = self.part()
         pass

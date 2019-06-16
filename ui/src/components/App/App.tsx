@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import './App.css'
 import { Blocks }   from '../Blocks'
 import { Stock } from '../Stock'
-import { Layout, Menu } from 'antd'
+import { Layout, Menu, Icon } from 'antd'
 import { BrowserRouter as Router, Route, Link, Switch } from "react-router-dom"
 
 const {
@@ -52,7 +52,13 @@ class App extends Component<any> {
               <Route exact path="/stock" component={Stock} />
             </Switch>
             {PageContent}
-            <Footer><strong>⏚ Circuits</strong> builds by <strong>B</strong>locks with <strong>E</strong>lements and <strong>M</strong>odificators<a className='copyright' href="mailto:alex@nder.work?subject=schema.vc">alex@nder.work</a></Footer>
+            <Footer>
+              <span><strong>⏚ Circuits</strong> builds by <strong>B</strong>locks with <strong>E</strong>lements and <strong>M</strong>odificators</span>
+              <span className='copyright'>
+                <a href='https://github.com/fefa4ka/schema.vc'><Icon type='github' /></a>
+                <a className='copyright' href='mailto:alex@nder.work?subject=schema.vc'>alex@nder.work</a>
+              </span>
+            </Footer>
           </Layout>
         </div>
       </Router>

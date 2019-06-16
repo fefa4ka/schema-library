@@ -60,10 +60,14 @@
 
 
 .ant-layout-footer {
-  padding: 24px 24px;
+  padding: 8px 24px;
   z-index:10;
 }
 
 .copyright {
   float: right;
+}
+
+.copyright a {
+  margin-left: 24px;
 }

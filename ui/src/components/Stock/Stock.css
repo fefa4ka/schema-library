@@ -39,3 +39,20 @@
     margin-left: 8px;
     margin-bottom: 8px;
 }
+
+.Stock-PrintLabel {
+    border: 1px solid #000;
+}
+
+.Stock-PrintLabelBlock {
+    background: #000;
+    color: #fff;
+}
+
+.Stock-PrintLabelModel {
+    font-weight: 500;
+}
+
+.Stock-PrintLabelDescription {
+    font-size: 10px;
+}

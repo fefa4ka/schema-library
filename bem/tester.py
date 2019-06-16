@@ -120,12 +120,13 @@ class Test:
         return body_kit
     
     def body_kit_circuit(self):
-        for body_kit in self.body_kit():
+        for index, body_kit in enumerate(self.body_kit()):
             mods = {}
             if body_kit.get('mods', None):
                 mods = body_kit['mods']
 
-            LoadBlock = Build(body_kit['name'], **mods).block
+            ref = body_kit['name'].split('.')[-1] + '_' + str(index)
+            LoadBlock = Build(body_kit['name'], **mods, ref=ref).block
             args = LoadBlock.parse_arguments(body_kit['args'])
             Load = LoadBlock(**args)
             
@@ -150,11 +151,10 @@ class Test:
     
         if not (end_time and step_time):
             period = get_minimum_period(self.body_kit())
-            end_time = period * 10
+            end_time = period * 4
             step_time = period / 50
 
         simulation = Simulate(self.block).transient(end_time=end_time @ u_s, step_time=step_time @ u_s)
-        
         
         return simulation
 

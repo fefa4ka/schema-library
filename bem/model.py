@@ -10,6 +10,12 @@ class Stock(BaseModel):
     quantity = IntegerField(default=0)
     place = CharField()
 
+
+class Pin(BaseModel):
+    unit = CharField()
+    pin = CharField()
+    block_pin = CharField()
+
 class Param(BaseModel):
     name = CharField()
     value = CharField()
@@ -25,7 +31,8 @@ class Prop(BaseModel):
 class Part(BaseModel):
     block = CharField()
     model = CharField()
-    scheme = CharField()
+    library = CharField()
+    symbol = CharField()
     datasheet = CharField()
     description = TextField(default='')
     footprint = CharField()
@@ -34,9 +41,13 @@ class Part(BaseModel):
     mods = ManyToManyField(Mod, backref='blocks')
     props = ManyToManyField(Prop, backref='blocks')
     stock = ManyToManyField(Stock, backref='parts_stock')
+    pins = ManyToManyField(Pin, backref='blocks')
 
     @property
     def spice_params(self):
+        if self.spice.upper().find('SUBCKT') != -1:
+            return {}
+            
         without_comments = filter(lambda line: line[0] != '*', self.spice)
         replace_plus_joints = ''.join(without_comments).replace('+', ' ').replace('(', ' ').replace(')', ' ').upper()
         reduce_double_spaces = ' '.join(replace_plus_joints.split()).replace(' =', '=').replace('= ', '=')
@@ -55,5 +66,5 @@ class Part(BaseModel):
 
         return params
 
-db.create_tables([Stock, Param, Mod, Prop, Part, Part.params.get_through_model(), Part.stock.get_through_model(), Part.mods.get_through_model(), Part.props.get_through_model()])
+db.create_tables([Stock, Param, Mod, Prop, Part, Pin, Part.params.get_through_model(), Part.stock.get_through_model(), Part.mods.get_through_model(), Part.props.get_through_model(), Part.pins.get_through_model()])
 

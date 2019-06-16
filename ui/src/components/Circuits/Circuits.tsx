@@ -10,7 +10,7 @@ const { SubMenu } = Menu;
 const initState = {
   code: `
 from bem import *
-from skidl import Net
+from bem import Net
 from PySpice.Unit import * 
 
 gnd = Net('0')

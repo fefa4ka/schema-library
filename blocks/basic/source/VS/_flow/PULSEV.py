@@ -13,12 +13,12 @@ class Modificator(Base):
     def willMount(self, initial_value, pulse_width, period, delay_time):
         self.pulsed_value = self.V
 
-    def circuit(self):
+    def part(self):
         arguments = {}
         for arg in ['initial_value', 'pulsed_value', 'pulse_width', 'period', 'delay_time']:
             arguments[arg] = getattr(self, arg)
 
-        super().circuit(**arguments)
+        return super().part(**arguments)
         
     def devices(self):
         return {

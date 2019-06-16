@@ -55,11 +55,6 @@ class Base(Electrical(), Network(port='two')):
 
         return Transformer
 
-    def part_template(self):
-        part = Part('Device', self.selected_part.scheme or self.model, footprint=self.footprint, dest=TEMPLATE)
-        
-        return part
-
     def circuit(self, *args, **kwargs):
         transformer = self.part_spice() if self.SIMULATION else self.part()
        

@@ -8,7 +8,7 @@ class Case(Test):
                     'flow': ['V']
                 },
                 'args': {
-                    'value': {
+                    'V': {
                         'value': 10,
                         'unit': {
                             'name': 'volt',
@@ -17,8 +17,8 @@ class Case(Test):
                     }
                 },
                 'pins': {
-                    'p': ['v_ref'],
-                    'n': ['gnd']
+                    'input': ['v_ref'],
+                    'output': ['gnd']
                 }
         }, {
                 'name': 'basic.RLC',

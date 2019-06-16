@@ -3,6 +3,7 @@ import logging
 
 from PySpice.Unit import FrequencyValue, PeriodValue
 from PySpice.Unit.Unit import UnitValue
+from copy import copy
 
 try:
     import __builtin__ as builtins
@@ -188,7 +189,7 @@ class Block:
         arguments = self.get_arguments(self)
         props = {}
         for attr in arguments:
-            props[attr] = getattr(self, attr)
+            props[attr] = copy(getattr(self, attr))
             if type(props[attr]) == list:
                 props[attr] = props[attr][0]
             arg = args.get(attr, None)

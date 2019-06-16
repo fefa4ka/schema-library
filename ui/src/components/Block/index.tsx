@@ -7,7 +7,8 @@ export interface TParams {
         unit: {
             name: string,
             suffix: string
-        }
+        },
+        description?: string
     }
 }
 

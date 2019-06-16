@@ -12,7 +12,7 @@ class Base(Network(port='two'), Electrical()):
     """
 
     mods = {
-        'wave': ['full']
+        'wave': ['half']
     }
 
     V_out = 10 @ u_V

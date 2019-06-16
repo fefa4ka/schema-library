@@ -1,11 +1,14 @@
 from bem.tester import Test
 
 class Case(Test):
-    def sources(self):
+    def body_kit(self):
         return [{
-                'name': 'SINEV',
+                'name': 'basic.source.VS',
+                'mods': {
+                    'flow': ['SINEV']
+                },
                 'args': {
-                    'amplitude': {
+                    'V': {
                         'value': 0.2,
                         'unit': {
                             'name': 'volt',
@@ -21,13 +24,16 @@ class Case(Test):
                     }
                 },
                 'pins': {
-                    'p': ['input'],
-                    'n': ['gnd']
+                    'input': ['input'],
+                    'output': ['gnd']
                 }
-        }, {
-                'name': 'SINEV_n',
+        },  {
+                'name': 'basic.source.VS',
+                'mods': {
+                    'flow': ['SINEV']
+                },
                 'args': {
-                    'amplitude': {
+                    'V': {
                         'value': 0.2,
                         'unit': {
                             'name': 'volt',
@@ -35,7 +41,7 @@ class Case(Test):
                         }
                     },
                     'frequency': {
-                        'value': 240,
+                        'value': 1200,
                         'unit': {
                             'name': 'herz',
                             'suffix': 'Hz'
@@ -43,13 +49,16 @@ class Case(Test):
                     }
                 },
                 'pins': {
-                    'p': ['input_n'],
-                    'n': ['gnd']
+                    'input': ['input_n'],
+                    'output': ['gnd']
                 }
         }, {
-                'name': 'V_2',
+                'name': 'basic.source.VS',
+                'mods': {
+                    'flow': ['V']
+                },
                 'args': {
-                    'value': {
+                    'V': {
                         'value': 10,
                         'unit': {
                             'name': 'volt',
@@ -58,13 +67,16 @@ class Case(Test):
                     }
                 },
                 'pins': {
-                    'p': ['v_ref'],
-                    'n': ['gnd']
+                    'input': ['v_ref'],
+                    'output': ['gnd']
                 }
         }, {
-                'name': 'V_3',
+                'name': 'basic.source.VS',
+                'mods': {
+                    'flow': ['V']
+                },
                 'args': {
-                    'value': {
+                    'V': {
                         'value': -10,
                         'unit': {
                             'name': 'volt',
@@ -73,7 +85,25 @@ class Case(Test):
                     }
                 },
                 'pins': {
-                    'p': ['v_inv'],
-                    'n': ['gnd']
+                    'input': ['v_inv'],
+                    'output': ['gnd']
                 }
+        }, {
+            'name': 'basic.RLC',
+            'mods': {
+                'series': ['R']
+            },
+            'args': {
+                'R_series': {
+                    'value': 1000,
+                    'unit': {
+                        'name': 'ohm',
+                        'suffix': 'Ω'
+                    }
+                }
+            },
+            'pins': {
+                'input': ['output'],
+                'output': ['gnd']
+            }
         }]

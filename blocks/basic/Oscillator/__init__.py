@@ -7,7 +7,6 @@ class Base(Physical()):
     """
     """
 
-
     mods = {
         'type': 'crystal'
     }
@@ -16,6 +15,3 @@ class Base(Physical()):
 
     def willMount(self, frequency):
         pass
-
-    def part_spice(self, *args, **kwargs):
-        return None

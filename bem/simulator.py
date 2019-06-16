@@ -39,9 +39,13 @@ class Simulate:
         index_field = None
         index = None
 
+
         if hasattr(analysis, 'time'):
             index_field = 'time'
             index = analysis.time
+        elif hasattr(analysis, 'frequency'):
+            index_field = 'frequency'
+            index = analysis.frequency
         else:
             index_field = 'sweep'
             index = analysis.sweep
@@ -79,7 +83,8 @@ class Simulate:
                 entry['V_' + key] = u(voltage[key][index])
                 
             for key in current.keys():
-                entry['I_' + key] = u(current[key][index])
+                if key.find('.') == -1:
+                    entry['I_' + key] = u(current[key][index])
 
             data.append(entry)
        
@@ -103,13 +108,13 @@ class Simulate:
 
         return measures
 
-    def ac(self, params, temperature=None):
+    def ac(self, temperature=None, **params):
         pins = self.block.get_pins().keys()
         measures = {}
         for temp in temperature or default_temperature:
             simulation = self.circuit.simulator(temperature=temp, nominal_temperature=temp)
             analysis = simulation.ac(**params)
-            measures[temp] = analysis
+            measures[str(temp)] = analysis
      
         return measures
 

@@ -40,7 +40,6 @@ class Stockman:
         Returns:
             list -- of parts with available values
         """
-
         available = []
 
         parts = self.related_parts()
@@ -53,6 +52,11 @@ class Stockman:
     
     def is_part_proper(self, part):
         params, values = self.request
+
+        units = value[params.index('units')] if 'units' in params else 1
+        if not self.is_units_enough(part, units):
+            return False
+        
         for index, param in enumerate(params):
             if param == 'value':
                 continue
@@ -72,6 +76,7 @@ class Stockman:
 
     def check_attrubute(self, part, attribute, desire):
         checks = ['param', 'mod', 'property', 'spice']
+        
         for check in checks:
             check_is_proper = getattr(self, 'check_' + check)
             is_proper = check_is_proper(part, attribute, desire)
@@ -139,3 +144,10 @@ class Stockman:
             return True
 
         return False 
+
+    def is_units_enough(self, part, units):
+        part_units = part.params.where(Param.name == 'units')
+        if len(part_units) >= units or units == 1:
+            return True
+        
+        return False

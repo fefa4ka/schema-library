@@ -8,7 +8,7 @@ class Case(Test):
                 'flow': ['SINEV']
             },
             'args': {
-                'amplitude': {
+                'V': {
                     'value': 10,
                     'unit': {
                         'name': 'volt',
@@ -24,8 +24,8 @@ class Case(Test):
                 }
             },
             'pins': {
-                'p': ['input'],
-                'n': ['gnd']
+                'input': ['input'],
+                'output': ['gnd']
             }
         }, {
             'name': 'basic.source.VS',

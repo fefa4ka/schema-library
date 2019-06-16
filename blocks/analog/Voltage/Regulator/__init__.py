@@ -8,6 +8,8 @@ class Base(Electrical()):
     V = 19 @ u_V
     V_out = 10 @ u_V
 
+    units = 1
+
     def willMount(self, V_out):
         """
             P_zener -- The zener must be able to dissipate `P_(zen\er) =  ((V_(i\\n) - V_(out))/R_(i\\n) - I_(out)) * V_(out)`
@@ -17,5 +19,3 @@ class Base(Electrical()):
         
         pass 
     
-    def circuit(self, **kwargs):
-        pass

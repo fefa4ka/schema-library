@@ -38,7 +38,6 @@ class Base(Physical()):
         return Build('T').spice(*args, **kwargs)
 
     def part_template(self):
-        
         pin_head = {
             'library': 'Connector_Generic',
             'name': 'Conn_01x04',

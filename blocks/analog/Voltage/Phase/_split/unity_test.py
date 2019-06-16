@@ -1,11 +1,14 @@
 from bem.tester import Test
 
 class Case(Test):
-    def sources(self):
+    def body_kit(self):
         return [{
-                'name': 'SINEV',
+                'name': 'basic.source.VS',
+                'mods': {
+                    'flow': ['SINEV']
+                },
                 'args': {
-                    'amplitude': {
+                    'V': {
                         'value': 2,
                         'unit': {
                             'name': 'volt',
@@ -28,13 +31,16 @@ class Case(Test):
                     }
                 },
                 'pins': {
-                    'p': ['input'],
-                    'n': ['gnd']
+                    'input': ['input'],
+                    'output': ['gnd']
                 }
-        }, {
-                'name': 'V',
+            }, {
+                'name': 'basic.source.VS',
+                'mods': {
+                    'flow': ['V'],
+                },
                 'args': {
-                    'value': {
+                    'V': {
                         'value': 20,
                         'unit': {
                             'name': 'volt',
@@ -43,10 +49,7 @@ class Case(Test):
                     }
                 },
                 'pins': {
-                    'p': ['v_ref'],
-                    'n': ['gnd']
+                    'input': ['v_ref'],
+                    'output': ['gnd']
                 }
-        }]
-
-    def load(self):
-        return []
+            }]

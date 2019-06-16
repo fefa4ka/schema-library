@@ -79,12 +79,5 @@ class Base(Combination()):
     def part_spice(self, *args, **kwargs):
         return Build('C').spice(*args, **kwargs)
 
-    def part_template(self):
-        part = Part('Device', 'C', footprint=self.footprint, dest=TEMPLATE)
-        part.set_pin_alias('+', 1)
-        part.set_pin_alias('-', 2)
-        
-        return part
-
-    def circuit(self):
-        super().circuit(value=self.value)
+    def part(self):
+        return super().part(value=self.value)

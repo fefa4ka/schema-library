@@ -1,4 +1,5 @@
 from bem import Block, Net, u_uF, u_pF
+from bem.abstract import Network
 from bem.basic import Capacitor, Oscillator
 
 pins = {}
@@ -27,7 +28,7 @@ pins['ATmega8-16PU'] = {
     'PC5': ['ADC5', 'SCL']
 }
 
-class Modificator(Block):
+class Modificator(Network(interface=['uart', 'spi', 'i2c'])):
     """
     The Atmel®AVR® ATmega8 is a low-power CMOS 8-bit microcontroller based on the AVR RISC
     architecture. By executing powerful instructions in a single clock cycle, the ATmega8 achieves

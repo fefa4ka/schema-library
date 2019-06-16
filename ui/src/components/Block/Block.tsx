@@ -275,7 +275,6 @@ export class Block extends React.Component<IProps, {}> {
             })//.catch(this.catchError)
     }
     urlParams() {
-        console.log({lala: this.state})
         const selectedMods: { [name:string]: string[] } = this.state.selectedMods.reduce((mods: { [name:string]: string[] }, mod) => {
             const [type, value] = mod.split(':')
             mods[type] = mods[type] || []
@@ -291,7 +290,7 @@ export class Block extends React.Component<IProps, {}> {
     }
     updateBlock() {
         if (this.loadBlockTimeout === 0) {
-            this.loadBlockTimeout = setTimeout(() => this.loadBlock(), 3000)
+            this.loadBlockTimeout = setTimeout(() => this.loadBlock(), 2000)
         }
     }
     loadBlock() {

@@ -1,10 +1,12 @@
 from bem.tester import Test
 
 class Case(Test):
-    def sources(self):
+    def body_kit(self):
         return [{
-            'name': 'PULSEV',
-            'description': "Pulsed voltage source",
+            'name': 'basic.source.VS',
+            'mods': {
+                'flow': ['PULSEV'],
+            },
             'args': {
                 'initial_value': {
                     'value': 0.1,
@@ -13,7 +15,7 @@ class Case(Test):
                         'suffix': 'V'
                     }
                 },
-                'pulsed_value': {
+                'V': {
                     'value': 10,
                     'unit': {
                         'name': 'volt',
@@ -36,7 +38,25 @@ class Case(Test):
                 }
             },
             'pins': {
-                'p': ['input'],
-                'n': ['gnd']
+                'input': ['input'],
+                'output': ['gnd']
+            }
+        }, {
+            'name': 'basic.RLC',
+            'mods': {
+                'series': ['R']
+            },
+            'args': {
+                'R_series': {
+                    'value': 1000,
+                    'unit': {
+                        'name': 'ohm',
+                        'suffix': 'Ω'
+                    }
+                }
+            },
+            'pins': {
+                'input': ['output'],
+                'output': ['gnd']
             }
         }]

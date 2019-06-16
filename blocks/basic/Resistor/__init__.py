@@ -63,52 +63,47 @@ class Base(Block):
     def part_spice(self, *args, **kwargs):
         return Build('R').spice(*args, **kwargs)
 
-    def part_template(self):
-        part = Part('Device', 'R', footprint=self.footprint, dest=TEMPLATE)
-        part.set_pin_alias('+', 1)
-        part.set_pin_alias('-', 2)
-
-        return part
-
-    def circuit(self):
-        values = self.values_optimal(self.value, error=5) if not self.SIMULATION else [self.value]
-        resistors = []
+    def part(self):
+        return super().part(value=self.value)
+    # def circuit(self):
+    #     values = self.values_optimal(self.value, error=5) if not self.SIMULATION else [self.value]
+    #     resistors = []
         
-        self.log(f'{self.value} implemented by {len(values)} resistors: ' + ', '.join([str(value) + " Ω" for value in values]))
-        total_value = 0
-        for index, value in enumerate(values):
-            if type(value) == list:
-                parallel_in = Net()
-                parallel_out = Net()
+    #     self.log(f'{self.value} implemented by {len(values)} resistors: ' + ', '.join([str(value) + " Ω" for value in values]))
+    #     total_value = 0
+    #     for index, value in enumerate(values):
+    #         if type(value) == list:
+    #             parallel_in = Net()
+    #             parallel_out = Net()
                 
-                for resistance in value:
-                    r = self.part(value=resistance)
-                    r.ref = self.ref
-                    total_value += resistance.value * resistance.scale
+    #             for resistance in value:
+    #                 r = self.part(value=resistance)
+    #                 r.ref = self.ref
+    #                 total_value += resistance.value * resistance.scale
                         
-                    r[1] += parallel_in
-                    r[2] += parallel_out
+    #                 r[1] += parallel_in
+    #                 r[2] += parallel_out
                 
-                if index:
-                    previous_r = resistors[-1]
-                    previous_r[2] += parallel_in[1]
+    #             if index:
+    #                 previous_r = resistors[-1]
+    #                 previous_r[2] += parallel_in[1]
 
-                resistors.append((None, parallel_in, parallel_out))
+    #             resistors.append((None, parallel_in, parallel_out))
 
-            else:
-                r = self.part(value=value)
-                total_value += value.value * value.scale
-                r.ref = self.ref
-                self.element = r
+    #         else:
+    #             r = self.part(value=value)
+    #             total_value += value.value * value.scale
+    #             r.ref = self.ref
+    #             self.element = r
                         
-                if index:
-                    previous_r = resistors[-1]
-                    previous_r[2] += r[1]
+    #             if index:
+    #                 previous_r = resistors[-1]
+    #                 previous_r[2] += r[1]
                 
-                resistors.append(r)
+    #             resistors.append(r)
 
-        self.value = total_value @ u_Ohm
+    #     self.value = total_value @ u_Ohm
         
-        self.input += resistors[0][1]
-        self.output += resistors[-1][2]
+    #     self.input += resistors[0][1]
+    #     self.output += resistors[-1][2]
         

@@ -1,10 +1,10 @@
-from bem import Build, Net
-from bem.abstract import Physical
-from skidl import Part, TEMPLATE
+from bem import Build 
+from bem.abstract import Physical, Network
+from skidl import Part, Net, TEMPLATE
 from skidl.Net import Net as NetType
 from PySpice.Unit import u_Ohm, u_uF, u_H, u_kHz
 
-class Base(Physical()):
+class Base(Physical(), Network(port='two')):
     """**Bipolar Transistor**
     
     When designing or looking at a transistor circuit there are **three different circuit configurations** that can be used.
@@ -29,6 +29,9 @@ class Base(Physical()):
         'input_n': True,
         'output': True,
         'output_n': True,
+        'emitter': True,
+        'base': True,
+        'collector': True,
         'gnd': True
     }
     
@@ -97,26 +100,19 @@ class Base(Physical()):
 
     def part_template(self):
         # TODO: Search for models and footprints using low level attributes of Block
-        library = 'Transistor_BJT'
-
-        model = self.selected_part.scheme
-        if model:
-            pack = model.split(':')
-            if len(pack) == 2:
-                library = pack[0]
-                model = pack[1]
-        else:
-            model = self.model
-
-        part = Part(library, model, footprint=self.footprint, dest=TEMPLATE)
-        part.set_pin_alias('collector', 1)
-        part.set_pin_alias('base', 2)
-        part.set_pin_alias('emitter', 3)
+        part = super().part_template()
+        
+        part.set_pin_alias('collector', 'C')
+        part.set_pin_alias('base', 'B')
+        part.set_pin_alias('emitter', 'E')
 
         return part
 
+    def part(self):
+        return super().part(model=self.model)
+
     def circuit(self):
-        transistor = self.element = self.part(model=self.model)
+        transistor = self.element = self.part()
 
         common = self.props.get('common', 'emitter') 
         follow = self.props.get('follow', 'collector')

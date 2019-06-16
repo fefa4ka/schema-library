@@ -10,8 +10,8 @@ class Modificator(Base):
     def network(self):
         return Vdc(self.V)
     
-    def circuit(self):
-        super().circuit(value=self.V)
+    def part(self):
+        return super().part(value=self.V)
     
     def devices(self):
         return {

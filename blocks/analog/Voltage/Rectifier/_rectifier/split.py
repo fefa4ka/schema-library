@@ -1,4 +1,5 @@
 from .. import Base
+from skidl import Net
 from bem.basic import Capacitor
 
 from PySpice.Unit import u_Ohm, u_V, u_F, u_ms, u_Hz, u_A

@@ -5,21 +5,14 @@ class Case(Test):
         return [{
             'name': 'basic.source.VS',
             'mods': {
-                'flow': ['SINEV']
+                'flow': ['V']
             },
             'args': {
                 'V': {
-                    'value': 19,
+                    'value': 6.5,
                     'unit': {
                         'name': 'volt',
                         'suffix': 'V'
-                    }
-                },
-                'frequency': {
-                    'value': 60,
-                    'unit': {
-                        'name': 'herz',
-                        'suffix': 'Hz'
                     }
                 }
             },

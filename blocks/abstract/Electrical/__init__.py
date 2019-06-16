@@ -48,7 +48,6 @@ class Base(Network(port='one')):
     # Circuit Creation
     def circuit(self, *args, **kwargs):
         element = self.part(*args, **kwargs)
-       
         if element:
             element.ref = self.ref or element.ref 
             self.element = element
@@ -58,6 +57,7 @@ class Base(Network(port='one')):
     
 
     # Consumption and Load
+
     def consumption(self, V):
         self.P = None
         self.I = None
@@ -120,7 +120,6 @@ class Base(Network(port='one')):
     def power(self, voltage, impedance):
         return voltage * voltage / impedance
 
-
     def part(self, *args, **kwargs):
         return self.part_spice(*args, **kwargs)
 
@@ -130,10 +129,10 @@ class Base(Network(port='one')):
     def simulate(self, body_kit):
         Test = BuildTest(self.__class__, **(self.mods))
         
-        def method_load():
+        def method_body_kit():
             return body_kit
             
-        Test.load = method_load
+        Test.body_kit = method_body_kit
 
         arguments = self.get_arguments()
         simulation = Test.simulate(arguments)
