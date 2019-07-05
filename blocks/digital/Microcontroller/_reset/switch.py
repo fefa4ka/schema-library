@@ -26,7 +26,7 @@ class Modificator(Base):
         be large enough to generate high voltages at the RESET pin. An example connection is shown in the
         following diagram.
         """
-        switch = self['RESET'] & Resistor()(330 @ u_Ohm) & Switch(input='physical')() & self.gnd
+        reset = self['RESET'] & Resistor()(330 @ u_Ohm) & Switch(input='physical')() & self.gnd
 
         """
         To protect the RESET line from further noise, connect a capacitor from the RESET pin to ground. This is

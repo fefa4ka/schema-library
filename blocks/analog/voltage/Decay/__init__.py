@@ -37,15 +37,15 @@ class Base(Electrical()):
 
     R_in = 0 @ u_Ohm
     C_out = 0 @ u_Ohm
+    reverse = False
 
-    def willMount(self, V_out, Time_to_V_out):
-        pass
+    def willMount(self, V_out, Time_to_V_out, reverse=False):
+        self.load(self.V)
 
     # @subcircuit
     def circuit(self):
-
         if not (self.R_in and self.C_out):
-            self.R_in = (self.V / self.I_load) @ u_Ohm
+            self.R_in = self.R_load
 
         if self.R_in and not self.C_out:        
             self.C_out = (self.Time_to_V_out / (self.R_in * log(self.V / (self.V - self.V_out)))) @ u_F
@@ -53,11 +53,19 @@ class Base(Electrical()):
         if self.V_out and not self.R_in:
             self.R_in = (self.Time_to_V_out / (self.C_Out * log(self.V / (self.V - self.V_out)))) @ u_Ohm
         
-        rlc = RLC(series=['R'], gnd=['C'])(
-            R_series = self.R_in,
-            C_gnd = self.C_out
-        )
+        if self.reverse:
+            rlc = RLC(series=['R'], vref=['C'])(
+                R_series = self.R_in,
+                C_vref = self.C_out
+            )
+            self.gnd = rlc.v_ref
+        else:
+            rlc = RLC(series=['R'], gnd=['C'])(
+                R_series = self.R_in,
+                C_gnd = self.C_out
+            )
+            self.gnd = rlc.gnd
         
-        self.input = self.v_ref = rlc.input
+        self.input = rlc.input
         self.output = rlc.output
-        self.gnd = rlc.gnd
+        

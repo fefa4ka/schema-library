@@ -15,12 +15,15 @@ class Modificator(Base):
     def willMount(self, frequency, dc_offset=0@ u_V, offset=0 @ u_V, delay=0 @ u_s, damping_factor=0):
         self.amplitude = self.V
 
-    def part(self):
+    def get_spice_arguments(self):
         arguments = {}
         for arg in ['amplitude', 'frequency', 'dc_offset', 'offset', 'delay', 'damping_factor']:
             arguments[arg] = getattr(self, arg)
+            
+        return arguments
 
-        return super().part(**arguments)
+    def part(self):
+        return super().part(**self.get_spice_arguments())
 
     def network(self):
         return Vac(self.amplitude)

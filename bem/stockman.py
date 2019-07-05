@@ -140,7 +140,7 @@ class Stockman:
         return False
     
     def is_value_enough(self, desire, value, multiple=1):
-        if u(value) > u(desire) * multiple:
+        if u(value) >= u(desire) * multiple:
             return True
 
         return False 

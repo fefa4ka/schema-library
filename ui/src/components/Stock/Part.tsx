@@ -93,7 +93,7 @@ class AddForm extends React.Component<{ form: any, selectedBlock: string, mods: 
   state: FormState = initFormState
   canvasRef = React.createRef<HTMLCanvasElement>()
   printLabelRef: any = null
-  kicadviewer: any = null
+  // kicadviewer: any = null
   componentWillMount() {
     this.loadStockPart()
   }
@@ -102,7 +102,7 @@ class AddForm extends React.Component<{ form: any, selectedBlock: string, mods: 
     let options = {
       grid: 1.27
     }
-    this.kicadviewer = new KiCad(this.canvasRef.current, options)
+    // this.kicadviewer = new KiCad(this.canvasRef.current, options)
   }
 
   componentDidUpdate(prevProps: any) {
@@ -130,15 +130,16 @@ class AddForm extends React.Component<{ form: any, selectedBlock: string, mods: 
   
   loadBlock(partData: any = {}) {
     const selectedMods: { [name: string]: string[] } = this.state.selectedMods.reduce((mods: { [name: string]: string[] }, mod) => {
-      const [type, value] = mod.split('=')
+      const [type, value] = mod.split(':')
       mods[type] = mods[type] || []
       mods[type].push(value)
 
       return mods
     }, {})
 
-   
     const modsUrlParam = Object.keys(selectedMods).map((mod: string) => mod + '=' + selectedMods[mod].join(','))
+    console.log(modsUrlParam)
+
     axios.get('/api/blocks/' + this.props.selectedBlock + '/part_params/?' + modsUrlParam)
       .then(res => {
             
@@ -190,11 +191,11 @@ class AddForm extends React.Component<{ form: any, selectedBlock: string, mods: 
             // console.log({ ...partData, ...params, ...pinsData })
           
 
-          if (partData.footprint) {
-            axios.get('/api/parts/footprint?name=' + partData.footprint.replace('=', ':')).then((res: any) => {
-              this.kicadviewer.render(res.data)
-            })
-          }
+          // if (partData.footprint) {
+          //   axios.get('/api/parts/footprint?name=' + partData.footprint.replace('=', ':')).then((res: any) => {
+          //     // this.kicadviewer.render(res.data)
+          //   })
+          // }
 
           setFieldsValue({ ...partData, ...params, ...pinsData })
 
@@ -231,7 +232,7 @@ class AddForm extends React.Component<{ form: any, selectedBlock: string, mods: 
 
     const attributes = Object.keys(params).map(name => {
       const args = params
-      let suffix = ''
+      let suffix = this.state.params[name].unit.suffix 
 
        return getFieldDecorator(`params[${name}]`, {})(<Select
           key={name}
@@ -390,12 +391,7 @@ class AddForm extends React.Component<{ form: any, selectedBlock: string, mods: 
                       })
                     }
                   }}
-                  onChange={(value) => {
-                    axios.get('/api/parts/footprint?name=' + value).then((data: any) => {
-
-                      this.kicadviewer.render(data.data)
-                    })
-                  }}>
+                >
                 
                 {Object.keys(this.state.footprints).map((type:string) =>
                   <TreeNode title={type} key={type}>
@@ -407,7 +403,7 @@ class AddForm extends React.Component<{ form: any, selectedBlock: string, mods: 
                 </TreeSelect>
               )}
             </Form.Item>
-            <canvas ref={this.canvasRef} width={1800} height={1500} className={cnStock('AddFootprint')}></canvas>
+            <img className={cnStock('Footprint') }src={'/api/parts/footprint/?name=' + this.state.footprint}/>
           </Col>
         </Row> 
 

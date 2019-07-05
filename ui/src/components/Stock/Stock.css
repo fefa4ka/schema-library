@@ -1,6 +1,9 @@
 .Stock-AddFootprint {
     width: 100%;
 }
+.Stock-Footprint {
+    width: 100%;
+}
 
 .Stock-AddParams .ant-input-group-wrapper {
     margin-bottom: 4px;

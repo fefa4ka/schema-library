@@ -1,7 +1,7 @@
 from bem import Block, Build
 from skidl import Circuit, set_default_tool, KICAD, set_backup_lib
 from bem.abstract import Physical
-
+from bem.pcbmode import generate_netlist
 try:
     import __builtin__ as builtins
 except ImportError:
@@ -12,7 +12,7 @@ class Print:
     kit = []
     scheme = None
 
-    def __init__(self, Block, props, kit=[]):
+    def __init__(self, Block, props, kit=[], type='kicad'):
         set_backup_lib('.')
         set_default_tool(KICAD) 
         builtins.SIMULATION = False
@@ -25,6 +25,7 @@ class Print:
 
         self.block = Block(**props)
         self.kit = kit
+        self.type = type
     
     def netlist(self):
         for device in self.kit:
@@ -38,8 +39,11 @@ class Print:
                     device_pin += getattr(self.block, pin)
 
         self.scheme.ERC()
-        
-        return self.scheme.generate_netlist()
+
+        if self.type == 'default':
+            return generate_netlist(self.scheme)
+        else:
+            return self.scheme.generate_netlist()
 
     @classmethod    
     def body_kit(self, block):

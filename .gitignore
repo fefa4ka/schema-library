@@ -1,6 +1,7 @@
 # Byte-compiled / optimized / DLL files
 _clone/
 _api/
+bem/node_modules/
 skidl/
 spice/
 kicad/
@@ -10,6 +11,7 @@ ui/tmp
 yarn.lock
 *_lib_sklib.py
 *.erc
+*.net
 
 __pycache__/
 *.py[cod]

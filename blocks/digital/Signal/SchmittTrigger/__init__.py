@@ -1,6 +1,7 @@
 from bem.basic import Resistor
-from bem import Net, u_Ohm
+from bem import Net, u_Ohm, u_A
 from bem.abstract import Electrical
+from bem.analog.voltage import Difference, Divider
 from bem.basic.transistor import Bipolar
 
 class Base(Electrical()):
@@ -8,34 +9,43 @@ class Base(Electrical()):
     TODO: Relaxation Oscillator https://en.wikipedia.org/wiki/Schmitt_trigger
     """
 
-    R_in = 25000 @ u_Ohm
-    R_out = 20 @ u_Ohm
-    R_collector = 1000 @ u_Ohm
-
-    def willMount(self, input=None):
-        self.input = input or Net('SchmittTriggerInput')
-
     def circuit(self):
-        self.gnd = Net()
-        self.v_ref = Net()
-        self.output = Net()
-
-        regenerative = Bipolar(type='npn', common='emitter')(
-            base = Resistor()(self.R_in),
-            collector = Resistor()(self.R_collector)
+        self.load(self.V)
+        amplifier = Difference(via='bipolar')(
+            V = self.V,
+            Load = self.Load,
+            V_ref = self.V / 2,
+            V_gnd = self.V / -2,
+            I_quiescent = 0.0001 @ u_A
         )
 
-        hysteresis = Bipolar(type='npn', common='emitter')(
-            collector = Resistor()(self.R_collector),
-            emitter = Resistor()(self.R_out)
+        split_power = Divider(type='resistive')(
+            V = self.V, 
+            V_out = self.V / 2,
+            Load = self.R_load / 2
         )
 
-        regenerative.gnd += hysteresis.emitter
-        regenerative.output += hysteresis.input
+        # threshold = Divider(type='resistive')(
+        #     V = self.V, 
+        #     V_out = self.V / 1.5,
+        #     Load = self.Load / amplifier.CMMR
+        # )
 
-        self.input += regenerative.input
-        self.output += hysteresis.output
+        split_power.input += self.v_ref, amplifier.v_ref
+        split_power.output += self.gnd#, threshold.gnd
+        split_power.gnd += amplifier.v_inv
 
-        self.gnd += hysteresis.gnd  
-        self.v_ref += regenerative.v_ref, hysteresis.v_ref
+        
+        self.input & Resistor()(self.R_load * amplifier.CMMR) & amplifier
+        amplifier.output_n & amplifier.input_n
 
+        self.output += amplifier.output
+    
+        
+        # self.v_ref += amplifier.v_ref
+        # self.gnd += amplifier.v_inv#, threshold.gnd
+        # self.output += amplifier.output
+        # self.input += amplifier.input_n
+        # self.output += 
+
+        # & amplifier.input_n

@@ -35,5 +35,5 @@ class Base(Combination()):
     def part_spice(self, *args, **kwargs):
         return Build('L').spice(*args, **kwargs)
 
-    def circuit(self):
-        super().circuit(value=self.value)
+    def part(self):
+        return super().part(value=self.value)

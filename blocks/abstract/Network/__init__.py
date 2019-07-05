@@ -10,26 +10,30 @@ class Base(Block):
 
     v_ref = None
     gnd = None
- 
+
     def __init__(self, *args, **kwargs):
         self.set_pins()
 
         super().__init__(*args, **kwargs)
-       
+
         transfer = self.transfer()
         if transfer:
             self.H = transfer.latex_math()
 
-        # for pin in self.pins.keys():
-        #     net = getattr(self, pin)
-        #     net.fixed_name = False
+        for pin in self.pins.keys():
+            net = getattr(self, pin)
+            if net:
+                net.fixed_name = False
 
     # Link Routines
     def __getitem__(self, *pin_ids, **criteria):
         if len(pin_ids) == 1 and hasattr(self, str(pin_ids[0])):
             return getattr(self, pin_ids[0])
 
-        return self.element.__getitem__(*pin_ids, **criteria)
+        if self.element:
+            return self.element.__getitem__(*pin_ids, **criteria)
+
+        return None
 
 
     def __and__(self, instance):
@@ -39,23 +43,52 @@ class Base(Block):
 
             return instance
         elif type(instance) == NetPinList:
-            return self.__and__(instance[0])
-        else:
-            try:
-                ntwk = instance.create_network()
-            except AttributeError:
-                raise Exception
-            
-            self.output += ntwk[0]
+            self.__and__(instance[0])
 
-            return ntwk[-1]
+            return instance
+        elif type(instance) == list:
+            for block in instance:
+                super().__and__(block)
+
+            return instance
+        else:
+            self.output += instance[0]
+
+            return instance
+            # try:
+            #     ntwk = instance.create_network()
+            # except AttributeError:
+            #     raise Exception
+
+            # self.output += ntwk[0]
+
+            # return ntwk[-1]
             # return Network(self.output, ntwk[-1])
 
         raise Exception
 
-    # def __rand__(self, instance):
-    #     print('RAND')
-    #     return instance & self
+    def __rand__(self, instance):
+        if issubclass(type(instance), Block):
+            # print(f'{self.title} series connect {instance.title if hasattr(instance, "title") else instance.name}')
+            instance.__series__(self)
+
+            return self
+        elif type(instance) == NetPinList:
+            self.__rand__(instance[0])
+
+            return self
+        elif type(instance) == list:
+            for block in instance:
+                super().__rand__(block)
+
+            return self
+        else:
+            self.input += instance[0]
+
+            return self
+
+        raise Exception
+
 
     def __or__(self, instance):
         # print(f'{self.title} parallel connect {instance.title if hasattr(instance, "title") else instance.name}')
@@ -66,13 +99,13 @@ class Base(Block):
         elif type(instance) == NetPinList:
             return self.__and__(instance[0])
         else:
-            try:
-                ntwk = instance.create_network()
-            except AttributeError:
-                raise Exception
+            # try:
+            #     ntwk = instance.create_network()
+            # except AttributeError:
+            #     raise Exception
 
-            self.input += ntwk[0]
-            self.output += ntwk[-1]
+            self.input += instance[0]
+            self.output += instance[-1]
 
             return self
 
@@ -82,10 +115,10 @@ class Base(Block):
     def connect_power_bus(self, instance):
         if self.gnd and instance.gnd:
             self.gnd += instance.gnd
-        
+
         if self.v_ref and instance.v_ref:
             self.v_ref += instance.v_ref
-    
+
 
     # Pins
     def get_pins(self):
@@ -93,15 +126,15 @@ class Base(Block):
         for key, value in inspect.getmembers(self, lambda item: not (inspect.isroutine(item))):
             if type(value) == NetType and key not in ['__doc__', 'element', 'simulation', 'ref']:
                 pins[key] = [str(pin).split(',')[0] for pin in getattr(self, key) and getattr(self, key).get_pins()]
-       
+
         return pins
-       
+
     def set_pins(self):
         for pin in self.pins.keys():
             pin_description = [self.pins[pin]] if type(self.pins[pin]) == bool else self.pins[pin]
-            device_name = self.name.replace('.', '')
+            device_name = ''.join([name for name in self.name.split('.') if name[0] == name[0].upper()])
             net_name = device_name + ''.join([word.capitalize() for word in pin.split('_')])
-            
+
             related_nets = [pin]
 
             # pin = True, str -- Net(pin_name | str)
@@ -119,14 +152,12 @@ class Base(Block):
                     original_net = Bus(pin, pin_description)
                 else:
                     net_name = device_name + pin_description
-            
+
 
             if not original_net:
                 original_net = Net(net_name)
-            
-            # if not hasattr(self, 'model') and pin.find('output') != -1:
-                # print(net_name.replace('.', ))
-                # original_net.fixed_name = True
+
+            original_net.fixed_name = True
 
             for net in related_nets:
                 setattr(self, net, original_net)
@@ -140,7 +171,7 @@ class Base(Block):
                 return network.Isc.transient_response()
 
         return None
-            
+
     def transient(self, start=0 @ u_s, stop=0 @ u_s, num=50):
         time_space = linspace(start, stop, num)
 

@@ -27,15 +27,9 @@ class Base(Electrical(), Network(port='two')):
                 section = input & Transistor(
                     drain = output if valign == 'bottom' else self.v_ref,
                     source = output if valign == 'top' else self.gnd
-                ) 
-        
+                )
+
         for pin in [self.output, self.output_n]:
             protect = pin & D(**self.load_args)['A, K'] & self.v_ref
             protect_gnd = self.gnd & D(**self.load_args)['A, K'] & pin
-        
 
-
-        
-
-
-        

@@ -23,6 +23,11 @@
     display: inline-block;
 }
 
+.Block-DownloadNetlist {
+    float: right;
+    margin-top: -1px;
+}
+
 .Block-ParamTooltip .ant-tooltip-inner {
     padding-top: 1em;
     padding-left: 1em;
@@ -34,6 +39,9 @@
     margin-bottom: 8px;
 }
 
+.Block-Schematics {
+    overflow: scroll;
+}
 
 .Block-Param {
     text-overflow: ellipsis;
@@ -59,23 +67,6 @@
     border-style: dashed;
 }
 
-.Block-Description {
-    font-family: Georgia;
-    font-size: 16px;
-    padding-right: 40px;
-}
-
-.Block-Description table td, .Block-Description table th {
-    padding: 4px;
-}
-
-.Block-Description table {
-    margin-bottom: 10px;
-}
-
-.Block-CodeExample .CodeMirror { 
-    background: #f0f2f5;
-}
 
 .Block-TestAction {
     z-index: 10;

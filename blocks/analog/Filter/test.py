@@ -21,8 +21,7 @@ class Case(Test):
                 # label += '@ %s' % str(frequency)
                 # index = simulation['sweep']
                 chart[index]['Frequency'] = float(frequency)
-                chart[index][label + ' Gain'] = 20 * log(float(V_out / V_in), 10)
-                # chart[index][label + 'V_out'] = str(
+                chart[index][label + ' Gain'] = 20 * log(float(abs(V_out) / abs(V_in)), 10) if V_out and V_in else 0
 
         sweep = list(chart.keys())
 

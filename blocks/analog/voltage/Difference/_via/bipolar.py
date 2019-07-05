@@ -16,7 +16,6 @@ class Modificator(Base):
         'gnd': True 
     }
 
-    V_ref = 10 @ u_V
     V_gnd = -10 @ u_V
 
     I_quiescent = 0.0001 @ u_A
@@ -29,7 +28,7 @@ class Modificator(Base):
     G_cm = 0
     CMMR = 0
 
-    def willMount(self, V_ref, V_gnd, I_quiescent):
+    def willMount(self, V_gnd, I_quiescent):
         """
         R_c -- `R_c = V_c / I_(quiescent)`
         R_e -- Hardcoded value `R_e = 1000 Ω` 
@@ -39,13 +38,14 @@ class Modificator(Base):
         CMMR -- A good differential amplifier has a high _common-mode rejection ratio_ `CM\\R\\R = R_1/(R_e + r_e)` the ratio of response for a normal-mode signal to the response for a common-mode signal of the same amplitude.
         r_e -- Transresistance `r_e = V_T / I_e = ((kT) / q) / I_e = (0.0253 V) / I_e`
         """
-        pass 
+        self.load(self.V)
 
     def circuit(self):
         R = Resistor()
-        self.R_c = self.V_ref / 2 / self.I_quiescent
-        self.R_e = 1000 @ u_Ohm
-        self.R_out = (0 @ u_V - self.V_gnd) / (self.I_quiescent * 2) 
+
+        self.R_c = self.V / 2 / self.I_quiescent
+        self.R_e = self.R_load
+        self.R_out = (0 @ u_V - self.V_gnd) / (self.I_quiescent * 2)
         self.r_e = 0.026 @ u_V / self.I_quiescent
         self.G_diff = u(self.R_c / (2 * (self.r_e + self.R_e)))
         self.G_cm = u(-1 * self.R_c / (2 * self.R_out + self.R_e + self.r_e))
@@ -67,6 +67,6 @@ class Modificator(Base):
         power = self.v_ref & left.v_ref & right.v_ref
         left_input = self.input & left & self.output_n
         right_input = self.input_n & right & self.output
+
         sink = left.gnd & right.gnd & R(self.R_out) & self.v_inv
-        
 

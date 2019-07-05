@@ -13,13 +13,16 @@ class Modificator(Base):
     def willMount(self, initial_value, pulse_width, period, delay_time):
         self.pulsed_value = self.V
 
-    def part(self):
+    def get_spice_arguments(self):
         arguments = {}
         for arg in ['initial_value', 'pulsed_value', 'pulse_width', 'period', 'delay_time']:
             arguments[arg] = getattr(self, arg)
 
-        return super().part(**arguments)
-        
+        return arguments
+
+    def part(self):
+        return super().part(**self.get_spice_arguments())
+
     def devices(self):
         return {
             'jds6600': {

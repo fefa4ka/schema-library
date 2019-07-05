@@ -71,7 +71,7 @@ export class Part extends React.Component<IProps, {}> {
                         placeholder='Select Power Probe'
                         value={pin_state && pin_state.name}
                         defaultValue=''
-                        onChange={name => onChange(({ probes }: any) => {
+                        onChange={(name:any) => onChange(({ probes }: any) => {
                             const pins = probes || {}
                             pins[pin] = pins[pin] || {}
                             pins[pin].name = name

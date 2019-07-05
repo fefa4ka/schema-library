@@ -5,6 +5,8 @@ from skidl import Part, TEMPLATE
 
 class Base(Physical()):
     """
+    **Diode**
+
     A diode is a two-terminal electronic component that conducts current primarily in one direction (asymmetric conductance); it has low (ideally zero) resistance in one direction, and high (ideally infinite) resistance in the other.
 
     The most common function of a diode is to allow an electric current to pass in one direction (called the diode's forward direction), while blocking it in the opposite direction (the reverse direction). As such, the diode can be viewed as an electronic version of a check valve. This unidirectional behavior is called rectification, and is used to convert alternating current (ac) to direct current (dc). Forms of rectifiers, diodes can be used for such tasks as extracting modulation from radio signals in radio receivers.
@@ -30,10 +32,10 @@ class Base(Physical()):
         'VJ': {'description': 'Junction potential', 'unit': { 'suffix': 'V', 'name': 'volt' }, 'value': ''},
         'XTI': {'description': 'Saturation-current temp.exp', 'unit': { 'suffix': '', 'name': 'number' }, 'value': ''}
     }
-    
+
     mods = {
         'type': ['generic']
-    } 
+    }
 
     def willMount(self):
         self.Power = self.I_load
@@ -55,4 +57,4 @@ class Base(Physical()):
             part.set_pin_alias('K', 2)
 
         return part
-        
+

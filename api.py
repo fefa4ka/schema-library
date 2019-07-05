@@ -4,7 +4,7 @@ import os
 from collections import defaultdict
 from math import isnan
 
-from flask import request
+from flask import request, Response
 from flask_api import FlaskAPI
 
 from PySpice.Unit import u_A, u_Hz, u_ms, u_Ohm, u_s, u_V
@@ -20,7 +20,8 @@ from probe.read import get_sigrok_samples
 from probe import get_arg_units, get_minimum_period
 from probe.source import JDS6600, KA3005P, simulation_sources
 from bem.tester import BuildTest
-
+from copy import copy
+from subprocess import PIPE, run
 try:
     import __builtin__ as builtins
 except ImportError:
@@ -41,14 +42,14 @@ def devices():
 
     keyword = request.args.get('query', None)
     name = request.args.get('name', None)
-    
+
     if keyword:
         f = io.StringIO()
         with redirect_stdout(f):
             search(keyword)
 
         out = f.getvalue()
-        
+
         devices = out[out.rfind('\r') + 2:].split('\n')
         result = defaultdict(list)
 
@@ -107,10 +108,10 @@ def block(name):
         params = request.args
         Block = Build(name, **params).block
         props = Block.parse_arguments(params)
-        
+
         Instance = Block(**props)
-        
-        parts = []
+
+        parts = {}
         nets = {}
 
         if hasattr(Instance, 'input') and Instance.input:
@@ -120,16 +121,22 @@ def block(name):
                 circuit = Instance.input.circuit
             for part in circuit.parts:
                 pins = [str(pin).split(',')[0] for pin in part.get_pins() or []]
-                parts.append({
+                value = copy(part.value)
+                if type(value) not in [str, int, float]:
+                    value = value.canonise()
+                    value._value = int(value._value)
+
+
+                parts[part.ref] = {
                     'name': part.name,
-                    'description': part.description,
+                    'description': str(value) + '|' + part.description.replace(',', ';'),
                     'pins': pins
-                })
+                }
 
             for net in circuit.get_nets():
                 pins = [str(pin).split(',')[0] for pin in net.get_pins() or []]
                 nets[net.name] = pins
-        
+
         RawBlock = Build(Block.name)
         props = RawBlock.base and RawBlock.base.props
         Test = BuildTest(Block, **params)
@@ -138,19 +145,19 @@ def block(name):
             available = [{'id':part.id, 'model':part.model, 'footprint':part.footprint} for part in Instance.available_parts()]
         else:
             available = []
-        
+
         if hasattr(Instance, 'devices'):
             devices = Instance.devices()
         else:
             devices = []
-            
+
         params = {
             'name': Block.name,
             'mods': { **Block.mods, **{ key: prop for key, prop in Block.props.items() if key in props.keys() }},
             'props': props,
             'description': Block.get_description(Block),
             'params_description': Block.get_params_description(Block),
-            'args':  Instance.get_arguments(),
+            'args': Instance.get_arguments(),
             'params': Instance.get_params(),
             'pins': Instance.get_pins(),
             'files': Block.files,
@@ -163,21 +170,21 @@ def block(name):
         }
 
         params['params'] = {param: params['params'][param] for param in params['params'].keys() if not params['args'].get(param, None)}
-        
+
         return params
 
     params = build()
     return params
 
-@app.route('/api/blocks/<name>/netlist/', methods=['POST'])
-def netlist(name):
+@app.route('/api/blocks/<name>/netlist/<type>/', methods=['POST'])
+def netlist(name, type):
     params = request.data
-    
+
     Block = Build(name, **params['mods']).block
     props = Block.parse_arguments(params['args'])
     body_kit = params.get('pcb_body_kit', [])
-    
-    netlist = Print(Block, props, body_kit).netlist()
+
+    netlist = Print(Block, props, body_kit, type).netlist()
 
     return netlist
 
@@ -187,12 +194,12 @@ def simulate(name):
     Block = Build(name, **params['mods']).block
     args = Block.parse_arguments(params['args'])
     Instance = Block(**args)
-    
+
     body_kit = params.get('body_kit', None)
-    
+
     simulation = Instance.simulate(body_kit)
 
-    return simulation 
+    return simulation
 
 
 @app.route('/api/blocks/<name>/simulate/cases/', methods=['POST'])
@@ -208,7 +215,7 @@ def simulate_cases(name):
         cases[name] = case(params['args'])
         cases[name]['description'] = Test.description(name)
 
-    return cases  
+    return cases
 
 @app.route('/api/circuit/', methods=['POST'])
 def circuit():
@@ -216,12 +223,12 @@ def circuit():
     del builtins.default_circuit
     builtins.default_circuit = Circuit()
     builtins.NC = builtins.default_circuit.NC
-    
+
     code = request.data.get('code', '')
-    
+
     code_locals = {}
     exec(code, {}, code_locals)
-    
+
     return code_locals.get('chart', [])
 
 @app.route('/api/files/', methods=['GET'])
@@ -232,7 +239,7 @@ def get_file():
         return ''.join(file.readlines())
     else:
         return ''
-    
+
 
 @app.route('/api/files/', methods=['POST'])
 def save_file():
@@ -254,7 +261,7 @@ def get_parts():
         for param in part.params:
             params[param.name].append(param.value)
 
-        pins = defaultdict(lambda: defaultdict(list)) 
+        pins = defaultdict(lambda: defaultdict(list))
         for pin in part.pins:
             # pins[pin.block_pin].append({
             #     'pin': pin.pin,
@@ -332,7 +339,7 @@ def add_part():
             param = Param(name=name, value=value)
             param.save()
             part.params.add(param)
-        
+
     stock = Stock(quantity=data['quantity'], place=data['stock'])
     stock.save()
     part.stock.add(stock)
@@ -351,22 +358,22 @@ def add_part():
 
 def __stock_delete_part(part_id):
     part = Part.get_or_none(id=part_id)
-    
+
     if part:
         part.params.clear()
         part.mods.clear()
         part.props.clear()
         part.stock.clear()
         part.pins.clear()
-    
+
         part.delete_instance()
 
 @app.route('/api/parts/', methods=['DELETE'])
 def delete_part():
     data = request.args
-    
+
     __stock_delete_part(data.get('id', None))
-    
+
     return {}
 
 @app.route('/api/probes/', methods=['GET'])
@@ -404,45 +411,33 @@ def get_serial_ports():
 @app.route('/api/probes/', methods=['POST'])
 def get_probes():
     req = request.data
-    sources = req.get('sources', [])
-    for source in sources:
-        port = source.get('port', None)
-        device = source.get('device', None)
-        if port:
-            args = {}
-            part_name = source['name'].split('_')[0]
-            part = Build(part_name).spice
-            
-            for arg in source['args'].keys():
-                if source['args'][arg]['value']:
-                    try: 
-                        args[arg] = float(source['args'][arg]['value']) @ get_arg_units(part, arg)
-                    except:
-                        args[arg] = source['args'][arg]['value']
-            
-            if device == 'jds6600':
-                device = JDS6600(port=port)
-            else:
-                device = KA3005P(port=port)
-                
-            if hasattr(device, part_name):
-                generator = getattr(device, part_name)
-                generator(
-                    channel=source.get('channel', 1),
-                    **args)
+    body_kit = req.get('body_kit', [])
+
+    for index, block in enumerate(body_kit):
+        mods = {}
+        if block.get('mods', None):
+            mods = block['mods']
+
+        ref = block['name'].split('.')[-1] + '_' + str(index)
+        BlockModel = Build(block['name'], **mods, ref=ref).block
+        args = BlockModel.parse_arguments(block['args'])
+        BlockInstance = BlockModel(**args)
+
+        if hasattr(BlockInstance, 'set_device'):
+            BlockInstance.set_device()
 
     probes = req.get('probes', [])
-    
-    period = get_minimum_period(sources)
-    end_time = period * 10
-    step_time = period / 50
-    
+
+    period = get_minimum_period(body_kit)
+    end_time = period * 4
+    step_time = period / 200
+
     devices = defaultdict(list)
     pins = {}
     for probe in probes:
         pins[probes[probe]['name'] + probes[probe]['channel']] = probe
         devices[probes[probe]['name']].append(probes[probe]['channel'])
-    
+
     data = {}
     for device in devices.keys():
         device_data = get_sigrok_samples(device, ','.join(devices[device]), step_time @ u_s, end_time @ u_s)
@@ -454,7 +449,7 @@ def get_probes():
     for index, entity in enumerate(chartData):
         for probe in data.keys():
             chartData[index]['V_' + probe] = data[probe][index]
-        
+
     return chartData
 
 
@@ -470,23 +465,30 @@ def get_pins():
     part = Part(library, symbol)
 
     return [str(pin) for pin in part.pins]
-    
+
 
 @app.route('/api/parts/footprint/', methods=['GET'])
 def get_footprint():
     name = request.args.get('name', None)
+
     if name:
         folder, filename = name.split(':')
         path = '/Users/fefa4ka/Development/_clone/kicad/kicad-footprints/' + folder + '.pretty/' + filename + '.kicad_mod'
-        file = open(path, 'r')
-        data = '\n'.join(file.readlines())
-        file.close()
+        # file = open(path, 'r')
+        # data = '\n'.join(file.readlines())
+        # file.close()
+        command = ['node', 'bem/mod2svg.js', path]
+        result = run(command, stdout=PIPE, stderr=PIPE, universal_newlines=True)
+        # print(result)
+        data = result.stdout
+        data = Response(data)
+        data.headers['Content-Type'] = 'image/svg+xml'
     else:
         data = defaultdict(list)
         for file in glob.glob('/Users/fefa4ka/Development/_clone/kicad/kicad-footprints/*.pretty/*.kicad_mod'):
             category, footprint = file.split('/')[-2:]
             data[category.replace('.pretty', '')].append(footprint.replace('.kicad_mod', ''))
-    
+
     return data
 
 @app.route('/api/parts/footprints/', methods=['GET'])
@@ -503,20 +505,20 @@ def get_footprints():
 
         if not query or (category.lower().find(query) != -1 or footprint.lower().find(query) != -1):
             data[category].append(footprint)
-    
+
     return data
 
 @app.route('/api/blocks/<name>/part_params/', methods=['GET'])
 def get_part_params(name):
     params = request.args
-    
+
     Block = Build(name, **params).block
 
     props = {}
     if Build(name).base:
         props = Build(name).base.props
         props = { key: value if type(value) == list else [value] for key, value in props.items() }
-    
+
     return {
         'spice': Block.spice_params if hasattr(Block, 'spice_params') else{},
         'pins': list(Block.pins.keys()),

@@ -1,4 +1,5 @@
 from .. import Base
+from skidl import Net
 from bem.basic import Diode, Capacitor
 
 from PySpice.Unit import u_uF
@@ -11,7 +12,7 @@ class Modificator(Base):
     def circuit(self, *args, **kwargs):
         super().circuit(*args, **kwargs)
 
-        D = Diode(type=='generic')
+        D = Diode(type='generic')
         C = Capacitor()
         
         signal = self.output

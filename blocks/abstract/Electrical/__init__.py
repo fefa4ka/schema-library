@@ -3,12 +3,17 @@ from bem.abstract import Network
 from bem.tester import BuildTest
 from PySpice.Unit import u_V, u_Ohm, u_A, u_W, u_S, u_s
 from lcapy import R
+import sys
 
+tracer_instances = [None]
 
 class Base(Network(port='one')):
     V = 10 @ u_V
     Power = 0 @ u_W
     Load = 1000 @ u_Ohm  # [0 @ u_Ohm, 0 @ u_A, 0 @ u_W]
+    I_load = 1 @ u_A
+    R_load = 1 @ u_Ohm
+    P_load = 1 @ u_W
 
     doc_methods = ['willMount', 'circuit']
 
@@ -16,6 +21,8 @@ class Base(Network(port='one')):
     ref = ''
 
     def __init__(self, *args, **kwargs):
+        sys.setprofile(None)
+
         is_ciruit_building = kwargs.get('circuit', True)
         if kwargs.get('circuit', None) != None:
             del kwargs['circuit']
@@ -28,8 +35,34 @@ class Base(Network(port='one')):
             self.consumption(self.V)
 
         if is_ciruit_building:
-            self.circuit()
+            self.release()
 
+    def release(self):
+        self.circuit_locals = {}
+
+        def tracer(frame, event, arg, self=self):
+            if event == 'return':
+                self.circuit_locals = frame.f_locals
+
+        # tracer is activated on next call, return or exception
+        sys.setprofile(tracer)
+        tracer_instances.append(tracer)
+
+        try:
+            # trace the function 
+            self.circuit()
+        finally:
+            # disable tracer and replace with old one
+            tracer_current = tracer_instances.pop()
+            sys.setprofile(tracer_instances[-1])
+
+        values = []
+        name = self.name.split('.')[-1]
+        for key, value in self.circuit_locals.items():
+            if key != 'self'and value not in values and hasattr(value, 'element') and value.element: 
+                key = ''.join([word.capitalize() for word in key.replace('_', '.').split('.')])
+                values.append(value)
+                value.element.ref = name + '_' + key.capitalize()
 
     def willMount(self, V=None, Load=None):
         """
@@ -49,12 +82,10 @@ class Base(Network(port='one')):
     def circuit(self, *args, **kwargs):
         element = self.part(*args, **kwargs)
         if element:
-            element.ref = self.ref or element.ref 
             self.element = element
-            
+
             self.input += self.element[1]
             self.output += self.element[2]
-    
 
     # Consumption and Load
 
@@ -67,11 +98,11 @@ class Base(Network(port='one')):
             return
 
         Power = self.Power
-        
+
         if Power.is_same_unit(1 @ u_Ohm):
             self.Z = Power
             self.I = V / self.Z
-        
+
         if Power.is_same_unit(1 @ u_W):
             self.P = Power
             self.I = self.P / V
@@ -88,12 +119,12 @@ class Base(Network(port='one')):
 
     def load(self, V_load):
         Load = self.Load
-        
+
         if type(Load) in [int, float] or Load.is_same_unit(1 @ u_Ohm):
             Load = self.Load = Load @ u_Ohm
             self.R_load = Load
             self.I_load = V_load / self.R_load
-        
+
         if Load.is_same_unit(1 @ u_W):
             self.P_load = Load
             self.I_load = self.P_load / V_load
@@ -105,15 +136,15 @@ class Base(Network(port='one')):
 
         if not hasattr(self, 'R_load'):
             self.R_load = V_load / self.I_load
-        
+
         if not hasattr(self, 'Z_load'):
             self.Z_load = R(self.R_load)
 
         self.load_args = {
             'V': V_load,
             'Load': self.Load
-        } 
-        
+        }
+
     def current(self, voltage, impedance):
         return voltage / impedance
 
@@ -125,17 +156,17 @@ class Base(Network(port='one')):
 
     def part_spice(self, *args, **kwargs):
         return None
-        
+
     def simulate(self, body_kit):
         Test = BuildTest(self.__class__, **(self.mods))
-        
+
         def method_body_kit():
             return body_kit
-            
+
         Test.body_kit = method_body_kit
 
         arguments = self.get_arguments()
         simulation = Test.simulate(arguments)
 
         return simulation
-      
+

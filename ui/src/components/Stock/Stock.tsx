@@ -62,7 +62,7 @@ export class Stock extends Component {
         })
     }
 
-    handleAddPartOk = (e:any) => {
+    handleAddPartOk = (e:any, duplicate=false) => {
       const form = this.formRef.props.form
       form.validateFields((err:any, values:any) => {
         if (err) {
@@ -72,8 +72,8 @@ export class Stock extends Component {
         const prevData = this.state.addPartData
         axios.post('/api/parts/', {
           ...values,
-          id: prevData.id,
-          block: this.state.selectedBlock
+          id: duplicate ? 0 : prevData.id,
+          block: this.state.selectedBlock,
         }).then(res => this.loadStock())
         form.resetFields()
 
@@ -159,8 +159,18 @@ export class Stock extends Component {
                 <Modal
                     title="Add Part"
                     visible={this.state.addPartModalVisible}
-                    onOk={this.handleAddPartOk}
                     onCancel={this.handleAddPartCancel}
+                    footer={[
+                      <Button key="Duplicate" onClick={(e:any) => this.handleAddPartOk(e, true)}>
+                        Duplicate
+                      </Button>,
+                       <Button key="cancel" onClick={this.handleAddPartCancel}>
+                       Cancel
+                     </Button>,
+                      <Button key="submit" type="primary" onClick={this.handleAddPartOk}>
+                        Save
+                      </Button>,
+                    ]}
                 >
                   <Part
                     wrappedComponentRef={this.saveFormRef}

@@ -23,4 +23,4 @@ class Modificator(Base):
         
         R_out = Resistor()(value=self.R_vref, ref='R_v', **self.load_args)
 
-        circuit = signal & self.output & R_out['+,-'] & self.v_ref
+        circuit = signal & self.output & R_out['-,+'] & self.v_ref

@@ -4,6 +4,27 @@ from collections import defaultdict
 from bem import u, u_A, u_Degree
 
 class Case(Test):
+    def body_kit(self):
+        return super().body_kit() + [{
+            'name': 'basic.source.VS',
+            'mods': {
+                'flow': ['V'],
+            },
+            'args': {
+                'V': {
+                    'value': 15,
+                    'unit': {
+                        'name': 'volt',
+                        'suffix': 'V'
+                    }
+                }
+            },
+            'pins': {
+                'input': ['v_ref'],
+                'output': ['gnd']
+            }
+        }]
+
     def dc_body_kit(self):
         return [{
             'name': 'basic.source.VS',
@@ -42,22 +63,22 @@ class Case(Test):
     def characteristics(self, args, temperature, voltage_sweep):
         self.body_kit = self.dc_body_kit
         self.circuit(args)
-        
-        simulations = Simulate(self.block).dc({ 'V1': voltage_sweep }, temperature=temperature)
-        
+
+        simulations = Simulate(self.block).dc({ 'VVVS_0': voltage_sweep }, temperature=temperature)
+
         chart = defaultdict(dict)
         for temp, simulation in simulations.items():
             label = '@ %s °C' % str(temp)
             for run in simulation:
                 index = run['sweep']
                 chart[index]['V_input'] = index
-                chart[index][label + ' I_v1'] = run['I_v1']
+                chart[index][label + ' I_vvvs_0'] = run['I_vvvs_0']
 
         sweep = list(chart.keys())
 
         sweep.sort()
 
-        return [chart[index] for index in sweep] 
+        return [chart[index] for index in sweep]
 
 
     def ForwardCurrentVersusForwardVoltage(self, args, temperature=None):
@@ -86,9 +107,9 @@ class Case(Test):
         """
             Also, diodes' high resistance to current flowing in the reverse direction suddenly drops to a low resistance when the reverse voltage across the diode reaches a value called the breakdown voltage.
         """
-        
+
         voltage_sweep = slice(-0.3, 0.1, .01)
-        data = self.characteristics(args, temperature, voltage_sweep) 
+        data = self.characteristics(args, temperature, voltage_sweep)
 
         return {
             'x': {

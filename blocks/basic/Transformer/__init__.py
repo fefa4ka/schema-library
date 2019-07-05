@@ -7,12 +7,12 @@ class Base(Electrical(), Network(port='two')):
     """
     """
     increase = False
-    
+
     V = 25 @ u_V
     V_out = 10 @ u_V
     coupling_factor = 0.9
     turns_ration = 5
-    
+
 
     def willMount(self, V_out, coupling_factor, turns_ration):
         self.load(self.V_out)
@@ -21,10 +21,10 @@ class Base(Electrical(), Network(port='two')):
     #     if self.output and instance.input:
     #         self.output._name = instance.input._name = f'{self.name}{instance.name}_Net'
     #         self.output += instance.input
-        
+
     #     if self.output_gnd and instance.gnd:
     #         self.output_gnd += instance.gnd
-        
+
     #     if self.v_ref and instance.v_ref:
     #         self.v_ref += instance.v_ref
 
@@ -38,7 +38,7 @@ class Base(Electrical(), Network(port='two')):
             '4': Net('TransformerOutputN')
         }
 
-        Spacer = Resistor()(value=1 @ u_Ohm) 
+        Spacer = Resistor()(value=1 @ u_Ohm)
         # Lin = L(value=100 @ u_H)
         Lin = RLC(series=['L', 'R'])(
             R_series = 1 @ u_Ohm,
@@ -57,10 +57,10 @@ class Base(Electrical(), Network(port='two')):
 
     def circuit(self, *args, **kwargs):
         transformer = self.part_spice() if self.SIMULATION else self.part()
-       
+
         self.v_ref = Net()
         self.gnd = Net()
-       
+
         self.input = transformer['1']
         self.input_n = transformer['2']
 

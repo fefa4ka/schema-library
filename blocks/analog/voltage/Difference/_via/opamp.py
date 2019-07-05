@@ -51,5 +51,8 @@ class Modificator(Base):
         sense = opamp.input & R(self.R_feedback) & opamp.output
         ref = opamp.input_n & R(self.R_feedback) & self.v_inv
 
+        self.v_ref += opamp.v_ref
+        self.v_inv += opamp.gnd
+
         self.output += opamp.output
 

@@ -31,7 +31,6 @@ class Modificator(Base):
         ) @ u_Ohm
 
         self.P_zener = ((self.V - self.V_out) / self.R_in - self.I_load) * self.V_out
-    
 
         self.v_ref += self.input
 
@@ -44,6 +43,4 @@ class Modificator(Base):
                             **self.load_args
                         )(Load=self.Load, V=self.V,)['K, A'] \
                     & self.gnd
-
-        
 

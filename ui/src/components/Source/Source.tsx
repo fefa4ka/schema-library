@@ -221,7 +221,7 @@ export class Part extends React.Component<IProps, {}> {
                     style={{ width: '100%' }}
                     placeholder='Select Power Source'
                     value={this.state.name}
-                    onChange={name => this.setState({
+                    onChange={(name:any) => this.setState({
                         name
                     }, () => onChange(this.getCurrentSource()))}
                 >
@@ -254,7 +254,7 @@ export class Part extends React.Component<IProps, {}> {
                         className={cnPart('SerialPort')}
                         value={this.state.port}
                         style={{ width: '100%' }}
-                        onChange={port => this.setState({ port }, () => onChange(this.getCurrentSource()))}
+                        onChange={(port:any) => this.setState({ port }, () => onChange(this.getCurrentSource()))}
                     >
                         {this.state.serial.map(item => <Option value={item.port} key={item.port}>{item.port} {item.desc}</Option>)}
                     

@@ -37,18 +37,18 @@ def bem_scope(root='./blocks'):
             element = tail[-2]
             if element[0].isupper() == False:
                 continue
-            
+
             blocks[scope][element] = defaultdict(list)
-            
+
             for mod_type, mod_value in [(mod.split('/')[-2], mod.split('/')[-1]) for mod in glob.glob(scope_root + '/%s/_*/*.py' % element)]:
                 if mod_value.find('_test.py') != -1:
                     continue
 
                 mod_type = mod_type[1:]
                 mod_value = mod_value.replace('.py', '')
-                
+
                 blocks[scope][element][mod_type].append(mod_value)
-       
+
         inner_blocks = bem_scope(scope_root)
         blocks[scope] = {
             **blocks[scope],
@@ -76,6 +76,6 @@ def bem_scope_module(scopes, root=''):
 
     if root:
         sys.modules[__name__ + root] = type(root, (object,), blocks)
-    
+
 root = bem_scope()
 bem_scope_module(root)

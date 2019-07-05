@@ -16,6 +16,32 @@ except ImportError:
 
 libs = ['./spice/']
 
+import logging
+import collections
+
+
+class TailLogHandler(logging.Handler):
+    def __init__(self, log_queue):
+        logging.Handler.__init__(self)
+        self.log_queue = log_queue
+
+    def emit(self, record):
+        self.log_queue.append(self.format(record))
+
+
+class TailLogger(object):
+
+    def __init__(self, maxlen):
+        self._log_queue = collections.deque(maxlen=maxlen)
+        self._log_handler = TailLogHandler(self._log_queue)
+
+    def contents(self):
+        return '\n'.join(self._log_queue)
+
+    @property
+    def log_handler(self):
+        return self._log_handler
+
 
 class Simulate:
     block = None
@@ -28,12 +54,19 @@ class Simulate:
 
     def __init__(self, block, libs=libs):
         self.block = block
-        
+
         from skidl.tools.spice import node
         self.circuit = builtins.default_circuit.generate_netlist(libs=libs)
-        self.node = node
 
-        print(self.circuit)
+        # Grab ERC from logger 
+        erc = logging.getLogger('ERC_Logger')
+        tail = TailLogger(10)
+        log_handler = tail.log_handler
+        erc.addHandler(log_handler)
+        builtins.default_circuit.ERC()
+        self.ERC = tail.contents() 
+
+        self.node = node
 
     def measures(self, analysis):
         index_field = None
@@ -51,12 +84,12 @@ class Simulate:
             index = analysis.sweep
 
         pins = self.block.get_pins().keys()
-        
+
         current_branches = analysis.branches.keys()
-    
+
         voltage = {}
         for pin in pins:
-            try: 
+            try:
                 net = getattr(self.block, pin)
                 if net and pin != 'gnd' and net != self.block.gnd:
                     node = self.node(net)
@@ -78,23 +111,23 @@ class Simulate:
             entry = {
                 index_field: entity.value * entity.scale
             }
-            
+
             for key in voltage.keys():
                 entry['V_' + key] = u(voltage[key][index])
-                
+
             for key in current.keys():
                 if key.find('.') == -1:
                     entry['I_' + key] = u(current[key][index])
 
             data.append(entry)
-       
+
         return data
 
 
     def transient(self, step_time=0.01 @ u_ms, end_time=200 @ u_ms):
         self.simulation = self.circuit.simulator()
         analysis = self.simulation.transient(step_time=step_time, end_time=end_time) 
-       
+
         return self.measures(analysis) 
 
     def dc(self, params, temperature=None):
@@ -115,15 +148,15 @@ class Simulate:
             simulation = self.circuit.simulator(temperature=temp, nominal_temperature=temp)
             analysis = simulation.ac(**params)
             measures[str(temp)] = analysis
-     
+
         return measures
 
 
 def set_spice_enviroment():
     set_backup_lib('.')
-    set_default_tool(SPICE) 
+    set_default_tool(SPICE)
     builtins.SIMULATION = True
-    
+
     scheme = Circuit()
     builtins.default_circuit.reset(init=True)
     del builtins.default_circuit

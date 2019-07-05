@@ -26,7 +26,7 @@ class Modificator(Base):
 
     def circuit(self):
         super().circuit()
-        
+
         signal = self.output
         self.output = Net('FilterTrapOutput')
 
@@ -38,4 +38,4 @@ class Modificator(Base):
         lc.output += self.gnd
 
         circuit = signal & rin & (self.output | lc.input)
-       
+

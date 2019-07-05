@@ -12,7 +12,9 @@ export interface IProps extends IClassNameProps {
         [name:string]: string[]
     },
     load: IBlock[]
-    parts: IBlock[]
+    parts: {
+        [name: string]: IBlock
+    } 
 }
 
 export const Diagram = compose()(Base);

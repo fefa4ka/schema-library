@@ -2,6 +2,7 @@ from ..interface import Interfaced
 from bem.basic import Resistor
 from bem import u_Ohm
 from skidl import Part, Net
+import sys, time, pylibftdi as ftdi
 
 class Modificator(Interfaced):
     """
@@ -22,16 +23,14 @@ class Modificator(Interfaced):
         ISP interface. Applying series resistors on the SPI lines, as depicted in Connecting the SPI Lines to the
         ISP Interface, is the easiest way to achieve this. Typically, the resistor value R can be of 330Ω
         """
-        def bus_protect():
-            return Resistor()(330 @ u_Ohm)
 
         mosi = Net('MOSI')
         miso = Net('MISO')
         sck = Net('SCK')
 
-        isp_mosi = self['MOSI'] & connector[1] & bus_protect() & mosi
-        isp_miso = self['MISO'] & connector[9] & bus_protect() & miso
-        isp_sck = self['SCK'] & connector[7] & bus_protect() & sck
+        isp_mosi = self['MOSI'] & connector[1] & Resistor()(330 @ u_Ohm) & mosi
+        isp_miso = self['MISO'] & connector[9] & Resistor()(330 @ u_Ohm) & miso
+        isp_sck = self['SCK'] & connector[7] & Resistor()(330 @ u_Ohm) & sck
 
         connector[2] += self.v_ref
         connector[5] += self['RESET']
@@ -40,5 +39,38 @@ class Modificator(Interfaced):
         self.MOSI = mosi
         self.MISO = miso
         self.SCK = sck
-        
+
         return connector
+
+
+    # def set_device(self):
+
+    # # Set mode (bitbang / MPSSE)
+    # def set_bitmode(d, bits, mode):
+    #     return (d.setBitMode(bits, mode) if FTD2XX else
+    #                 d.ftdi_fn.ftdi_set_bitmode(bits, mode))
+ 
+    # # Open device for read/write
+    # def ft_open(index=0):
+    #     d = ftdi.Device(device_index=index)
+    #     return d
+ 
+    # # Set SPI clock rate
+    # def set_spi_clock(d, hz):
+    #     div = int((12000000 / (hz * 2)) - 1)  # Set SPI clock
+    #     ft_write(d, (0x86, div%256, div//256)) 
+    
+    # # Read byte data into list of integers
+    # def ft_read(d, nbytes):
+    #     s = d.read(nbytes)
+    #     return [ord(c) for c in s] if type(s) is str else list(s)
+    
+    # # Write list of integers as byte data
+    # def ft_write(d, data):
+    #     s = bytes(data)
+    #     return d.write(s)
+    
+    # # Write MPSSE command with word-value argument
+    # def ft_write_cmd_bytes(d, cmd, data):
+    #     n = len(data) - 1
+    #     ft_write(d, [cmd, n%256, n//256] + list(data))

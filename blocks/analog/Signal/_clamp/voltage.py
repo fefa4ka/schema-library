@@ -1,6 +1,7 @@
 from bem import u, u_A, u_Ohm, u_V
 from bem.analog.voltage import Divider
 from bem.basic import Diode, Resistor
+from skidl import Net
 
 from .. import Base
 

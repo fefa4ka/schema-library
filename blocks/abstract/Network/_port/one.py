@@ -10,7 +10,7 @@ class Modificator(Base):
 
     input = None
     output = None
-
+       
     # Link Routines
     def __series__(self, instance):
         if self.output and instance.input:

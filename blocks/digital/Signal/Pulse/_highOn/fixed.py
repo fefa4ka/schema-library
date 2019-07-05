@@ -27,23 +27,24 @@ class Modificator(Base):
         holder = Bipolar(type='npn', common='emitter')(
             base = Resistor()( self.R_holder_base)
         )
+        holder.v_ref += sensor.output
+        holder.gnd += self.gnd
 
         self.C_width = (self.width / self.R_pulse_base) * 1.4
         pulsar_width = RLC(series='C', vref='R')(
             C_series = self.C_width,
             R_vref = self.R_pulse_base)
+        pulsar_width.v_ref += self.v_ref
 
         pulsar = Bipolar(type='npn', common='emitter')(
             base = pulsar_width,
             collector = Resistor()(self.R_pulse_collector)
         )
     
-        sensor.v_ref += self.v_ref, pulsar_width.v_ref
-        sensor.gnd += self.gnd, holder.gnd
+        output = Net('onHightPulse')
 
-        holder.v_ref += sensor.output
-        pulse = self & sensor & pulsar
+        pulse = self & sensor & pulsar & output & holder
 
-        self.output = Net('onHightPulse')
-        pulsar.output += self.output, holder.input
+        self.output = output
+
     

@@ -51,7 +51,7 @@ export class UnitInput extends React.Component<IProps, {}> {
         const selectAfter = (
             <Select
                 defaultValue="base"
-                onChange={unit =>
+                onChange={(unit:any) =>
                     this.setState({ exponenta: scale[unit][1] },
                         () => this.props.onChange(this.onChange(this.state.value.toString())))}>
                 {Object.keys(scale).map(unit => {

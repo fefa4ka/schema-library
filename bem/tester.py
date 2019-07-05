@@ -16,14 +16,14 @@ try:
     import __builtin__ as builtins
 except ImportError:
     import builtins
-        
+
 class Test:
     builder = None
     block = None
 
     def __init__(self, builder):
         set_spice_enviroment()
-        
+
         self.builder = builder
 
     def cases(self):
@@ -33,20 +33,20 @@ class Test:
 
         for name, method in methods:
             cases[name] = [arg for arg in inspect.getargspec(method).args if arg not in ['self', 'args']]
-        
+
         return cases
 
     def description(self, method):
         description = getattr(self, method).__doc__.strip()
-        
+
         return description
 
     # Signal source configuration
-    
+
     # def sources(self):
     #     # sources = test_sources
     #     sources = self._sources if hasattr(self, '_sources') and self._sources else test_sources
-        
+
     #     gnd = ['gnd']
     #     if len(self.body_kit()) == 0:
     #         gnd.append('output')
@@ -59,7 +59,7 @@ class Test:
     #     sources =  self.sources()
     #     series_sources = defaultdict(list)
     #     series_sources_allready = []
-        
+
     #     periods = []  # frequency, time, delay, duration
         
     #     # Get Series Source with same input
@@ -112,13 +112,13 @@ class Test:
             
     #         for pin in source['pins']['p']:
     #             signal['p'] += getattr(self.block, pin)
-    
+
     # Load configuration
     def body_kit(self):
         body_kit = self._body_kit if hasattr(self, '_body_kit') and self._body_kit else test_body_kit
 
         return body_kit
-    
+
     def body_kit_circuit(self):
         for index, body_kit in enumerate(self.body_kit()):
             mods = {}
@@ -129,7 +129,7 @@ class Test:
             LoadBlock = Build(body_kit['name'], **mods, ref=ref).block
             args = LoadBlock.parse_arguments(body_kit['args'])
             Load = LoadBlock(**args)
-            
+
             for body_kit_pin in body_kit['pins'].keys():
                 for pin in body_kit['pins'][body_kit_pin]:
                     Load_pin = getattr(Load, body_kit_pin)
@@ -148,26 +148,31 @@ class Test:
 
     def simulate(self, args, end_time=None, step_time=None):
         self.circuit(args)
-    
+
         if not (end_time and step_time):
             period = get_minimum_period(self.body_kit())
             end_time = period * 4
             step_time = period / 50
 
-        simulation = Simulate(self.block).transient(end_time=end_time @ u_s, step_time=step_time @ u_s)
-        
-        return simulation
+        simulation = Simulate(self.block)
+        data = simulation.transient(end_time=end_time @ u_s, step_time=step_time @ u_s)
+
+        return {
+            'data': data,
+            'circuit': str(simulation.circuit),
+            'erc': simulation.ERC
+        }
 
 def BuildTest(Block, *args, **kwargs):
         name = Block.name
         mods = {}
         tests = []
-        
+
         block_dir = name.replace('.', '/')
 
         base_file = Path(BLOCKS_PATH) / block_dir / ('__init__.py')
         base = base_file.exists() and importlib.import_module(BLOCKS_PATH + '.' + name).Base        
-        
+
         base_test = Path(BLOCKS_PATH) / block_dir / ('test.py')
         BaseTest = base_test.exists() and importlib.import_module(BLOCKS_PATH + '.' + name + '.test')
         if BaseTest:
@@ -186,7 +191,7 @@ def BuildTest(Block, *args, **kwargs):
                 else:
                     value = str(value)
                     mods[mod] = value.split(',')
-            
+
             for mod, value in base.mods.items():
                 if not mods.get(mod, None):
                     mods[mod] = value

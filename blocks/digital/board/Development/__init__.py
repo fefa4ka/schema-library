@@ -11,12 +11,12 @@ class Base(Electrical()):
         power_5V = Regulator(via='ic')(V = 10 @ u_V, V_out = 5 @ u_V)
         power_5V.input += self.v_ref
         power_5V.gnd += self.gnd
-        
+
         mcu = Microcontroller(
             vendor='Microchip_ATmega',
             series='ATmega8',
             reset='switch')(frequency = 8000000)
-            
+
         mcu_supply = power_5V & mcu
 
         # Interface conntectors
@@ -39,5 +39,5 @@ class Base(Electrical()):
                 for index, pin in enumerate(buses[bus]):
                     connector[index + 1] += mcu[pin]
 
-        
-        
+
+

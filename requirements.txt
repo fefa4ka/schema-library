@@ -9,3 +9,5 @@ flask-api
 peewee==3.8.2
 
 sympy
+lcapy
+Jetson.GPIO

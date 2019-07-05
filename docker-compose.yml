@@ -4,6 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    privileged: true
 
   ui:
     image: node:carbon

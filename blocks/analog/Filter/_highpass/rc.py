@@ -1,9 +1,10 @@
 from .. import Base
 
-from bem.basic import RLC
+from bem.basic import Resistor, Capacitor
 from bem import Net
 from PySpice.Unit import u_Ω, u_F, u_Hz
 from math import pi
+from lcapy import LSection, R, C
 
 class Modificator(Base):
     """**RC Highpass Filter**
@@ -28,20 +29,21 @@ class Modificator(Base):
     C_block = 1e-6 @ u_F
 
     def willMount(self, f_3dB_high):
-        self.R_shunt = self.R_load / 10
+        self.load(self.V)
+        self.R_shunt = self.R_load
         self.C_block = 1 / (2 * pi * self.R_shunt * f_3dB_high) @ u_F
         self.tau = self.R_shunt * self.C_block
 
-    def circuit(self):
-        super().circuit()
-        
-        signal = self.output
-        self.output = Net('FilterHighpassOutput')
-        rlc = RLC(series=['C'], gnd=['R'])(
-            C_series = self.C_block,
-            R_gnd = self.R_shunt
+    def network(self):
+        return LSection(
+            C('C_block'),
+            R('R_shunt')
         )
 
-        self.output = rlc.output
-        rlc.input += signal
-        rlc.gnd += self.gnd
+    def circuit(self):
+        super().circuit()
+
+        signal = self.output
+        self.output = Net('FilterHighpassOutput')
+
+        high_pass = signal & Capacitor()(self.C_block) & self.output & Resistor()(self.R_shunt) & self.gnd

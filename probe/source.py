@@ -110,7 +110,7 @@ class JDS6600(Device):
     def SINEV(self, channel, amplitude, frequency, offset=0 @ u_V):
         self.set_channel(channel, 'sine', amplitude, frequency, offset)
 
-    def PULSEV(self, channel, initial_value, pulsed_value, pulse_width, period):
+    def PULSEV(self, channel, initial_value, pulsed_value, pulse_width, period, delay_time):
         frequency = (1 / u(period)) @ u_Hz
         offset = (pulsed_value / 2) + initial_value
         amplitude = pulsed_value

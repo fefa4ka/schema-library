@@ -17,7 +17,7 @@ class Modificator(Base):
         super().circuit()
 
         self.R_protect = self.R_load / 10
-        
+
         follower = Bipolar(type='npn', follow='emitter')(
             base = Resistor()(self.R_protect, **self.load_args),
             **self.load_args
@@ -27,5 +27,4 @@ class Modificator(Base):
         follower.v_ref += self.v_ref
         self.output = follower.output
 
-        
 

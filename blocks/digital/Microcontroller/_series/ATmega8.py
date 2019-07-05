@@ -1,6 +1,7 @@
 from bem import Block, Net, u_uF, u_pF
 from bem.abstract import Network
-from bem.basic import Capacitor, Oscillator
+from bem.basic import Capacitor
+from bem.basic.oscillator import Crystal
 
 pins = {}
 pins['ATmega8-16PU'] = {
@@ -52,11 +53,11 @@ class Modificator(Network(interface=['uart', 'spi', 'i2c'])):
 
         # External resonator if frequency non 0
         if self.frequency != 0:
-            oscillator = Oscillator(type='crystal')(frequency=self.frequency)
+            oscillator = Crystal()(frequency=self.frequency)
             # Creating resonation circuit
             cap = self.gnd & Capacitor()(22 @ u_pF) \
                     & self['XTAL1'] \
                         & oscillator \
                     & self['XTAL2'] \
                 & Capacitor()(22 @ u_pF) & self.gnd
-        
+

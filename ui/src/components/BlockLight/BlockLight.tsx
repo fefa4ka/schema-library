@@ -274,7 +274,7 @@ export class BlockLight extends React.Component<IProps, {}> {
                             placeholder='Select probe'
                             value={probe && probe.name}
                             // defaultValue=''
-                            onChange={name => {
+                            onChange={(name:any) => {
                                 this.setState(({ block }: State) => {
                                     console.log(name, block)
                                     if (block) {
@@ -335,7 +335,7 @@ export class BlockLight extends React.Component<IProps, {}> {
                             defaultValue={device_port}
                             style={{ width: '100%' }}
                             placeholder='Select serial port'
-                            onChange={port => this.handleDeviceChange({ port })}
+                            onChange={(port:any) => this.handleDeviceChange({ port })}
                         >
                             {this.state.serial.map(item => <Option value={item.port} key={item.port}>{item.port} {item.desc}</Option>)}
                     

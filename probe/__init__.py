@@ -64,4 +64,4 @@ def get_minimum_period(sources):
                 if not min_period or min_period > time:
                     min_period = time
 
-    return period if min_period and period / min_period <= 20 else period / 5 if period else 0.1
+    return period if min_period and period / min_period <= 20 else period / 5 if period else 1

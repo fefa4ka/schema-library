@@ -24,8 +24,6 @@ class Base(Block):
     G = 0 @ u_S
     V_drop = 0 @ u_V
 
-    ref = 'R'
-
     def willMount(self):
         """
             value -- A resistor is made out of some conducting stuff (carbon, or a thin metal or carbon film, or wire of poor conductivity), with a wire or contacts at each end. It is characterized by its resistance.
