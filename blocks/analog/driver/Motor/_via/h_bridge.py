@@ -1,10 +1,11 @@
-from bem.abstract import Electrical, Network
+from .. import Base
+from bem.abstract import Network
 from bem.basic import Diode
 from bem.basic.transistor import Field
 from bem import Net, u_V
 from collections import defaultdict
 
-class Base(Electrical(), Network(port='two')):
+class Modificator(Base, Network(port='two')):
 
     pins = {
         'input': 'ForwardSignal',

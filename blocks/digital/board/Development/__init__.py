@@ -1,29 +1,34 @@
 from bem.abstract import Electrical, Network
+from bem.basic import Diode, Plug
 from bem.analog.voltage import Regulator
+from bem.analog.driver import Led
 from bem.digital import Microcontroller
 from skidl import Part
-from bem import u_V
+from bem import u_V, u_Hz
 import re
 from collections import defaultdict
 
 class Base(Electrical()):
+    series = 'ATmega8'
+    frequency = 8000000 @ u_Hz
+
+    def willMount(self, series, frequency):
+        pass
+
     def circuit(self):
-        power_5V = Regulator(via='ic')(V = 10 @ u_V, V_out = 5 @ u_V)
-        power_5V.input += self.v_ref
-        power_5V.gnd += self.gnd
-
         mcu = Microcontroller(
-            vendor='Microchip_ATmega',
-            series='ATmega8',
-            reset='switch')(frequency = 8000000)
+            series=self.series,
+            reset='switch')(frequency=self.frequency)
 
-        mcu_supply = power_5V & mcu
+        self.V_max = mcu.V * 2 
 
-        # Interface conntectors
+        power = Regulator(via='ic')(V=self.V_max, V_out=mcu.V)
+        mcu_supply = Plug(power='dc')(V=self.V_max) & power & mcu
+        supply_indication = power & Led(via='resistor')(diodes=Diode(type='led')(color='green'))
+
         interfaces = {}
         for interface in mcu.mods['interface']:
-            connector_builder = getattr(mcu, interface + '_connector')
-            interfaces[interface] = connector_builder()
+            interfaces[interface] = mcu & Plug(interface=interface)(ref=interface)
 
         buses = defaultdict(list)
         for pin in mcu.element.pins:

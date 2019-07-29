@@ -1,11 +1,10 @@
-  
-from .model import Part 
+from .model import Part
 from .model import Param, Mod, Prop
 from .util import u, is_tolerated
 
 class Stockman:
     upper_limit = []
-    
+
     def __init__(self, block):
         self.block = block
 
@@ -23,46 +22,49 @@ class Stockman:
 
         params = list(block.props.keys()) + list(block.mods.keys()) + list(load.keys())
         values = list(block.props.values()) + list(block.mods.values()) + list(load.values())
-        
+
         return params, values
-        
+
     def related_parts(self):
         name = self.block.name
         parts = Part.select().where(Part.block == name)
-        
+
         return parts
 
     def suitable_parts(self):
-        """Available parts in stock 
+        """Available parts in stock
             from Part model
             filtered by Block modifications and params and spice model.
-        
+
         Returns:
             list -- of parts with available values
         """
         available = []
 
         parts = self.related_parts()
-        
+
         for part in parts:
             if self.is_part_proper(part):
                 available.append(part)
 
         return available
-    
+
     def is_part_proper(self, part):
         params, values = self.request
+
+        if not self.check_mods(part):
+            return False
 
         units = value[params.index('units')] if 'units' in params else 1
         if not self.is_units_enough(part, units):
             return False
-        
+
         for index, param in enumerate(params):
             if param == 'value':
                 continue
-            
+
             value = values[index]
-            
+
             is_param_proper = self.check_attrubute(part, param, value)
 
             if is_param_proper:
@@ -71,16 +73,16 @@ class Stockman:
             break
         else:
             return True
-        
+
         return False
 
     def check_attrubute(self, part, attribute, desire):
         checks = ['param', 'mod', 'property', 'spice']
-        
+
         for check in checks:
             check_is_proper = getattr(self, 'check_' + check)
             is_proper = check_is_proper(part, attribute, desire)
-                
+
             if not is_proper:
                 break
         else:
@@ -98,7 +100,15 @@ class Stockman:
                 return False
 
         return True
-    
+
+    def check_mods(self, part):
+        for mod in part.mods:
+            block_mod = self.block.mods.get(mod.name, None)
+            if not block_mod:
+                return False
+
+        return True
+
     def check_mod(self, part, mod, desire):
         part_mods = part.mods.where(Mod.name == mod)
         if part_mods.count():
@@ -109,7 +119,7 @@ class Stockman:
                 return False
 
         return True
-    
+
     def check_property(self, part, property, desire):
         part_props = part.props.where(Prop.name == property)
         if part_props.count():
@@ -119,14 +129,14 @@ class Stockman:
                 return False
 
         return True
-        
+
     def check_spice(self, part, param, desire):
         spice_param = part.spice_params.get(param, None)
         if spice_param:
             return self.is_value_proper(param, desire, spice_param)
 
         return True
-            
+
     def is_value_proper(self, param, desire, value):
         if param in self.upper_limit:
             return self.is_value_enough(desire, value)
@@ -136,9 +146,9 @@ class Stockman:
     def is_value_preicise(self, desire, value):
         if is_tolerated(desire, value):
             return True
-            
+
         return False
-    
+
     def is_value_enough(self, desire, value, multiple=1):
         if u(value) >= u(desire) * multiple:
             return True
@@ -149,5 +159,5 @@ class Stockman:
         part_units = part.params.where(Param.name == 'units')
         if len(part_units) >= units or units == 1:
             return True
-        
+
         return False

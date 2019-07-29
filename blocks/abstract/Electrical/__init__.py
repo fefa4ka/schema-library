@@ -118,6 +118,9 @@ class Base(Network(port='one')):
         self.G = (1 / self.Z) @ u_S
 
     def load(self, V_load):
+        self.R_load = None
+        self.I_load = None
+        self.P_load = None
         Load = self.Load
 
         if type(Load) in [int, float] or Load.is_same_unit(1 @ u_Ohm):
@@ -134,7 +137,7 @@ class Base(Network(port='one')):
 
             self.P_load = V_load * self.I_load
 
-        if not hasattr(self, 'R_load'):
+        if not self.R_load:
             self.R_load = V_load / self.I_load
 
         if not hasattr(self, 'Z_load'):

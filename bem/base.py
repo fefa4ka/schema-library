@@ -7,6 +7,7 @@ from copy import copy
 from types import FunctionType
 import inspect
 import sys
+import re
 
 try:
     import __builtin__ as builtins
@@ -267,7 +268,9 @@ class Block:
         assign_pos = code.find('=')
         and_pos = code.find('&')
         or_pos = code.find('|')
-        ref = code[:assign_pos].strip().replace('self', '').capitalize()
+        ref = code[:assign_pos].strip().replace('self', '')
+        ref = re.sub("[\(\[].*?[\)\]]", "", ref).strip()
+        ref = ref.capitalize()
         value = code[assign_pos:]
         ref = ''.join([word.capitalize() for word in ref.replace('_', '.').split('.')])
 

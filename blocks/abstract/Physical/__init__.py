@@ -27,7 +27,7 @@ class Base(Electrical()):
     def __getitem__(self, *attrs_or_pins, **criteria):
         if hasattr(self, 'selected_part') and len(attrs_or_pins) == 1:
             attr = attrs_or_pins[0]
-            if len(attr) == 1:
+            if attr:
                 attr_value = self.selected_part.spice_params.get(attr, None) 
                 if attr_value:
                     return attr_value
@@ -190,8 +190,12 @@ class Base(Electrical()):
         for pin in self.selected_part.pins:
             units[pin.unit][pin.block_pin].append(pin.pin)
 
+        units = dict(units)
+        if not units.get(self.unit, None):
+            return
+
         # for unit in units.keys():
-        for block_pin in units[self.unit]:
+        for block_pin in units[self.unit].keys():
             for part_pin in units[self.unit][block_pin]:
                 pin_number = int(part_pin.split('/')[1])
                 device_name = self.name.replace('.', '')

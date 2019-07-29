@@ -47,7 +47,7 @@ def is_tolerated(a, b, tollerance=params_tolerance):
     A mathematical model for symmetrical parameter variations is
     `P_(nom) * (1 − ε) ≤ P ≤ P_(nom)(1 + ε)`
     in which `P_(nom)` is the nominal specification for the parameter such as the resistor value or independent source value, and `ε` is the fractional tolerance for the component. 
-    
+
     For example, a resistor `R` with nominal value of 10 kOhm and a 5 percent tolerance could exhibit a resistance anywhere in the following range:
     `10,000 * (1 − 0.05) ≤ R ≤ 10,000 * (1 + 0.05)`
     `9500 ≤ R ≤ 10,500`
@@ -61,7 +61,7 @@ def is_tolerated(a, b, tollerance=params_tolerance):
             a = u(a)
         except:
             pass
-   
+
     if type(b) not in [int, float]:
         try:
             b = u(b)
@@ -79,6 +79,5 @@ def is_tolerated(a, b, tollerance=params_tolerance):
             return True
     except:
         pass
-    
+
     return False
-    

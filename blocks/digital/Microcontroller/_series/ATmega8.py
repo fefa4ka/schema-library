@@ -1,4 +1,4 @@
-from bem import Block, Net, u_uF, u_pF
+from bem import Block, Net, u_V, u_uF, u_pF
 from bem.abstract import Network
 from bem.basic import Capacitor
 from bem.basic.oscillator import Crystal
@@ -36,6 +36,7 @@ class Modificator(Network(interface=['uart', 'spi', 'i2c'])):
     throughputs approaching 1MIPS per MHz, allowing the system designer to optimize power consumption
     versus processing speed.
     """
+    V = 5 @ u_V 
 
     def apply_part(self, part):
         super().apply_part(part)

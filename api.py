@@ -521,7 +521,7 @@ def get_part_params(name):
 
     return {
         'spice': Block.spice_params if hasattr(Block, 'spice_params') else{},
-        'pins': list(Block.pins.keys()),
+        'pins': list(Block.pins.keys()) if type(Block.pins) == dict else list(Block.pins().keys()),
         'part': {**Block.get_arguments(Block), **Block.get_params(Block)},
         'props': props
     }

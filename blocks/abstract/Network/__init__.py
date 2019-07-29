@@ -20,7 +20,8 @@ class Base(Block):
         if transfer:
             self.H = transfer.latex_math()
 
-        for pin in self.pins.keys():
+        pins = self.get_pins_definition()
+        for pin in pins.keys():
             net = getattr(self, pin)
             if net:
                 net.fixed_name = False
@@ -129,9 +130,16 @@ class Base(Block):
 
         return pins
 
+    def get_pins_definition(self):
+        pins = self.pins 
+        pins = pins if type(pins) == dict else pins()
+
+        return pins
+
     def set_pins(self):
-        for pin in self.pins.keys():
-            pin_description = [self.pins[pin]] if type(self.pins[pin]) == bool else self.pins[pin]
+        pins = self.get_pins_definition() 
+        for pin in pins.keys():
+            pin_description = [pins[pin]] if type(pins[pin]) == bool else pins[pin]
             device_name = ''.join([name for name in self.name.split('.') if name[0] == name[0].upper()])
             net_name = device_name + ''.join([word.capitalize() for word in pin.split('_')])
 

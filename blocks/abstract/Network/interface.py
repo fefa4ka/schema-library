@@ -10,10 +10,10 @@ class Interfaced(Base):
 
     def __and__(self, instance):
         if issubclass(type(instance), Base):
-            self.__series__(instance)
+            self.__interface__(instance)
 
             return instance
-            
+
         if isinstance(instance, MethodType):
             return instance(self)
 
@@ -21,24 +21,24 @@ class Interfaced(Base):
 
     def __rand__(self, instance):
         if issubclass(type(instance), Base):
-            instance.__series__(self)
+            instance.__interface__(self)
 
             return instance
 
         if isinstance(instance, MethodType):
             return instance(self)
-            
+
         raise Exception
 
     def __or__(self, instance):
-        raise Exception 
+        raise Exception
 
-    def __series__(self, instance):
-        for protocol in instance.mods['interface']: 
-            if protocol in self.mods['iterface']:
+    def __interface__(self, instance):
+        for protocol in instance.mods['interface']:
+            if protocol in self.mods['interface']:
                 interface = getattr(self, protocol)
                 interface(instance)
-                
+
         self.connect_power_bus(instance)
 
     def get_interface_pins(self, protocol):
