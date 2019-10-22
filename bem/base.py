@@ -22,7 +22,7 @@ class Block:
     mods = {}
     props = {}
 
-    files = []
+    files = ['bem/base.py']
     inherited = []
 
     doc_methods = ['willMount']
@@ -269,8 +269,9 @@ class Block:
         and_pos = code.find('&')
         or_pos = code.find('|')
         ref = code[:assign_pos].strip().replace('self', '')
-        ref = re.sub("[\(\[].*?[\)\]]", "", ref).strip()
-        ref = ref.capitalize()
+        ref = re.sub("[\(\[].*?[\)\]]", "", ref)
+        ref = re.sub('[(){}<>]', '', ref)
+        ref = ref.strip().capitalize()
         value = code[assign_pos:]
         ref = ''.join([word.capitalize() for word in ref.replace('_', '.').split('.')])
 

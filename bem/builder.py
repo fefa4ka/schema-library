@@ -10,7 +10,7 @@ from collections import OrderedDict
 
 logger = logging.getLogger(__name__)
 
-    
+
 class Build:
     name = None
     base = None
@@ -26,16 +26,16 @@ class Build:
         self.models = []
         self.inherited = []
         self.files = []
-        
+
         block_dir = self.name.replace('.', '/')
 
         base_file = Path(BLOCKS_PATH) / block_dir / ('__init__.py')
-        self.base = base_file.exists() and importlib.import_module(BLOCKS_PATH + '.' + self.name).Base        
-        
+        self.base = base_file.exists() and importlib.import_module(BLOCKS_PATH + '.' + self.name).Base
+
         if self.base:
             if type(self.base.files) == list:
                 self.files = list(self.base.files)
-            
+
             self.files.append(str(base_file))
 
             for mod, value in kwargs.items():
@@ -44,7 +44,7 @@ class Build:
                 else:
                     value = str(value)
                     self.mods[mod] = value.split(',')
-            
+
             for mod, value in self.base.mods.items():
                 if not self.mods.get(mod, None):
                     self.mods[mod] = value
@@ -60,21 +60,25 @@ class Build:
                             self.files.append(str(module_file))
                             Module = importlib.import_module(BLOCKS_PATH + '.' + mod_block_dir.replace('/', '.') + '._' + mod + '.' + value)
                             self.models.append(Module.Modificator)
+
                             mods = Module.Modificator.mods if hasattr(Module.Modificator, 'mods') else None
                             if mods:
                                 self.mods = {
                                     **mods,
                                     **self.mods
                                 }
+
                         else:
                             self.props[mod] = value
-  
+
             for key, value in self.props.items():
                 del self.mods[key]
         else:
             self.props = kwargs
 
-        self.files = list(set(self.files))
+        self.files = sorted(set(self.files), key=self.files.index)
+        self.files.reverse()
+
 
     # Run once
     def ancestors(self, ancestor=None):
@@ -86,36 +90,42 @@ class Build:
         inherited = ancestor.inherited if hasattr(ancestor, 'inherited') else []
         for parent in inherited:
             ParentBlock = parent(**mods)
-            parent_models = getmro(ParentBlock)[1:-1] 
+            parent_models = getmro(ParentBlock)[1:-1]
             self.inherited += parent_models
             self.ancestors(ParentBlock)
 
         return list(OrderedDict.fromkeys(self.inherited))
 
-    @property
-    def block(self):
+
+    def blocks(self):
         if self.base:
-            Models = self.models
-            
+            Models = self.models.copy()
+
             Models.reverse()
-           
+
             if self.base not in Models:
                 Models.append(self.base)
 
-            Models += self.ancestors() 
-            
+            Models += self.ancestors()
+
         else:
             Models = [BaseBlock]
-            
+
+        return Models
+
+    @property
+    def block(self):
+        Models = self.blocks()
         self.inherited = []
-        
+
         Block = type(self.name,
                     tuple(Models),
                     {
                         'name': self.name,
                         'mods': self.mods,
                         'props': self.props,
-                        'files': self.files
+                        'files': self.files,
+                        'models': Models
                     })
 
         return Block
@@ -128,15 +138,15 @@ class Build:
     def spice(self):
         from skidl import SKIDL, SPICE, set_default_tool, SchLib, Part
         from skidl.tools.spice import set_net_bus_prefixes
-        
-        set_default_tool(SPICE) 
+
+        set_default_tool(SPICE)
         set_net_bus_prefixes('N', 'B')
         _splib = SchLib('pyspice', tool=SKIDL)
-        
+
         for p in _splib.get_parts():
             if self.name == p.name or (hasattr(p, 'aliases') and self.name in p.aliases):
                 return p
-            
+
         if self.name.find(':') != -1:
             kicad, spice = self.name.split(':')
 

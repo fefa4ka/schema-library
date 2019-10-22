@@ -32,7 +32,6 @@ const cnBlock = cn('Block')
 
 const initialState = {
     available: [],
-    params_description: {},
     selectedMods: [],
     params: {},
     spiceAttrs: {},
@@ -60,9 +59,6 @@ interface IState extends IBlock {
         model: string,
         id: number
     }[],
-    params_description: {
-        [name:string]: string
-    },
     selectedMods: string[],
     spiceAttrs: {
         [name:string]: {
@@ -147,9 +143,13 @@ export class Block extends React.Component<IProps, {}> {
             .then(res => {
                 this.loadBlockTimeout = 0
 
-                const { description, available, params_description, args, params, mods, props, pins, files, nets, parts, body_kit, pcb_body_kit } = res.data               
-                
-                const selectedMods = Object.keys(mods).reduce((selected, type) =>
+                const { description, available, args, params, mods, props, pins, files, nets, parts, body_kit, pcb_body_kit } = res.data               
+
+                const modKeys = this.props.mods 
+                    ? Object.keys(this.props.mods)
+                    : []
+
+                const selectedMods = Object.keys(mods).filter(mod => modKeys.indexOf(mod) !== -1).reduce((selected, type) =>
                     selected.concat(
                         Array.isArray(mods[type])
                             ? mods[type].map((value: string) => type + ':' + value)
@@ -170,7 +170,6 @@ export class Block extends React.Component<IProps, {}> {
                     return {
                         description,
                         available, 
-                        params_description,
                         mods,
                         props,
                         args,
@@ -325,7 +324,6 @@ export class Block extends React.Component<IProps, {}> {
                 </Row>
 
                 {this.state.activeTab !== 'code'
-                
                     ? <Definition
                         name={name}
                         available={this.state.available}

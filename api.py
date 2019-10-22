@@ -156,7 +156,6 @@ def block(name):
             'mods': { **Block.mods, **{ key: prop for key, prop in Block.props.items() if key in props.keys() }},
             'props': props,
             'description': Block.get_description(Block),
-            'params_description': Block.get_params_description(Block),
             'args': Instance.get_arguments(),
             'params': Instance.get_params(),
             'pins': Instance.get_pins(),
@@ -170,6 +169,14 @@ def block(name):
         }
 
         params['params'] = {param: params['params'][param] for param in params['params'].keys() if not params['args'].get(param, None)}
+
+        description =  params['params_description']
+        for param in description.keys():
+            if params['args'].get(param, None):
+                params['args'][param]['description'] = description[param]
+
+            if params['params'].get(param, None):
+                params['params'][param]['description'] = description[param]
 
         return params
 
