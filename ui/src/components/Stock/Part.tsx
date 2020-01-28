@@ -46,8 +46,8 @@ type FormState = {
   spiceAttrs: TParams,
   spice: string,
   spiceParams: { [name: string]: number },
-  symbol_pins: string[]
-  pins: string[], 
+  symbol_pins: string[],
+  pins: string[]
 }
 
 const PrintLabel = ({ block, model, description, footprint, params }: any) => {
@@ -106,16 +106,16 @@ class AddForm extends React.Component<{ form: any, selectedBlock: string, mods: 
   }
 
   componentDidUpdate(prevProps: any) {
-    if (this.props.data.id != prevProps.data.id) {
+    if (this.props.data.id !== prevProps.data.id) {
       this.loadStockPart()
     }
   }
   loadStockPart() {
     const { data } = this.props
-      const partData = this.props.data.model && {
+      const partData = (this.props.data.model && {
         ...this.props.data,
         ...this.props.data.stock[0] || {}
-      } || {} 
+      }) || {} 
 
 
       this.setState({

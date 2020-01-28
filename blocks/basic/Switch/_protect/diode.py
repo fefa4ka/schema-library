@@ -12,7 +12,7 @@ class Modificator(Base):
         super().circuit()
         
         if 'on' in self.mods['on_press']:
-            protect = self.load_block.input & Diode()(**self.load_args)['K,A'] & self.load_block.output
+            protect = self.load_block.input & Diode(type='generic')(**self.load_args)['K,A'] & self.load_block.output
         
         if 'off' in self.mods['on_press']:
-            protect = self.load_block.input & Diode()(**self.load_args)['A,K'] & self.load_block.output
+            protect = self.load_block.input & Diode(type='generic')(**self.load_args)['A,K'] & self.load_block.output

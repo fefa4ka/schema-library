@@ -9,10 +9,6 @@ class Base(Electrical(), Network(port='two')):
     Switch connected series to the signal.
     """
 
-    mods = {
-        'input': ['physical']
-    }
-
     V_ref = 15 @ u_V
     V_input = 10 @ u_V
 

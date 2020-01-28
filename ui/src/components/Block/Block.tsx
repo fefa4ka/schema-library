@@ -97,7 +97,6 @@ export class Block extends React.Component<IProps, {}> {
         this.loadBlock()
     }
     componentDidUpdate(prevProps: IProps, prevState: IState) {
-        
         const isModChanged = JSON.stringify(prevState.selectedMods) !== JSON.stringify(this.state.selectedMods)
 
         const emptyBlock = {
@@ -114,6 +113,7 @@ export class Block extends React.Component<IProps, {}> {
             delete emptyBlock.selectedMods
         }
         if (prevProps.name !== this.props.name || isModChanged) {
+		
             this.setState(emptyBlock, this.updateBlock)
         }
         return true
@@ -182,7 +182,6 @@ export class Block extends React.Component<IProps, {}> {
                         ...elements,
                         simulationShouldUpdate: true,
                         pcbShouldUpdate: true
-                        
                     }
                 })
             }).catch(this.catchError)
@@ -408,7 +407,9 @@ export class Block extends React.Component<IProps, {}> {
                             pcb_body_kit={pcb_body_kit}
                             activeTab={this.state.activeTab}
                             shouldReload={(callback:any) => {
+								console.log('PCB Should reload', this.state.pcbShouldUpdate, this.state)
                                 if (name && this.state.activeTab === 'pcb' && this.state.pcbShouldUpdate) {
+								console.log('PCB LOADING')
                                     this.setState({ pcbShouldUpdate: false }, callback)
 
                                     return true

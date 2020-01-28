@@ -22,7 +22,7 @@ class Modificator(Base):
     }
 
     set_period = 0.5 @ u_s
-    reset_period = 0.16 @ u_s
+    reset_period = 0.3 @ u_s
     V_load = 5 @ u_V
 
     def willMount(self, V_load, set_period, reset_period):

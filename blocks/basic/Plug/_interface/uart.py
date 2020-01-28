@@ -1,5 +1,6 @@
 from bem.abstract import Network
+from .. import Base
 
-class Modificator(Network(interface='uart')):
+class Modificator(Base, Network(interface='uart')):
     pass
 

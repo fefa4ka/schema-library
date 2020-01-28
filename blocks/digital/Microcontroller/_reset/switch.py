@@ -43,4 +43,4 @@ class Modificator(Base):
         recommended in noisy environments. The components should be located physically close to the RESET
         pin of the AVR.Recommended circuit of a RESET line is shown in the following circuit diagram.
         """
-        esd_protection = self['RESET'] & Diode()()['A, K'] & self.v_ref
+        esd_protection = self['RESET'] & Diode(type='generic')()['A, K'] & self.v_ref

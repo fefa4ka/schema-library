@@ -8,6 +8,7 @@ kicad/
 .vscode
 server/public
 ui/tmp
+ui/node_modules/
 yarn.lock
 *_lib_sklib.py
 *.erc

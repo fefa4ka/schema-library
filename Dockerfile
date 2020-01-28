@@ -1,7 +1,7 @@
 FROM alpine:3.9
 
-# python3
-RUN apk add --no-cache python3 && \
+# python3 and node.js with yarn
+RUN apk add --no-cache python3 yarn && \
     python3 -m ensurepip && \
     rm -r /usr/lib/python*/ensurepip && \
     pip3 install --upgrade pip setuptools && \
@@ -71,7 +71,8 @@ WORKDIR /app
 ADD requirements.txt /app/requirements.txt
 RUN apk add --no-cache \
         --virtual=.build-dependencies \
-        gcc git python3-dev python-dev musl-dev libffi-dev && \
+        gcc g++ git python3-dev python-dev musl-dev libffi-dev && \
+    pip3 install --no-deps git+https://github.com/xesscorp/skidl && \
     pip3 install -r /app/requirements.txt && \
     apk del .build-dependencies && \ 
     rm -vrf /var/cache/apk/*
@@ -87,6 +88,8 @@ ADD ./settings.py /app/settings.py
 ADD ./api.py /app/api.py
 COPY ./data.db /app/data.db
 ADD ./kicad /app/kicad/
+
+RUN cd bem && yarn install 
 
 ENTRYPOINT [ "python3" ]
 CMD ["api.py"]

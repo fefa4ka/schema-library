@@ -2,26 +2,27 @@ import datetime
 import glob
 import os
 from collections import defaultdict
+from copy import copy
 from math import isnan
+from subprocess import PIPE, run
 
-from flask import request, Response
+from flask import Response, request
 from flask_api import FlaskAPI
-
 from PySpice.Unit import u_A, u_Hz, u_ms, u_Ohm, u_s, u_V
 from PySpice.Unit.Unit import UnitValue
-from skidl import Circuit, Net, search, subcircuit, set_default_tool, set_backup_lib, KICAD, SPICE
+from skidl import (KICAD, SPICE, Circuit, Net, search, set_backup_lib,
+                   set_default_tool, subcircuit)
 
 from bem import Build, bem_scope
 from bem.abstract import Physical
-from bem.model import Part, Pin, Param, Mod, Prop, Stock
+from bem.model import Mod, Param, Part, Pin, Prop, Stock
 from bem.printer import Print
 from bem.simulator import Simulate, set_spice_enviroment
-from probe.read import get_sigrok_samples
-from probe import get_arg_units, get_minimum_period
-from probe.source import JDS6600, KA3005P, simulation_sources
 from bem.tester import BuildTest
-from copy import copy
-from subprocess import PIPE, run
+from probe import get_arg_units, get_minimum_period
+from probe.read import get_sigrok_samples
+from probe.source import JDS6600, KA3005P, simulation_sources
+
 try:
     import __builtin__ as builtins
 except ImportError:
@@ -170,7 +171,7 @@ def block(name):
 
         params['params'] = {param: params['params'][param] for param in params['params'].keys() if not params['args'].get(param, None)}
 
-        description =  params['params_description']
+        description = Block.get_params_description(Block)
         for param in description.keys():
             if params['args'].get(param, None):
                 params['args'][param]['description'] = description[param]
@@ -484,9 +485,10 @@ def get_footprint():
         # file = open(path, 'r')
         # data = '\n'.join(file.readlines())
         # file.close()
+        print(path)
         command = ['node', 'bem/mod2svg.js', path]
         result = run(command, stdout=PIPE, stderr=PIPE, universal_newlines=True)
-        # print(result)
+        print(result)
         data = result.stdout
         data = Response(data)
         data.headers['Content-Type'] = 'image/svg+xml'

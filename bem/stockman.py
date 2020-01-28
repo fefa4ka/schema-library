@@ -55,7 +55,7 @@ class Stockman:
         if not self.check_mods(part):
             return False
 
-        units = value[params.index('units')] if 'units' in params else 1
+        units = values[params.index('units')] if 'units' in params else 1
         if not self.is_units_enough(part, units):
             return False
 

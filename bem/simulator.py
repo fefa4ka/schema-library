@@ -62,9 +62,13 @@ class Simulate:
         erc = logging.getLogger('ERC_Logger')
         tail = TailLogger(10)
         log_handler = tail.log_handler
+        for handler in erc.handlers[:]:
+            erc.removeHandler(handler)
+
         erc.addHandler(log_handler)
         builtins.default_circuit.ERC()
         self.ERC = tail.contents() 
+        print(self.circuit)
 
         self.node = node
 

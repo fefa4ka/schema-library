@@ -5,8 +5,8 @@ class Base(Electrical()):
     diodes = []
 
     pins = {
-        'v_ref': ('Supply', ['input', 'output']),
-        'gnd': True
+        'v_ref': ('Supply', ['input']),
+        'gnd': ('Gnd', ['output'])
     }
 
     def willMount(self, diodes):

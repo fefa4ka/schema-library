@@ -10,13 +10,13 @@ class Modificator(Base):
 
     input = None
     output = None
-       
+
     # Link Routines
     def __series__(self, instance):
         if self.output and instance.input:
             self.output._name = instance.input._name = f'{self.name}{instance.name}_Net'
             self.output += instance.input
-        
+
         self.connect_power_bus(instance)
 
     def __parallel__(self, instance):
@@ -37,7 +37,7 @@ class Modificator(Base):
 
     def Z_out(self):
         return self.network().Z
-        
+
     def thevenin(self):
         """
             Thevenin’s theorem states that any two-terminal network of resistors and voltage sources is equivalent to a single impedance in series with a single voltage source V.

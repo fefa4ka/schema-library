@@ -3,6 +3,7 @@ from bem.basic import Diode, Plug
 from bem.analog.voltage import Regulator
 from bem.analog.driver import Led
 from bem.digital import Microcontroller
+from bem.digital.adapter import UsbUart
 from skidl import Part
 from bem import u_V, u_Hz
 import re
@@ -20,11 +21,13 @@ class Base(Electrical()):
             series=self.series,
             reset='switch')(frequency=self.frequency)
 
-        self.V_max = mcu.V * 2 
+        self.V_max = mcu.V * 2
 
         power = Regulator(via='ic')(V=self.V_max, V_out=mcu.V)
         mcu_supply = Plug(power='dc')(V=self.V_max) & power & mcu
         supply_indication = power & Led(via='resistor')(diodes=Diode(type='led')(color='green'))
+
+        usb = (mcu & UsbUart(via='atmega16u2')()) & Plug(interface='usb', type='b')()
 
         interfaces = {}
         for interface in mcu.mods['interface']:

@@ -27,7 +27,7 @@ def generate_netlist(self):
             sorted(self.get_nets(), key=lambda net: str(net.name))):
         net.code = code
         nets[net.name] = generate_netlist_net(net)
-    
+
     netlist = {
         'components': components,
         'netlist': nets
@@ -39,7 +39,7 @@ def generate_netlist(self):
 
     command = ['node', 'bem/netlist.js', '../' + path]
     result = run(command, stdout=PIPE, stderr=PIPE, universal_newlines=True)
-    
+
     return result.stdout
 
 def generate_netlist_component(self):

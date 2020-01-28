@@ -7,10 +7,6 @@ class Base(Electrical()):
     Pulse triggered when some event occur.
     """
 
-    mods = {
-        'highOn': ['fixed']
-    }
-
     width = 0.03 @ u_s
 
     pins = {

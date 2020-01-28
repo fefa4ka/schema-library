@@ -1,12 +1,12 @@
 import inspect
+
+import re
+import sys
+from copy import copy
+from types import FunctionType
 import logging
 
 from PySpice.Unit import FrequencyValue, PeriodValue
-from PySpice.Unit.Unit import UnitValue
-from copy import copy
-from types import FunctionType
-import inspect
-import sys
 import re
 
 try:
@@ -103,11 +103,14 @@ class Block:
             return False
 
     def __str__(self):
-        body = [self.name]
+        name = []
         for key, value in self.mods.items():
-            body.append(key + ' = ' + str(value))
+            name.append(' '.join([str(el).capitalize() for el in value]) + ' ' + key.capitalize())
 
-        return '\n'.join(body)
+        for word in self.name.split('.'):
+            name.append(word.capitalize())
+
+        return ' '.join(name)
 
     def title(self):
         # input = self.input
@@ -317,8 +320,4 @@ class Block:
                 }
 
         return params
-
-    def log(self, message):
-        logger.info(self.title() + ' - ' + str(message))
-
 

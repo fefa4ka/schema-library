@@ -72,7 +72,7 @@ class PCBmodePlotter extends PCBPlotter {
 
         module.pads.forEach((pad, index) => {
             const pin = {
-                location: [pad.pos.x, pad.pos.y],
+                location: [pad.pos.x, pad.pos.y]
             }
             const pad_name = pad.name || '_' + index.toString()
 
@@ -108,14 +108,25 @@ const components = Object.keys(parts).reduce((components, part) => {
         root.pins = pins_length
     }
     
-    components[part] = component
+    components[part] = {
+		...component
+	}
+
+	Object.keys(component.pins).forEach(pin => {
+		const original_pin = components[part].pins[pin]
+		components[part].pins[pin] = {
+			...original_pin,
+			...parts[part].pins[pin]
+		}
+	})
+
     return components
 }, {})
 
 
 // Arrange
 let graph = new dagre.graphlib.Graph()
-graph.setGraph({ edgesep: 1, nodesep: 10, ranksep: 10})
+graph.setGraph({ rankdir: 'LR', edgesep: 1, nodesep: 2, ranksep: 2})
 graph.setDefaultEdgeLabel(_ => ({}))
 
 Object.keys(components).forEach(origin => {
@@ -125,10 +136,10 @@ Object.keys(components).forEach(origin => {
     components[origin].rotate = rotate
     const rotate_rad = Math.PI / rotate
     const size = {
-        width: Math.abs(part.size.width * Math.sin(rotate_rad)) + Math.abs(part.size.height * Math.cos(rotate_rad)),
-        height: Math.abs(part.size.width * Math.cos(rotate_rad)) + Math.abs(part.size.height * Math.sin(rotate_rad))
+        width: Math.abs(part.size.width * Math.sin(rotate)) + Math.abs(part.size.height * Math.cos(rotate)),
+        height: Math.abs(part.size.width * Math.cos(rotate)) + Math.abs(part.size.height * Math.sin(rotate))
     }
-    graph.setNode(origin, { width: part.size.width, height: part.size.height })
+    graph.setNode(origin, { width: size.width, height: size.height })
 
     componentEdge(origin)
 })
@@ -154,8 +165,8 @@ function getRandomArbitrary(min, max) {
   
 dagre.layout(graph)
 
-pcb.width = graph.graph().width 
-pcb.height = graph.graph().height 
+pcb.width = graph.graph().width + 5 
+pcb.height = graph.graph().height + 5
 
 graph.nodes().forEach(function (name) {
     const node = graph.node(name)

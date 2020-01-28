@@ -24,7 +24,7 @@ class Modificator(Base):
         super().circuit()
 
         R = Resistor()
-        D = Diode()
+        D = Diode(type='generic')
 
         signal = self.input
         self.input = Net('CompensationInput')

@@ -10,7 +10,7 @@ class Modificator(Base):
         super().circuit()
 
         R = Resistor()
-        D = Diode()
+        D = Diode(type='generic')
 
         load = {
             'V': self.V,

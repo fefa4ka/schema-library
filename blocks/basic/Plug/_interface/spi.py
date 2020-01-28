@@ -1,7 +1,10 @@
 from bem.abstract import Network
+from bem.basic import Resistor
+from bem import u_Ohm
 from skidl import Net
+from .. import Base
 
-class Modificator(Network(interface='spi')):
+class Modificator(Base, Network(interface='spi')):
     def spi(self, instance):
         """
         If additional devices are connected to the ISP lines, the programmer must be protected from any device
@@ -20,7 +23,8 @@ class Modificator(Network(interface='spi')):
 
         for pin in ['MOSI', 'MISO', 'SCK']:
             instance[pin].disconnect()
-            instance[pin] += self[pin]
+            instance_pin = instance[pin]
+            instance_pin += self[pin]
 
         self.MOSI = mosi
         self.MISO = miso

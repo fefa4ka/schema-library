@@ -47,7 +47,7 @@ class Part(BaseModel):
     def spice_params(self):
         if self.spice.upper().find('SUBCKT') != -1:
             return {}
-            
+
         without_comments = filter(lambda line: line[0] != '*', self.spice)
         replace_plus_joints = ''.join(without_comments).replace('+', ' ').replace('(', ' ').replace(')', ' ').upper()
         reduce_double_spaces = ' '.join(replace_plus_joints.split()).replace(' =', '=').replace('= ', '=')

@@ -27,7 +27,7 @@ class Base(Electrical()):
     def __getitem__(self, *attrs_or_pins, **criteria):
         if hasattr(self, 'selected_part') and len(attrs_or_pins) == 1:
             attr = attrs_or_pins[0]
-            if attr:
+            if attr and type(attr) == str:
                 attr_value = self.selected_part.spice_params.get(attr, None) 
                 if attr_value:
                     return attr_value

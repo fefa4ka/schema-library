@@ -1,7 +1,8 @@
 from bem import Block, Net, u_V, u_uF, u_pF
-from bem.abstract import Network
+from .. import Base
 from bem.basic import Capacitor
 from bem.basic.oscillator import Crystal
+from bem.abstract import Network
 
 pins = {}
 pins['ATmega8-16PU'] = {
@@ -29,7 +30,33 @@ pins['ATmega8-16PU'] = {
     'PC5': ['ADC5', 'SCL']
 }
 
-class Modificator(Network(interface=['uart', 'spi', 'i2c'])):
+pins['ATmega8U2'] = {
+    'PB0': ['SS', 'PCINT0'],
+    'PB1': ['SCLK', 'PCINT1'],
+    'PB2': ['PDI', 'MOSI', 'PCINT2'],
+    'PB3': ['PDO', 'MISO', 'PCINT3'],
+    'PB4': ['T1', 'PCINT4'],
+    'PB5': 'PCINT5',
+    'PB6': 'PCINT6',
+    'PB7': ['PCINT7', 'OC.0A', 'OC.1C'],
+    'PC0': 'XTAL2',
+    'PC1': ['RESET', 'dW'],
+    'PC2': ['PCINT11', 'AIN2'],
+    'PC4': ['PCINT10'],
+    'PC5': ['PCINT9', 'OC.1B'],
+    'PC6': ['OC.1A', 'PCINT8'],
+    'PC7': ['INT4', 'ICP1', 'CLKO'],
+    'PD0': ['OC.0B', 'INT0'],
+    'PD1': ['AIN0', 'INT1'],
+    'PD2': ['RXD1', 'AIN1', 'INT2'],
+    'PD3': ['TXD1', 'INT3'],
+    'PD4': ['INT5', 'AIN3'],
+    'PD5': ['XCK', 'AIN4', 'PCINT12'],
+    'PD6': ['RTS', 'AIN5', 'INT6'],
+    'PD7': ['CTS', 'HWB', 'AIN6', 'T0', 'INT7']
+}
+
+class ATmega(Base):
     """
     The Atmel®AVR® ATmega8 is a low-power CMOS 8-bit microcontroller based on the AVR RISC
     architecture. By executing powerful instructions in a single clock cycle, the ATmega8 achieves
@@ -41,7 +68,10 @@ class Modificator(Network(interface=['uart', 'spi', 'i2c'])):
     def apply_part(self, part):
         super().apply_part(part)
 
-        self.set_pins_aliases(pins[self.model])
+        self.set_pins_aliases(self.pins_alias())
+
+    def pins_alias(self):
+        return pins[self.model]
 
     def circuit(self):
         ref = self.props.get('ref', self.name)
@@ -50,7 +80,9 @@ class Modificator(Network(interface=['uart', 'spi', 'i2c'])):
         # Power Supply
         v_stable = self.v_ref & (Capacitor()(0.1 @ u_uF)['+, -'] | Capacitor()(4.7 @ u_uF)['+, -']) & self.gnd
         self.v_ref += self['vcc'], self['avcc']
-        self.gnd += self.element['gnd'], self['agnd']
+        self.gnd += self.element['gnd']
+        if self['agnd']:
+            self.gnd += self['agnd']
 
         # External resonator if frequency non 0
         if self.frequency != 0:
@@ -61,4 +93,8 @@ class Modificator(Network(interface=['uart', 'spi', 'i2c'])):
                         & oscillator \
                     & self['XTAL2'] \
                 & Capacitor()(22 @ u_pF) & self.gnd
+
+
+class Modificator(Network(interface=['uart', 'spi', 'i2c']), ATmega):
+    pass
 

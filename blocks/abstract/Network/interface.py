@@ -34,12 +34,24 @@ class Interfaced(Base):
         raise Exception
 
     def __interface__(self, instance):
-        for protocol in instance.mods['interface']:
-            if protocol in self.mods['interface']:
+        def power_crc(instance):
+            return len(instance.v_ref.get_pins()) + len(instance.gnd.get_pins()) + len(instance.v_ref.get_nets()) + len(instance.gnd.get_nets()) 
+
+        # If power net will not changed, we connect power bus in generic way
+        instance_power_crc = power_crc(instance)
+
+        instance_interfaces = instance.mods.get('interface', None) or instance.props.get('interface', None) or []
+        print('instance', instance_interfaces)
+        for protocol in instance_interfaces:
+            self_interfaces = self.mods.get('interface', None) or self.props.get('interface', None) or []
+            print('self', self_interfaces)
+            if protocol in self_interfaces:
+                print('connect:', protocol)
                 interface = getattr(self, protocol)
                 interface(instance)
 
-        self.connect_power_bus(instance)
+        if power_crc(instance) == instance_power_crc:
+            self.connect_power_bus(instance)
 
     def get_interface_pins(self, protocol):
         pins = {}
@@ -51,6 +63,7 @@ class Interfaced(Base):
     def interface(self, protocol, instance):
         for pin in getattr(self, protocol.upper()):
             self_pin = self[pin]
-            self_pin += instance[pin]
-        
+            instance_pin = instance[pin]
+            self_pin += instance_pin
+
 # cpu.spi & Display --  cpu.spi(Display) cpu.interface(spi, Display.interfaces['spi'])

@@ -64,6 +64,16 @@ class Base(Network(port='one')):
                 values.append(value)
                 value.element.ref = name + '_' + key.capitalize()
 
+        self.documentScheme()
+
+    def documentScheme(self):
+        pads = self.get_pins()
+
+        for pad_name in pads.keys():
+            for net in getattr(self, pad_name):
+                for pin in net.get_pins():
+                    pin.notes += pad_name + ':' + str(self)
+
     def willMount(self, V=None, Load=None):
         """
             V -- Volts across its input terminal and gnd

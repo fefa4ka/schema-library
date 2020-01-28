@@ -1,12 +1,14 @@
 from bem import Block, Build
 from skidl import Circuit, set_default_tool, KICAD, set_backup_lib
 from bem.abstract import Physical
-from bem.pcbmode import generate_netlist
+from bem.pcbmode import generate_netlist as pcbmode_netlist
+#from bem.yosys import generate_netlist as yosys_netlist
+
 try:
     import __builtin__ as builtins
 except ImportError:
     import builtins
-    
+
 class Print:
     block = None
     kit = []
@@ -14,9 +16,9 @@ class Print:
 
     def __init__(self, Block, props, kit=[], type='kicad'):
         set_backup_lib('.')
-        set_default_tool(KICAD) 
+        set_default_tool(KICAD)
         builtins.SIMULATION = False
-        
+
         self.scheme = Circuit()
         builtins.default_circuit.reset(init=True)
         del builtins.default_circuit
@@ -26,30 +28,32 @@ class Print:
         self.block = Block(**props)
         self.kit = kit
         self.type = type
-    
+
     def netlist(self):
         for device in self.kit:
             device_name = device['library'] + ':' + device['name'][:device['name'].rfind('_')]
             ref = device['library'] + ':' + device['name'][device['name'].rfind('_'):] 
             DeviceBlock = Physical(part=device_name, footprint=device['footprint'])(ref = ref).element
-            
+
             for device_pin_name in device['pins'].keys():
                 for pin in device['pins'][device_pin_name]:
                     device_pin = getattr(DeviceBlock, device_pin_name)
                     device_pin += getattr(self.block, pin)
 
         self.scheme.ERC()
-
         if self.type == 'default':
-            return generate_netlist(self.scheme)
+            return pcbmode_netlist(self.scheme)
+        elif self.type == 'yosys':
+            pass
+            #return yosys_netlist(self.scheme)
         else:
             return self.scheme.generate_netlist()
 
-    @classmethod    
+    @classmethod
     def body_kit(self, block):
         pins = block.get_pins() or []
         connected = [pin for pin in pins.keys() if len(pins[pin]) > 0]
-        
+
         pin_head = {
             'library': 'Connector_Generic',
             'name': 'Conn_01x02',
@@ -105,4 +109,3 @@ class Print:
         }
 
         return devices
-   

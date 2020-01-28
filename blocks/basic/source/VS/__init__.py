@@ -6,10 +6,6 @@ from probe.source import JDS6600, KA3005P
 
 
 class Base(Electrical()):
-    mods = {
-        'flow': ['V']
-    }
-
     device = ''
 
     def willMount(self, device=''):
