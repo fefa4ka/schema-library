@@ -22,4 +22,4 @@ class Modificator(Base):
 
         C_out = Capacitor()(value=self.C_vref, ref='C_v', **self.load_args)
 
-        circuit = signal & self.output & C_out['-,+'] & self.v_ref
+        circuit = self.v_ref & C_out & self.output & signal

@@ -21,7 +21,7 @@ class Modificator(Base):
     def circuit(self):
 
         super().circuit()
-        
+
         reduce_ripple = Signal(filter=['lowpass'])(
             input=self.input,
             f_3dB = self.frequency,
@@ -33,4 +33,4 @@ class Modificator(Base):
         reduce_ripple.gnd += self.gnd
 
         self.input = reduce_ripple.output
-        
+

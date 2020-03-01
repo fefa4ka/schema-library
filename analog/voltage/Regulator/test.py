@@ -1,4 +1,6 @@
 from bem.tester import Test
+from bem import u_V
+from bem.util import is_tolerated
 
 class Case(Test):
     def body_kit(self):
@@ -9,7 +11,7 @@ class Case(Test):
             },
             'args': {
                 'V': {
-                    'value': 6.5,
+                    'value': 19,
                     'unit': {
                         'name': 'volt',
                         'suffix': 'V'
@@ -39,7 +41,7 @@ class Case(Test):
                 'output': ['gnd']
             }
         }]
-   
+
     def conditions(self, probes):
         block = self.block
         V_input = (probes['V_input'] @ u_V).canonise()
@@ -47,5 +49,4 @@ class Case(Test):
 
         if V_input >= block.V_out and is_tolerated(V_output, block.V_out) == False:
             return 'V_out should be near %s, but %s' % (str(block.V_out), str(V_output))
-        
-         
+

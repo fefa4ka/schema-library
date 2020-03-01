@@ -1,4 +1,4 @@
-from .ATmega8 import ATmega 
+from .ATmega8 import ATmega
 from bem.abstract import Network
 from bem.basic import Capacitor
 from bem import u_uF
@@ -35,7 +35,6 @@ class Modificator(Network(interface=['uart', 'i2c', 'spi', 'usb']), ATmega):
 
     def usb(self, instance):
         super().usb(instance)
-        print('ura atmega usb')
 
         self['UVCC'] & instance.v_ref
         self['UCAP'] & Capacitor()(1 @ u_uF) & self['UGND'] & instance.gnd

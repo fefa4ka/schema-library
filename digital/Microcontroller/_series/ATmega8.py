@@ -78,7 +78,7 @@ class ATmega(Base):
         self.element = self.part(ref=ref)
 
         # Power Supply
-        v_stable = self.v_ref & (Capacitor()(0.1 @ u_uF)['+, -'] | Capacitor()(4.7 @ u_uF)['+, -']) & self.gnd
+        v_stable = self.v_ref & Capacitor()(0.1 @ u_uF) | Capacitor()(4.7 @ u_uF) & self.gnd
         self.v_ref += self['vcc'], self['avcc']
         self.gnd += self.element['gnd']
         if self['agnd']:

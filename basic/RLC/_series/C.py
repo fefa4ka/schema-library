@@ -11,7 +11,7 @@ class Modificator(Base):
 
     def circuit(self):
         super().circuit()
-        
+
         signal = None
         if not (self.input and self.output):
             signal = self.input = Net('RLCInput')
@@ -22,4 +22,4 @@ class Modificator(Base):
 
         C_out = Capacitor()(value=self.C_series, ref='C_s', **self.load_args)
 
-        circuit = signal & C_out['+', '-'] & self.output 
+        circuit = signal & C_out & self.output

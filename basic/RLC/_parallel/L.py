@@ -20,4 +20,4 @@ class Modificator(Base):
         
         L_out = Inductor()(value=self.L_parallel, ref='L_p', **self.load_args)
 
-        circuit = self.input & L_out['+,-'] & self.output
+        circuit = self.input & L_out & self.output

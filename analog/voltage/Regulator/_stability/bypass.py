@@ -14,10 +14,10 @@ models['L7805'] = [0.33 @ u_uF, 0.1 @ u_F]
 class Modificator(Base):
     def circuit(self):
         super().circuit()
-    
+
         def C_bypass(index):
             values = models[self.model]
             return Capacitor()(values[index])
-            
+
         front = self.input & C_bypass(0) & self.gnd
         back = self.output & C_bypass(1) & self.gnd

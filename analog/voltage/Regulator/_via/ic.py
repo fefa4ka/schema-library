@@ -26,7 +26,6 @@ class Modificator(Base, Physical()):
                     self.element[part_pin] += getattr(self, pin)
                     break
 
-        self.v_ref = self.input       
-   
-        
+        self.v_ref = self.input
+
 

@@ -7,12 +7,12 @@ from bem import Net, u, u_Ohm, u_V, u_A
 
 class Base(Electrical(), Network(port='two')):
     """**Emitter-Follower** Common-Collector Amplifier
-    
+
     The circuit shown here is called a common-collector amplifier, which has current gain but no voltage gain. It makes use of the emitter-follower arrangement but is modified to avoid clipping during negative input swings. The voltage divider (`R_s` and `R_g`) is used to give the input signal (after passing through the capacitor) a positive dc level or operating point (known as the quiescent point). Both the input and output capacitors are included so that an ac input-output signal can be added without disturbing the dc operating point. The capacitors, as you will see, also act as filtering elements.”
 
     * Paul Scherz. “Practical Electronics for Inventors, Fourth Edition
     """
-    
+
     V_ref = 10 @ u_V
     V = 1 @ u_V
     # I_load = 0.015 @ u_A
@@ -39,33 +39,33 @@ class Base(Electrical(), Network(port='two')):
         R_in_base_dc -- `R_(i\\n(base),dc) = beta * R_e`
         R_in_base_ac -- `R_(i\\n(base),ac) = beta * (R_e * R_(load)) / (R_e + R_(load))`
         """
-        
+
         self.load(V_ref)
 
     def circuit(self):
         R = Resistor()
-        is_ac = 'ac' in self.mods.get('coupled', []) 
+        is_ac = 'ac' in self.mods.get('coupled', [])
         is_compensating = 'compensate' in self.mods.get('drop', [])
-       
+
         self.V_e = self.V_ref / 2
         self.R_e = self.V_e / self.I_load
-        
+
         if is_compensating:
             self.R_e = self.R_e * 2
-        
-        
+
+
         amplifier = Bipolar(
             type='npn',
             common='emitter',
             follow='emitter')(
                 emitter = R(self.R_e)
             )
-        
+
         self.V_je = (amplifier.selected_part.spice_params.get('VJE', None) or 0.6) @ u_V
         self.V_b = self.V_e + self.V_je
         self.Beta = amplifier.selected_part.spice_params.get('BF', self.Beta) 
         self.I_in = self.I_load / self.Beta
-        
+
         self.R_in_base_dc = self.Beta * self.R_e
         self.R_in_base_ac = self.Beta * ((self.R_e * self.R_load) / (self.R_e + self.R_load)) 
 
@@ -75,8 +75,8 @@ class Base(Electrical(), Network(port='two')):
             Load = self.I_in
         )
         stiff_voltage.gnd += self.gnd
-        
-        self.R_in = R.parallel(R, [self.R_in_base_ac if is_ac else self.R_in_base_dc, stiff_voltage.R_in, stiff_voltage.R_out])
+
+        self.R_in = R.parallel_sum(R, [self.R_in_base_ac if is_ac else self.R_in_base_dc, stiff_voltage.R_in, stiff_voltage.R_out])
 
         if is_compensating:
             compensator = Bipolar(
@@ -93,10 +93,10 @@ class Base(Electrical(), Network(port='two')):
             self.output = compensated
         else:
             rc = self.v_ref & stiff_voltage & self.input
-    
+
         amplified = Net('CurrentGainOutput')
         amplifier.v_ref += self.v_ref
         amplifier.gnd += self.input_n or self.gnd
-        gain = self.output & amplifier & amplified 
+        gain = self.output & amplifier & amplified
 
         self.output = amplified

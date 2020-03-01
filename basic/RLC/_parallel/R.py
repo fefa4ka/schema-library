@@ -19,4 +19,4 @@ class Modificator(Base):
         
         R_out = Resistor()(value=self.R_parallel, ref='R_p', **self.load_args)
 
-        circuit = self.input & R_out['+,-'] & self.output
+        circuit = self.input & R_out & self.output

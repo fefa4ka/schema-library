@@ -21,7 +21,7 @@ class Modificator(Base):
         """
             f_3dB_low -- `f_(3db) = 1/(2πR_(series)C_(gnd))`
         """
-	self.load(self.V)
+        self.load(self.V)
         self.R_low = self.R_load
         self.C_pass = 1 / (2 * pi * self.R_low * f_3dB_low) @ u_F
         self.tau = self.R_low * self.C_pass

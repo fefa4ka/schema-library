@@ -11,13 +11,13 @@ class Modificator(Base):
 
     def circuit(self):
         super().circuit()
-        
+
         if not (self.input and self.output):
             self.input = Net('RLCInput')
             self.output = Net('RLCOutput')
-            
-        
-        
+
+
+
         C_out = Capacitor()(value=self.C_parallel, ref='C_p', **self.load_args)
 
-        circuit = self.input & C_out['+', '-'] & self.output
+        circuit = self.input & C_out & self.output

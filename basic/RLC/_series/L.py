@@ -22,4 +22,4 @@ class Modificator(Base):
 
         L_out = Inductor()(value=self.L_series, ref='L_s', **self.load_args)
 
-        circuit = signal & L_out['+,-'] & self.output 
+        circuit = signal & L_out & self.output 

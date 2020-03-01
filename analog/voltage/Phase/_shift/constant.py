@@ -15,21 +15,21 @@ class Modificator(Base):
     angle = 45
     f_3db = 100 @ u_Hz
 
-    R_shift_out = 1000000 @ u_Ohm
+    R_shift_out = 100000 @ u_Ohm
     C_shift_in = 0 @ u_F
-    
+
 
     def willMount(self, angle, R_shift_out=None):
         """
             angle -- Phase shift angle `theta = 2 tan^-1 omega RC`
         """
-        
+
         angle_rad = pi / (180 / self.angle)
         atan_desire = angle_rad / 2
         atan_argument = tan(atan_desire)
         angular_speed = 2 * pi * self.f_3db
         RC = atan_desire / angular_speed
-        
+
         self.C_shift_in = (RC / self.R_shift_out) @ u_F
         self.C_shift_in = self.C_shift_in.canonise()
 
@@ -37,7 +37,7 @@ class Modificator(Base):
 
     def circuit(self):
         super().circuit()
-        
+
         shifter = RLC(series=['C'], gnd=['R'])(
             C_series = self.C_shift_in,
             R_gnd = self.R_shift_out,

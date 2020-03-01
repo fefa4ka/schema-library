@@ -33,10 +33,8 @@ class Modificator(Base):
     def circuit(self):
         R = Resistor()
         Gate = Bipolar(follow='collector', common='emitter')
-        
+
         rectifier = Signal(clamp='rectifier')(V = self.V, Load = self.Load, frequency = self.frequency)
-        
-        
 
         trigger = Gate(ref='Trigger',
             collector=R(self.R_load, ref='R_t_collector'),
@@ -53,11 +51,11 @@ class Modificator(Base):
             reverse = True
         )
 
-        self.v_ref & trigger.v_ref & pulse.v_ref 
+        self.v_ref & trigger.v_ref & pulse.v_ref
         self.gnd & trigger.gnd & pulse.gnd & rectifier.gnd
 
         self.input & rectifier & trigger.base
 
         pulse & trigger & decay.gnd
         self.v_ref & decay & pulse & self.output
-        
+

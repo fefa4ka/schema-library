@@ -38,13 +38,13 @@ class Modificator(Base):
             return Decay()(
                 V = self.V, V_out = self.V * 0.5,
                 Time_to_V_out = width,
-                Load= (self.V - self.V_load - controller.V_je) / (3 * self.I_load / controller.Beta),
-                reverse=True
+                Load = (self.V - self.V_load - controller.V_je) / (3 * self.I_load / controller.Beta),
+                reverse = True
             )
 
         def State():
             return Gate(
-                collector=lambda T: Resistor()((self.V - (T['VCE'] or 0.3) @ u_V - self.V_load) / self.I_load, ref='R_collector')
+                collector = lambda T: Resistor()((self.V - (T['VCE'] or 0.3) @ u_V - self.V_load) / self.I_load, ref='R_collector')
             )
 
         def Sharp(state, oscillator):

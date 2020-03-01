@@ -127,7 +127,7 @@ class Case(Test):
         }
 
 
-        
+
     def LoadLineQPoint(self, args, temperature=[25] @ u_Degree):
         """
             The Q-point can be found by plotting the graph of the load line on the i-v characteristic for the diode. The intersection of the two curves represents the quiescent operating point, or Q-point, for the diode.
@@ -135,7 +135,7 @@ class Case(Test):
         voltage_sweep = slice(0, self.block.V, .1)
         data = self.characteristics(args, temperature, voltage_sweep)
         data[0]['Load_Line'] = u(self.block.I_load)
-        data[len(data) - 1]['Load_Line'] = 0 
+        data[len(data) - 1]['Load_Line'] = 0
 
         return {
             'x': {
@@ -151,4 +151,4 @@ class Case(Test):
             },
             'data': data
         }
-        
+ 

@@ -8,7 +8,7 @@ class Modificator(Base):
     output_inverse = None
     C_ripple = 0.01 @ u_F
 
-    
+
     V_ripple = 1 @ u_V
 
     frequency = 10 @ u_Hz
@@ -19,11 +19,11 @@ class Modificator(Base):
             frequency -- Input signal frequency
             C_ripple -- A relatively large value capacitor; it charges up to the peak output voltage during the diode conduction
         """
-        pass       
+        pass
 
     def circuit(self):
         super().circuit()
-        
+
         self.output_inverse = self.output_n
         self.output_n = Net('BridgeOutputGround')
 
@@ -34,5 +34,7 @@ class Modificator(Base):
              'value': self.C_ripple,
              'ref': 'C_ripple'
         }
+        C_ripple_out = C(**C_ripple)
+        C_ripple_inv = C(**C_ripple)
 
-        circuit = self.output & C(**C_ripple)['+', '-'] & self.output_n & C(**C_ripple)['+', '-'] & self.output_inverse
+        circuit = self.output & C_ripple_out & self.output_n & C_ripple_inv & self.output_inverse

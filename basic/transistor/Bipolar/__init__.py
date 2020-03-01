@@ -93,7 +93,7 @@ class Base(Physical(), Network(port='two')):
     }
 
     def willMount(self, collector=None, base=None, emitter=None):
-        self.Beta = self['BG'] or 100 #self.selected_part.spice_params.get('BF', 100)
+        self.Beta = self['BF'] or 100 #self.selected_part.spice_params.get('BF', 100)
         self.V_je = (self['VJE'] or 0.6) @ u_V # (self.selected_part.spice_params.get('VJE', None) or 0.6) @ u_V
         self.V_ce = (self['VCE'] or 0.3) @ u_V
 

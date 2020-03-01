@@ -15,7 +15,3 @@ class Modificator(Base):
         tx_led = self.v_ref & Led(via='resistor')(diodes=Diode(type='led')(color='green')) & mcu['PD5']
         rx_led = self.v_ref & Led(via='resistor')(diodes=Diode(type='led')(color='red')) & mcu['PD4']
 
-     def usb(self, instance):
-        print('USB UART USSB')
-        #self.element.usb(instance)
-

@@ -8,25 +8,25 @@ from bem.basic import RLC
 
 class Base(Electrical()):
     """**Decay to equilibrium**
-    
+
     The product RC is called the time constant of the circuit. For `R_s` in ohms and `C_g` in farads, the product RC is in seconds. A `C_g` microfarad across `R_s` 1.0k has a time constant Time_to_`V_(out)` of 1 ms; if the capacitor is initially charged to `V_(out) = 1.0 V`, the initial current `I_(out)` is 1.0 mA.
 
-    At time `t = 0`, someone connects the battery. The equation for the circuit is then 
-    
-    `I = C * (dV) / (dT) = (V_(i\\n) - V_(out)) / R_s` 
-    
+    At time `t = 0`, someone connects the battery. The equation for the circuit is then
+
+    `I = C * (dV) / (dT) = (V_(i\\n) - V_(out)) / R_s`
+
     with solution
 
     `V_(out) = V_(i\\n) + A * e ^ (-t / (R_s * C_g))`
 
-    The constant `A` is determined by initial conditions: `V_(out) = 0` at `t = 0`; therefore, `A = −V_(i\\n)`, and 
-    
+    The constant `A` is determined by initial conditions: `V_(out) = 0` at `t = 0`; therefore, `A = −V_(i\\n)`, and
+
     `V_(out) = V_(i\\n) * (1 − e ^ (−t / (R_s * C_g)))`
 
     Once again there’s good intuition: as the capacitor charges up, the slope (which is proportional to current, because it’s a capacitor) is proportional to the remaining voltage (because that’s what appears across the resistor, producing the current); so we have a waveform whose slope decreases proportionally to the vertical distance it has still to go an exponential.
 
     To figure out the time required to reach a voltage `V_(out)` on the way to the final voltage `V_(i\\n)`: 
-    
+
     `t = R * C * log_e(V_(i\\n) / (V_(i\\n) - V_(out)))`
 
     * Paul Horowitz and Winfield Hill. "1.4.2 RC circuits: V and I versus time" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 21-23
@@ -45,14 +45,14 @@ class Base(Electrical()):
     # @subcircuit
     def circuit(self):
         if not (self.R_in and self.C_out):
-            self.R_in = self.R_load
+            self.R_in = self.R_load / 10 
 
-        if self.R_in and not self.C_out:        
+        if self.R_in and not self.C_out:
             self.C_out = (self.Time_to_V_out / (self.R_in * log(self.V / (self.V - self.V_out)))) @ u_F
-        
+
         if self.V_out and not self.R_in:
             self.R_in = (self.Time_to_V_out / (self.C_Out * log(self.V / (self.V - self.V_out)))) @ u_Ohm
-        
+
         if self.reverse:
             rlc = RLC(series=['R'], vref=['C'])(
                 R_series = self.R_in,
@@ -65,7 +65,7 @@ class Base(Electrical()):
                 C_gnd = self.C_out
             )
             self.gnd = rlc.gnd
-        
+
         self.input = rlc.input
         self.output = rlc.output
-        
+
