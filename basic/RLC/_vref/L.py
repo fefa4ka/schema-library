@@ -21,6 +21,6 @@ class Modificator(Base):
             self.output = Net('VrefInductorOutput')
 
 
-        L_out = Inductor()(value=self.L_vref, ref='L_v', **self.load_args)
+        L_v_ref = Inductor()(self.L_vref, **self.load_args)
 
-        circuit = self.v_ref & L_out & self.output & signal
+        circuit = self.v_ref & L_v_ref & self.output & signal

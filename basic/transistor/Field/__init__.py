@@ -6,7 +6,7 @@ from PySpice.Unit import u_Ohm, u_uF, u_H, u_kHz
 
 class Base(Physical(), Network(port='two')):
     """**Field Transistor**
-    
+
     """
 
     pins = {
@@ -59,7 +59,7 @@ class Base(Physical(), Network(port='two')):
     def willMount(self, drain=None, gate=None, source=None, gnd=None):
         pass
         # super().willMount(model=model)
-    
+
     def part_spice(self, *args, **kwargs):
         is_spice_subciruit = 'SUBCKT' in self.selected_part.spice.upper()
         part = None
@@ -78,7 +78,7 @@ class Base(Physical(), Network(port='two')):
     def part_template(self):
         # TODO: Search for models and footprints using low level attributes of Block
         part = super().part_template()
-        
+
         part.set_pin_alias('drain', 2)
         part.set_pin_alias('gate', 1)
         part.set_pin_alias('source', 3)
@@ -93,7 +93,7 @@ class Base(Physical(), Network(port='two')):
 
         if not self.gnd:
             self.gnd = Net('FieldGnd')
-            
+
         common_end = self.gnd
         if not common:
             common_end = Net('NC')

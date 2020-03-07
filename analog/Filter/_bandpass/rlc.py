@@ -1,5 +1,5 @@
 from .. import Base
-from bem.basic import RLC
+from bem.basic import Resistor, Capacitor, Inductor
 from bem import Net
 from PySpice.Unit import u_Ω, u_F, u_Hz, u_H
 from math import pi, sqrt
@@ -24,14 +24,13 @@ class Modificator(Base):
 
     def circuit(self):
         super().circuit()
-        
+
         output = Net('FilterBandpassOutput')
 
-        rlc = RLC(series=['R'], gnd=['L', 'C'])(
-            R_series = self.R_band,
-            L_gnd = self.L_tank,
-            C_gnd = self.C_tank
-        )
+        R_band = Resistor()(self.R_band)
+        L_tank = Inductor()(self.L_tank)
+        C_tank = Capacitor()(self.C_tank)
 
-        signal = self & rlc & output
+        self & R_band & output & (L_tank | C_tank) & self.gnd
+
         self.output = output

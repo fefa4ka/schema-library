@@ -1,4 +1,5 @@
 from .. import Base
+from skidl import Net
 from bem.basic import Resistor, OpAmp
 from bem import Net, u, u_Ohm, u_V, u_A, u_kOhm
 
@@ -12,7 +13,7 @@ class Modificator(Base):
         'output_n': True,
         'v_ref': True,
         'v_inv': True,
-        'gnd': True 
+        'gnd': True
     }
 
     V_ref = 10 @ u_V
@@ -25,27 +26,25 @@ class Modificator(Base):
     G_cm = 0
     CMMR = 0
 
-    gain = 1
+    gain = 10
 
     def willMount(self, gain):
         """
-        G_diff -- `G_(di\\f\\f) = -R_c / (2*(r_e + R_e))`
-        G_cm -- `G_(cm) = -R_c / (2 * R_(out) + R_e)` You can determine the _common-mode gain_ by putting identical signals v_in on both inputs. 
-        CMMR -- A good differential amplifier has a high _common-mode rejection ratio_ `CM\\R\\R = R_1/(R_e + r_e)` the ratio of response for a normal-mode signal to the response for a common-mode signal of the same amplitude.
         """
-        self.R_in = 25 @ u_kOhm
+        self.load(self.V)
+        self.R_in = self.R_load * 10
         self.R_feedback = self.R_in * gain
 
         pass
-        
+
 
     def circuit(self):
         R = Resistor()
         opamp = self.props.get('unit', None)
         if not opamp:
-            opamp = OpAmp()(V=self.V_ref).A
+            opamp = OpAmp()(V=self.V_ref)
 
-        input_p = self.input & R(self.R_in) & opamp.input 
+        input_p = self.input & R(self.R_in) & opamp.input
         input_n = self.input_n & R(self.R_in) & opamp.input_n
 
         sense = opamp.input & R(self.R_feedback) & opamp.output
@@ -55,4 +54,3 @@ class Modificator(Base):
         self.v_inv += opamp.gnd
 
         self.output += opamp.output
-

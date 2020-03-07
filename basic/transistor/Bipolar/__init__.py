@@ -34,7 +34,7 @@ class Base(Physical(), Network(port='two')):
         'collector': True,
         'gnd': True
     }
-    
+
     emitter = None
     base = None
     collector = None
@@ -103,7 +103,7 @@ class Base(Physical(), Network(port='two')):
     def part_template(self):
         # TODO: Search for models and footprints using low level attributes of Block
         part = super().part_template()
-        
+
         part.set_pin_alias('collector', 'C')
         part.set_pin_alias('base', 'B')
         part.set_pin_alias('emitter', 'E')
@@ -116,7 +116,7 @@ class Base(Physical(), Network(port='two')):
     def circuit(self):
         transistor = self.element = self.part()
 
-        common = self.props.get('common', 'emitter') 
+        common = self.props.get('common', 'emitter')
         follow = self.props.get('follow', 'collector')
 
         common_end = self.gnd

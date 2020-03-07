@@ -3,7 +3,7 @@ from math import log
 from PySpice.Unit import u_A, u_F, u_Ohm, u_s, u_V
 
 from bem.abstract import Electrical
-from bem.basic import RLC
+from bem.basic import Resistor, Capacitor
 
 
 class Base(Electrical()):
@@ -40,12 +40,15 @@ class Base(Electrical()):
     reverse = False
 
     def willMount(self, V_out, Time_to_V_out, reverse=False):
+        """
+            reverse -- Reverse capacitor connection
+        """
         self.load(self.V)
 
     # @subcircuit
     def circuit(self):
         if not (self.R_in and self.C_out):
-            self.R_in = self.R_load / 10 
+            self.R_in = self.R_load / 10
 
         if self.R_in and not self.C_out:
             self.C_out = (self.Time_to_V_out / (self.R_in * log(self.V / (self.V - self.V_out)))) @ u_F
@@ -53,19 +56,11 @@ class Base(Electrical()):
         if self.V_out and not self.R_in:
             self.R_in = (self.Time_to_V_out / (self.C_Out * log(self.V / (self.V - self.V_out)))) @ u_Ohm
 
+        current_source = Resistor()(self.R_in)
+        discharger = Capacitor()(self.C_out)
+
         if self.reverse:
-            rlc = RLC(series=['R'], vref=['C'])(
-                R_series = self.R_in,
-                C_vref = self.C_out
-            )
-            self.gnd = rlc.v_ref
+            self.input & current_source & self.output
+            self.gnd & discharger & self.output
         else:
-            rlc = RLC(series=['R'], gnd=['C'])(
-                R_series = self.R_in,
-                C_gnd = self.C_out
-            )
-            self.gnd = rlc.gnd
-
-        self.input = rlc.input
-        self.output = rlc.output
-
+            self.input & current_source & self.output & discharger & self.gnd

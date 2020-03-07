@@ -21,7 +21,7 @@ class Base(Physical(), Network(port='two')):
         pass
     
     def circuit(self):
-        part = self.part()
+        self.element = self.part()
 
         # part['input'] += self.input
         # part['input_n'] += self.input_n

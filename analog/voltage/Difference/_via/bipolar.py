@@ -13,7 +13,7 @@ class Modificator(Base):
         'output_n': True,
         'v_ref': True,
         'v_inv': True,
-        'gnd': True 
+        'gnd': True
     }
 
     V_gnd = -10 @ u_V
@@ -31,10 +31,10 @@ class Modificator(Base):
     def willMount(self, V_gnd, I_quiescent):
         """
         R_c -- `R_c = V_c / I_(quiescent)`
-        R_e -- Hardcoded value `R_e = 1000 Ω` 
+        R_e -- Hardcoded value `R_e = 1000 Ω`
         R_out -- Value is chosen to set the transistor’s emitters as close to 0 V as possible. Value is found by adding both the right and left branch’s. `R_(out) = (0V - V_(gnd)) / (2 * I_(quiescent))`
         G_diff -- `G_(di\\f\\f) = -R_c / (2*(r_e + R_e))`
-        G_cm -- `G_(cm) = -R_c / (2 * R_(out) + R_e)` You can determine the _common-mode gain_ by putting identical signals v_in on both inputs. 
+        G_cm -- `G_(cm) = -R_c / (2 * R_(out) + R_e)` You can determine the _common-mode gain_ by putting identical signals v_in on both inputs.
         CMMR -- A good differential amplifier has a high _common-mode rejection ratio_ `CM\\R\\R = R_1/(R_e + r_e)` the ratio of response for a normal-mode signal to the response for a common-mode signal of the same amplitude.
         r_e -- Transresistance `r_e = V_T / I_e = ((kT) / q) / I_e = (0.0253 V) / I_e`
         """

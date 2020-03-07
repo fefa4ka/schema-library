@@ -20,6 +20,6 @@ class Modificator(Base):
             signal = self.output
             self.output = Net('SeriesInductorOutput')
 
-        L_out = Inductor()(value=self.L_series, ref='L_s', **self.load_args)
+        L_series = Inductor()(self.L_series, **self.load_args)
 
-        circuit = signal & L_out & self.output 
+        circuit = signal & L_series & self.output 
