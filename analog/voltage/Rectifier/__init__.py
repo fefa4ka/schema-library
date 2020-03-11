@@ -15,12 +15,12 @@ class Base(Network(port='two'), Electrical()):
         'wave': ['half']
     }
 
-    def willMount(self, V_out=10 @ u_V):
+    def willMount(self):
         """
             V_ripple -- Periodic variations in voltage about the steady value
             frequency -- Input signal frequency
         """
-        self.load(self.V_out)
+        self.load(self.V)
 
 
     def __series__(self, instance):

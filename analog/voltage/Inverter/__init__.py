@@ -44,7 +44,7 @@ class Base(Electrical()):
         R_feedback = R(self.Gain * R_input.value)
         self.NG = 1 + R_feedback.value / R_input.value
 
-        buffer = OpAmp()(**self.load_args, frequency=self.frequency)
+        buffer = OpAmp()(frequency=self.frequency)
 
         buffer.v_ref & self.v_ref
         if 'single' in self.props.get('supply', []):

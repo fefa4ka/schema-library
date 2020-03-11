@@ -31,6 +31,6 @@ class Modificator(Base, Network(port='two')):
                 )
 
         for pin in [self.output, self.output_n]:
-            protect = pin & D(**self.load_args)['A, K'] & self.v_ref
-            protect_gnd = self.gnd & D(**self.load_args)['A, K'] & pin
+            protect = pin & D()['A, K'] & self.v_ref
+            protect_gnd = self.gnd & D()['A, K'] & pin
 

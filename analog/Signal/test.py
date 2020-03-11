@@ -9,14 +9,14 @@ class Case(Test):
             },
             'args': {
                 'V': {
-                    'value': 5,
+                    'value': 10,
                     'unit': {
                         'name': 'volt',
                         'suffix': 'V'
                     }
                 },
                 'frequency': {
-                    'value': 60,
+                    'value': 500000,
                     'unit': {
                         'name': 'herz',
                         'suffix': 'Hz'
@@ -34,7 +34,7 @@ class Case(Test):
             },
             'args': {
                 'V': {
-                    'value': 5,
+                    'value': 10,
                     'unit': {
                         'name': 'volt',
                         'suffix': 'V'
@@ -64,4 +64,4 @@ class Case(Test):
                 'output': ['gnd']
             }
         }]
-   
+

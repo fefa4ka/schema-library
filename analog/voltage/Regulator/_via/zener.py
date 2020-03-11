@@ -32,12 +32,11 @@ class Modificator(Base):
         self.v_ref += self.input
 
         regulator = self.input \
-                        & Resistor()(self.R_in, **self.load_args) \
+                        & Resistor()(self.R_in) \
                             & self.output \
                         & Diode(
                             type='zener',
-                            BV=u(self.V_out),
-                            **self.load_args
+                            BV=u(self.V_out)
                         )(Load=self.Load, V=self.V,)['K, A'] \
                     & self.gnd
 

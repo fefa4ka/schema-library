@@ -13,15 +13,15 @@ class Modificator(Base):
     * Paul Horowitz and Winfield Hill. "2.2.7 Common-emitter amplifier" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 88-89
     """
 
-    def willMount(self, V_ref=20 @ u_V, f_3db=120 @ u_Hz):
+    def willMount(self, f_3db=500e3 @ u_Hz):
         """
             f_3db -- Frequencies of interest are passed by the highpass filter
             C_in -- Blocking capacitor is chosen so that all frequencies of interest are passed by the highpass filter `C_(i\\n) >= 1 / (2 pi f_(3db) (R_s∥R_g))`
         """
 
-        self.V_split = self.V_ref / 6
+        self.V_split = self.V / 6
 
-        self.load(V_ref)
+        self.load(self.V)
 
         self.I_b = self.I_load
         self.R_out = (u(self.V_split) / u(self.I_b) * 100) @ u_Ohm
@@ -31,7 +31,7 @@ class Modificator(Base):
 
         R = Resistor()
         stiff_voltage = Divider(type='resistive')(
-            V = self.V_ref,
+            V = self.V,
             V_out = self.V_split + 0.6 @ u_V,
             Load = self.I_b
         )
@@ -44,8 +44,8 @@ class Modificator(Base):
             common='emitter',
             follow='collector'
         )(
-            collector = R(self.R_out, ref='R_c', **self.load_args),
-            emitter = R(self.R_out, ref='R_e', **self.load_args)
+            collector = R(self.R_out),
+            emitter = R(self.R_out)
         )
 
         split = stiff_voltage & self & splitter
@@ -57,7 +57,7 @@ class Modificator(Base):
         self.C_in = (1 / (2 * pi * self.f_3db * R_in)) @ u_F
 
         signal = Net('VoltageShiftAcInput')
-        ac_coupling = signal & Capacitor()(self.C_in, ref='C_in', **self.load_args) & self.input
+        ac_coupling = signal & Capacitor()(self.C_in) & self.input
         self.input = signal
 
 

@@ -14,4 +14,4 @@ class Modificator(Base):
             self.input = Net('RLCInput')
             self.output = Net('RLCOutput')
 
-        R_parallel = self.input & Resistor()(value=self.R_parallel, **self.load_args) & self.output
+        R_parallel = self.input & Resistor()(self.R_parallel) & self.output

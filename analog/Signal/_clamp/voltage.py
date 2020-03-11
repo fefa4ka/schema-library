@@ -15,8 +15,8 @@ class Modificator(Base):
     * Paul Horowitz and Winfield Hill. "1.6.6 Circuit applications of diodes" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 35-36
     """
 
-    def willMount(self, V_ref=10 @ u_V, V_out=3 @ u_V, I_ref=0.01 @ u_A):
-        pass
+    def willMount(self, V_out=3 @ u_V):
+        self.load(V_out)
 
     def circuit(self):
         super().circuit()
@@ -25,14 +25,15 @@ class Modificator(Base):
         self.output = Net('SignalClampedOutput')
 
         Rref = None
-        if self.V_out and self.V_ref and self.V_ref >  self.V_out:
+        clamp = Diode(type='generic')()
+        if self.V_out and self.V and self.V >  self.V_out:
             Rref = Divider(type='resistive')(
-                V = self.V_ref,
-                V_out = self.V_out,
-                Load=self.I_ref)
+                V = self.V,
+                V_out = self.V_out - clamp.V_j,
+                Load=self.I_load * 10)
             Rref.gnd += self.gnd
         else:
             Rref = Resistor()(667)
 
-        clamp = self.v_ref & Rref & Diode(type='generic')(V=self.V_ref, Load=self.Load)['K', 'A'] & self.output
-        signal_input = signal & Resistor()(self.R_load) & self.output
+        self.v_ref & Rref & clamp['K', 'A'] & self.output
+        signal_input = signal & Resistor()(self.R_load / 3) & self.output

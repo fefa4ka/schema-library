@@ -20,8 +20,7 @@ class Modificator(Base):
         super().circuit(*args, **kwargs)
 
         args = {
-            'frequency': self.frequency,
-            **self.load_args
+            'frequency': self.frequency
         }
 
         output = Net('SignalRecrifiedOutput')

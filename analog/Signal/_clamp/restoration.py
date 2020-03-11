@@ -12,10 +12,7 @@ class Modificator(Base):
     def circuit(self, *args, **kwargs):
         super().circuit(*args, **kwargs)
 
-        D = Diode(type='generic')
-        C = Capacitor()
-
         signal = self.output
         self.output = Net('SignalClampedOutput')
 
-        restoration = signal & C(value=1000 @ u_uF) & self.output & D(V=self.V, Load=self.Load)['K', 'A'] & self.gnd
+        restoration = signal & Capacitor()(value=1 @ u_uF) & self.output & Diode(type='generic')()['K', 'A'] & self.gnd

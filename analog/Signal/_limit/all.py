@@ -15,4 +15,4 @@ class Modificator(Base):
         signal = self.output
         self.output = Net('SignalLimitedOutput')
 
-        limiter = signal & R(value=1000@u_Ohm) & self.output & (D(**self.load_args) | D(**self.load_args)) & self.v_ref
+        limiter = signal & R(1000 @ u_Ohm) & self.output & (D() | D()) & self.v_ref

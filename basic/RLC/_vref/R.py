@@ -18,4 +18,4 @@ class Modificator(Base):
             signal = self.output
             self.output = Net('VrefResistorOutput')
 
-        R_v_ref = self.v_ref & Resistor()(value=self.R_vref, **self.load_args) & self.output & signal
+        R_v_ref = self.v_ref & Resistor()(self.R_vref) & self.output & signal

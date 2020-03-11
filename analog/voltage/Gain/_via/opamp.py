@@ -35,7 +35,7 @@ class Modificator(Electrical()):
         R_feedback = R(self.Z_in * 100)
         R_input = R(R_feedback.value / (self.Gain - 1))
 
-        buffer = OpAmp()(**self.load_args, frequency=self.frequency)
+        buffer = OpAmp()(frequency=self.frequency)
 
         buffer.v_ref & self.v_ref
 

@@ -16,7 +16,7 @@ class Modificator(Electrical()):
 
     """
 
-    def willMount(self, V_ref=10 @ u_V, f_3db=1000000 @ u_Hz, I_quiescent=0.01 @ u_A):
+    def willMount(self, f_3db=1000000 @ u_Hz):
         """
             f_3db -- Frequencies of interest are passed by the highpass filter
             C_in -- Blocking capacitor is chosen so that all frequencies of interest are passed by the highpass filter `C_(i\\n) >= 1 / (2 pi f_(3db) (R_s∥R_g))`
@@ -37,15 +37,15 @@ class Modificator(Electrical()):
             r_e -- Transresistance `r_e = V_T / I_e = ((kT) / q) / I_e = (0.0253 V) / I_e`
 
         """
-        pass
+        self.I_quiescent = self.I_load 
 
     def circuit(self):
         self.input = self.output = Net('VoltageGainInput')
         self.v_ref = Net('Vref')
         self.gnd = Net()
 
-        self.V_c = self.V_ref / 2
-        self.R_c = (self.V_ref - self.V_c) / self.I_quiescent
+        self.V_c = self.V / 2
+        self.R_c = (self.V - self.V_c) / self.I_quiescent
 
         self.V_e = 1.0 @ u_V  # For temperature stability
         self.R_e = self.V_e / self.I_quiescent
@@ -56,17 +56,14 @@ class Modificator(Electrical()):
             common='emitter',
             follow='collector'
         )(
-            collector = R(self.R_c, ref='R_c'),
-            emitter = R(self.R_e, ref='R_e')
+            collector = R(self.R_c),
+            emitter = R(self.R_e)
         )
 
-        self.Beta = amplifier.selected_part.spice_params.get('BF', 100)
-        self.V_je = (amplifier.selected_part.spice_params.get('VJE', None) or 0.6) @ u_V
-
         stiff_voltage = Divider(type='resistive')(
-            V = self.V_ref,
-            V_out = self.V_e + self.V_je,
-            Load = self.Beta * self.R_e
+            V = self.V,
+            V_out = self.V_e + amplifier.V_je,
+            Load = amplifier.Beta * self.R_e
         )
 
         self.r_e = 0.026 @ u_V / self.I_quiescent
@@ -76,9 +73,9 @@ class Modificator(Electrical()):
 
         self.g_m = self.G_v / self.R_c * -1
 
-        self.R_in_base_dc = self.Beta * self.R_e
+        self.R_in_base_dc = amplifier.Beta * self.R_e
 
-        self.R_in_base_ac = self.Beta * (self.r_e + self.R_3)
+        self.R_in_base_ac = amplifier.Beta * (self.r_e + self.R_3)
         self.R_in = R.parallel_sum(R, [self.R_in_base_ac, stiff_voltage.R_in, stiff_voltage.R_out]) @ u_Ohm
 
         stiff_voltage.input += self.v_ref

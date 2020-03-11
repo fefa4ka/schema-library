@@ -8,9 +8,9 @@ class Case(Test):
     def characteristics(self, args, temperature, voltage_sweep):
         self.body_kit = self.ac_body_kit
         self.circuit(args)
-        
+
         simulations = Simulate(self.block).ac(start_frequency=1@u_Hz, stop_frequency=1@u_MHz, number_of_points=10,  variation='dec', temperature=temperature)
-        
+
         # analys[temp][freq] = v_out / v_in
         chart = defaultdict(dict)
         for temp, simulation in simulations.items():
@@ -60,14 +60,14 @@ class Case(Test):
             },
             'args': {
                 'V': {
-                    'value': 12,
+                    'value': 10,
                     'unit': {
                         'name': 'volt',
                         'suffix': 'V'
                     }
                 },
                 'frequency': {
-                    'value': 60,
+                    'value': 500000,
                     'unit': {
                         'name': 'herz',
                         'suffix': 'Hz'

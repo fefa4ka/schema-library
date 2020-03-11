@@ -42,11 +42,11 @@ class Base(Electrical()):
             the datasheet.
             6. High output current amplifiers may be required if driving low impedance loads
             """
-            buffer = OpAmp()(**self.load_args, frequency=self.frequency)
+            buffer = OpAmp()(frequency=self.frequency)
             buffer.input_n & buffer.output & self.output
 
         if via == 'bipolar':
-            buffer = Gain(drop='compensate')(**self.load_args)
+            buffer = Gain(drop='compensate')()
             buffer & self.output
 
         if buffer:

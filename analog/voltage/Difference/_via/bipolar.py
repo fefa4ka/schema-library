@@ -16,7 +16,7 @@ class Modificator(Base):
         'gnd': True
     }
 
-    def willMount(self, V_gnd=-10 @ u_V, I_quiescent = 0.0001 @ u_A):
+    def willMount(self, V_inv=-10 @ u_V):
         """
         R_c -- `R_c = V_c / I_(quiescent)`
         R_e -- Hardcoded value `R_e = 1000 Ω`
@@ -27,13 +27,14 @@ class Modificator(Base):
         r_e -- Transresistance `r_e = V_T / I_e = ((kT) / q) / I_e = (0.0253 V) / I_e`
         """
         self.load(self.V)
+        self.I_quiescent = self.I_load / 100
 
     def circuit(self):
         R = Resistor()
 
         self.R_c = self.V / 2 / self.I_quiescent
         self.R_e = self.R_load
-        self.R_out = (0 @ u_V - self.V_gnd) / (self.I_quiescent * 2)
+        self.R_out = (0 @ u_V - self.V_inv) / (self.I_quiescent * 2)
         self.r_e = 0.026 @ u_V / self.I_quiescent
         self.G_diff = u(self.R_c / (2 * (self.r_e + self.R_e)))
         self.G_cm = u(-1 * self.R_c / (2 * self.R_out + self.R_e + self.r_e))

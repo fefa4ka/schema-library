@@ -18,4 +18,4 @@ class Modificator(Base):
             signal = self.output
             self.output = Net('SeriesInductorOutput')
 
-        L_series = signal & Inductor()(self.L_series, **self.load_args) & self.output
+        L_series = signal & Inductor()(self.L_series) & self.output

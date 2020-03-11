@@ -7,7 +7,7 @@ from PySpice.Unit import u_Ohm, u_V, u_F, u_ms, u_Hz, u_A
 class Modificator(Base):
     output_inverse = None
 
-    def willMount(self, V_ripple=1 @ u_V, frequency=10 @ u_Hz):
+    def willMount(self, V_ripple=1 @ u_V, frequency=5e5 @ u_Hz):
         """
             V_ripple -- Periodic variations in voltage about the steady value
             frequency -- Input signal frequency
@@ -23,12 +23,8 @@ class Modificator(Base):
 
         C = Capacitor(**self.mods, **self.props)
         self.C_ripple = C_value = self.I_load / (self.frequency * self.V_ripple) @ u_F
-        C_ripple = {
-             **self.load_args,
-             'value': self.C_ripple,
-             'ref': 'C_ripple'
-        }
-        C_ripple_out = C(**C_ripple)
-        C_ripple_inv = C(**C_ripple)
+
+        C_ripple_out = C(self.C_ripple)
+        C_ripple_inv = C(self.C_ripple)
 
         circuit = self.output & C_ripple_out & self.output_n & C_ripple_inv & self.output_inverse

@@ -18,4 +18,4 @@ class Modificator(Base):
             signal = self.output
             self.output = Net('SeriesCapacitorOutput')
 
-        C_series = signal & Capacitor()(value=self.C_series, **self.load_args) & self.output
+        C_series = signal & Capacitor()(self.C_series) & self.output

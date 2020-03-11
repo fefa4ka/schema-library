@@ -14,4 +14,4 @@ class Modificator(Base):
             self.input = Net('RLCInput')
             self.output = Net('RLCOutput')
 
-        C_out = self.input & Capacitor()(value=self.C_parallel, **self.load_args) & self.output
+        C_out = self.input & Capacitor()(self.C_parallel) & self.output

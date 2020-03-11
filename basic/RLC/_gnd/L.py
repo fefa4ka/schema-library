@@ -4,9 +4,7 @@ from bem import Net
 from PySpice.Unit import u_H
 
 class Modificator(Base):
-    L_gnd = 1 @ u_H
-
-    def willMount(self, L_gnd):
+    def willMount(self, L_gnd=1 @ u_H):
         pass
 
     def circuit(self):
@@ -20,4 +18,4 @@ class Modificator(Base):
             signal = self.output
             self.output = Net('GndInductorOutput')
 
-        L_gnd = signal & self.output & Inductor()(self.L_gnd, **self.load_args) & self.gnd
+        L_gnd = signal & self.output & Inductor()(self.L_gnd) & self.gnd

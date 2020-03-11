@@ -23,7 +23,7 @@ class Case(Test):
                         }
                     },
                     'frequency': {
-                        'value': 120,
+                        'value': 500000,
                         'unit': {
                             'name': 'herz',
                             'suffix': 'Hz'
@@ -41,7 +41,7 @@ class Case(Test):
                 },
                 'args': {
                     'V': {
-                        'value': 20,
+                        'value': 10,
                         'unit': {
                             'name': 'volt',
                             'suffix': 'V'
