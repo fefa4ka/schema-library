@@ -9,7 +9,7 @@ class Base(Electrical()):
 
     def willMount(self):
         self.output = self.input
-    
+
     def circuit(self):
         pass
-        
+

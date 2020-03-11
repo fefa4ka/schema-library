@@ -15,12 +15,9 @@ class Modificator(Base):
     """
 
 
-    frequency = 50 @ u_Hz
-    C_in = 0 @ u_F
-    R_out = 0 @ u_Ohm
 
-    def willMount(self, frequency):
-        self.load(self.V)
+    def willMount(self, frequency=50 @ u_Hz):
+        pass
 
     # @subcircuit
     def circuit(self):
@@ -30,13 +27,12 @@ class Modificator(Base):
 
         self.RC = u(self.V) / rate
 
-        if not (self.C_in and self.R_out):
-            self.R_out = (self.V / self.I_load) @ u_Ohm
+        self.R_out = self.R_load
 
         if not self.R_out:
             self.R_out = (self.RC / u(self.C_out)) @ u_Ohm
 
-        if not self.C_in:
+        if not hasattr(self, 'C_in'):
             self.C_in = (self.RC / u(self.R_out)) @ u_F
 
         C_in = Capacitor()(self.C_in)

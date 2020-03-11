@@ -1,6 +1,13 @@
 from bem.tester import Test
 
+from bem.simulator import Simulate
+from collections import defaultdict
+from bem import u, u_A, u_Degree, u_Hz, u_MHz
+from math import log
+
 class Case(Test):
+
+
     def body_kit(self):
         return [{
                 'name': 'basic.source.VS',
@@ -10,6 +17,13 @@ class Case(Test):
                 'args': {
                     'V': {
                         'value': 0.2,
+                        'unit': {
+                            'name': 'volt',
+                            'suffix': 'V'
+                        }
+                    },
+                    'offset': {
+                        'value': 0,
                         'unit': {
                             'name': 'volt',
                             'suffix': 'V'
@@ -35,6 +49,13 @@ class Case(Test):
                 'args': {
                     'V': {
                         'value': 0.2,
+                        'unit': {
+                            'name': 'volt',
+                            'suffix': 'V'
+                        }
+                    },
+                    'offset': {
+                        'value': 0,
                         'unit': {
                             'name': 'volt',
                             'suffix': 'V'

@@ -22,11 +22,8 @@ class Modificator(Base):
         'output_n': True
     }
 
-    set_period = 0.5 @ u_s
-    reset_period = 0.3 @ u_s
-    V_load = 5 @ u_V
 
-    def willMount(self, set_period, reset_period):
+    def willMount(self, set_period=0.5 @ u_s, reset_period=0.3 @ u_s):
         self.load(self.V)
 
         self.duty_cycle = reset_period / (reset_period + set_period)

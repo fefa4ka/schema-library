@@ -7,24 +7,20 @@ from .. import Base
 
 class Modificator(Base):
     """**Diode Voltage Clamp**
-    
+
     Sometimes it is desirable to limit the range of a signal (i.e., prevent it from exceeding certain voltage limits) somewhere in a circuit.
-    
+
     A voltage divider can provide the reference voltage for a clamp. In this case you must ensure that the resistance looking into the voltage divider (`I_out`) is small compared with `R_load`.
 
     * Paul Horowitz and Winfield Hill. "1.6.6 Circuit applications of diodes" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 35-36
     """
 
-    V_ref = 10 @ u_V
-    V_out = 3 @ u_V
-    I_ref = 0.01 @ u_A
-
-    def willMount(self, V_ref, V_out, I_ref):
+    def willMount(self, V_ref=10 @ u_V, V_out=3 @ u_V, I_ref=0.01 @ u_A):
         pass
 
     def circuit(self):
         super().circuit()
-        
+
         signal = self.output
         self.output = Net('SignalClampedOutput')
 
@@ -39,4 +35,4 @@ class Modificator(Base):
             Rref = Resistor()(667)
 
         clamp = self.v_ref & Rref & Diode(type='generic')(V=self.V_ref, Load=self.Load)['K', 'A'] & self.output
-        signal_input = signal & Resistor()(self.R_load, ref='R_load') & self.output
+        signal_input = signal & Resistor()(self.R_load) & self.output

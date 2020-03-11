@@ -4,9 +4,7 @@ from bem import Net
 from PySpice.Unit import u_Ohm
 
 class Modificator(Base):
-    R_parallel = 1 @ u_Ohm
-
-    def willMount(self, R_parallel):
+    def willMount(self, R_parallel=1 @ u_Ohm):
         pass
 
     def circuit(self):
@@ -16,7 +14,4 @@ class Modificator(Base):
             self.input = Net('RLCInput')
             self.output = Net('RLCOutput')
 
-        
-        R_out = Resistor()(value=self.R_parallel, ref='R_p', **self.load_args)
-
-        circuit = self.input & R_out & self.output
+        R_parallel = self.input & Resistor()(value=self.R_parallel, **self.load_args) & self.output

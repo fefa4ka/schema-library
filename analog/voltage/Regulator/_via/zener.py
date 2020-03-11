@@ -14,9 +14,6 @@ class Modificator(Base):
 
     """
 
-    P_zener = 0 @ u_W
-    R_in = 0 @ u_Ohm
-
     def willMount(self):
         """
             P_zener -- The zener must be able to dissipate `P_(zen\er) =  ((V_(i\\n) - V_(out))/R_(i\\n) - I_(out)) * V_(out)`

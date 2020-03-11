@@ -17,9 +17,6 @@ class Modificator(Base):
     In this case the voltage-divider equation tells you how much signal gets to the input of that last stage. This will all become clearer after you know about a remarkable fact (Thévenin’s theorem) that will be discussed later. First, though, a short aside on voltage sources and current sources.
     """
 
-    R_in = 0 @ u_Ohm
-    R_out = 0 @ u_Ohm
-
     def willMount(self, R_in = 0 @ u_Ohm):
         """
             R_in -- Output impeadance that could be used as part of the divider

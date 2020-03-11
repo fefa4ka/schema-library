@@ -24,13 +24,8 @@ class Modificator(Base):
 
         * Paul Horowitz and Winfield Hill. "1.6.3 Power-supply filtering" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 32-33
     """
-    C_ripple = 0.01 @ u_F
 
-    V_ripple = 1 @ u_V
-
-    frequency = 120 @ u_Hz
-
-    def willMount(self, V_ripple=None, frequency=None):
+    def willMount(self, V_ripple=1 @ u_V, frequency=120 @ u_Hz):
         """
             V_ripple -- Periodic variations in voltage about the steady value
             frequency -- Input signal frequency

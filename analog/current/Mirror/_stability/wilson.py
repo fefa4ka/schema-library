@@ -15,10 +15,9 @@ class Modificator(Base):
         stabilizer = Bipolar(type='pnp', follow='collector', common='base')()
         mirroring = mirror.base & programmer.base & stabilizer
 
-        V_je = (stabilizer.selected_part.spice_params.get('VJE', None) or 0.6) @ u_V
-        self.R_g = (self.V_ref - V_je) / self.I_load
-        generator = Resistor()(self.R_g, ref='R_g')
-        sink = self.ref() & programmer & stabilizer.base & generator & self.gnd 
-        v_ref = self.ref() & mirror 
+        self.R_g = (self.V - stabilizer.V_je) / self.I_load
+        generator = Resistor()(self.R_g)
+        sink = self.ref_input() & programmer & stabilizer.base & generator & self.gnd
+        v_ref = self.ref_input() & mirror
 
         return stabilizer.output

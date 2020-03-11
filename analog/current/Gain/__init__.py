@@ -13,8 +13,7 @@ class Base(Electrical(), Network(port='two')):
     * Paul Scherz. “Practical Electronics for Inventors, Fourth Edition
     """
 
-    V_ref = 10 @ u_V
-    V = 1 @ u_V
+    V = 10 @ u_V
     # I_load = 0.015 @ u_A
     # R_load = 1000 @ u_Ohm
 
@@ -28,7 +27,7 @@ class Base(Electrical(), Network(port='two')):
         'gnd': True
     } 
 
-    def willMount(self, V_ref):
+    def willMountbunt(self):
         """
         R_in -- `1/R_(i\\n) = 1/R_s + 1/R_g + 1 / R_(i\\n(base))`
         R_e -- `R_e = V_e / I_(load)`
@@ -40,14 +39,14 @@ class Base(Electrical(), Network(port='two')):
         R_in_base_ac -- `R_(i\\n(base),ac) = beta * (R_e * R_(load)) / (R_e + R_(load))`
         """
 
-        self.load(V_ref)
+        self.load(self.V)
 
     def circuit(self):
         R = Resistor()
         is_ac = 'ac' in self.mods.get('coupled', [])
         is_compensating = 'compensate' in self.mods.get('drop', [])
 
-        self.V_e = self.V_ref / 2
+        self.V_e = self.V / 2
         self.R_e = self.V_e / self.I_load
 
         if is_compensating:
@@ -61,16 +60,14 @@ class Base(Electrical(), Network(port='two')):
                 emitter = R(self.R_e)
             )
 
-        self.V_je = (amplifier.selected_part.spice_params.get('VJE', None) or 0.6) @ u_V
-        self.V_b = self.V_e + self.V_je
-        self.Beta = amplifier.selected_part.spice_params.get('BF', self.Beta) 
-        self.I_in = self.I_load / self.Beta
+        self.V_b = self.V_e + amplifier.V_je
+        self.I_in = self.I_load / amplifier.Beta
 
-        self.R_in_base_dc = self.Beta * self.R_e
-        self.R_in_base_ac = self.Beta * ((self.R_e * self.R_load) / (self.R_e + self.R_load)) 
+        self.R_in_base_dc = amplifier.Beta * self.R_e
+        self.R_in_base_ac = amplifier.Beta * ((self.R_e * self.R_load) / (self.R_e + self.R_load))
 
         stiff_voltage = Divider(type='resistive')(
-            V = self.V_ref,
+            V = self.V,
             V_out = self.V_b,
             Load = self.I_in
         )

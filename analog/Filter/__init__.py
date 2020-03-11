@@ -12,4 +12,4 @@ class Base(Electrical()):
 
     def circuit(self):
         pass
-        
+

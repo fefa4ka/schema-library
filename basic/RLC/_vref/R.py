@@ -4,9 +4,7 @@ from bem import Net
 from PySpice.Unit import u_Ohm
 
 class Modificator(Base):
-    R_vref = 1 @ u_Ohm
-
-    def willMount(self, R_vref):
+    def willMount(self, R_vref=1 @ u_Ohm):
         pass
 
     def circuit(self):
@@ -20,7 +18,4 @@ class Modificator(Base):
             signal = self.output
             self.output = Net('VrefResistorOutput')
 
-
-        R_out = Resistor()(value=self.R_vref, ref='R_v', **self.load_args)
-
-        circuit = self.v_ref & R_out & self.output & signal
+        R_v_ref = self.v_ref & Resistor()(value=self.R_vref, **self.load_args) & self.output & signal

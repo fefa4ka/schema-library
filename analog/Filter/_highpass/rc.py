@@ -23,12 +23,7 @@ class Modificator(Base):
     * Paul Horowitz and Winfield Hill. "1.7.8 RC highpass filters" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 48-49
     """
 
-    f_3dB_high = 500000 @ u_Hz
-
-    R_shunt = 1000 @ u_Ω
-    C_block = 1e-6 @ u_F
-
-    def willMount(self, f_3dB_high):
+    def willMount(self, f_3dB_high=5e5 @ u_Hz):
         self.load(self.V)
         self.R_shunt = self.R_load
         self.C_block = 1 / (2 * pi * self.R_shunt * f_3dB_high) @ u_F

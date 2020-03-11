@@ -29,7 +29,7 @@ class Modificator(Base, Physical()):
 
         self.input += switch['ip']
         self.input_n += switch['in']
-        
+
         self.output += switch['op']
         self.output_n += switch['on']
 

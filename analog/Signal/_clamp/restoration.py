@@ -14,7 +14,7 @@ class Modificator(Base):
 
         D = Diode(type='generic')
         C = Capacitor()
-        
+
         signal = self.output
         self.output = Net('SignalClampedOutput')
 

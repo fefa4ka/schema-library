@@ -6,14 +6,8 @@ from PySpice.Unit import u_Ohm, u_V, u_F, u_ms, u_Hz, u_A
 
 class Modificator(Base):
     output_inverse = None
-    C_ripple = 0.01 @ u_F
 
-
-    V_ripple = 1 @ u_V
-
-    frequency = 10 @ u_Hz
-
-    def willMount(self, V_ripple=None, frequency=None):
+    def willMount(self, V_ripple=1 @ u_V, frequency=10 @ u_Hz):
         """
             V_ripple -- Periodic variations in voltage about the steady value
             frequency -- Input signal frequency

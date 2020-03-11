@@ -9,11 +9,6 @@ class Base(Electrical(), Network(port='two')):
     Switch connected series to the signal.
     """
 
-    V_ref = 15 @ u_V
-    V_input = 10 @ u_V
-
-    load_block = None
-
     pins = {
         'v_ref': True,
         'input': 'ControlP',
@@ -22,14 +17,13 @@ class Base(Electrical(), Network(port='two')):
         'output_n': 'LoadN'
     }
 
-    def willMount(self, V_ref=None):
+    def willMount(self, V_ref=15 @ u_V):
         if not self.gnd:
             self.gnd = Net()
-        
+
         self.load_block = Virtual()(input=self.output, output=self.output_n)
-        
         self.load(self.V_ref)
-        
+
     def circuit(self):
         pass
 

@@ -11,6 +11,6 @@ class Base(Electrical()):
         'output_n': True,
         'gnd': True
     }
-    
+
     def circuit(self):
-        pass 
+        pass

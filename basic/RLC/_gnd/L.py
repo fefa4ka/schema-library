@@ -20,7 +20,4 @@ class Modificator(Base):
             signal = self.output
             self.output = Net('GndInductorOutput')
 
-
-        L_out = Inductor()(self.L_gnd, ref='L_g', **self.load_args)
-
-        circuit = signal & self.output & L_out & self.gnd
+        L_gnd = signal & self.output & Inductor()(self.L_gnd, **self.load_args) & self.gnd

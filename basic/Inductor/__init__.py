@@ -23,9 +23,8 @@ class Base(Combination()):
     """
 
     increase = False
-    value = 10 @ u_H
 
-    def willMount(self):
+    def willMount(self, value = 1 @ u_H):
         """
             value -- L is called the inductance and is measured in henrys (or mH, μH, nH, etc.).
         """

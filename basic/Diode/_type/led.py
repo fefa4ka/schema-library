@@ -4,14 +4,13 @@ from bem.basic import Resistor
 from skidl import Net
 
 class Modificator(Base):
-    color = 'green'
     # wavelength = 535e-9 @ u_m
     # wavelength_range = 35e-9 @ u_m
     V_drop = 3.4 @ u_V
     Load = 20e-3 @ u_A
     V_min = 1.9 @ u_V
 
-    def willMount(self, color):
+    def willMount(self, color='green'):
         self.Power = u(self['I_load']) @ u_A
         self.V_j = u(self['V_drop']) @ u_V
 

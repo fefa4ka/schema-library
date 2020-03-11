@@ -10,11 +10,7 @@ class Base(Electrical()):
     TODO: Relaxation Oscillator https://en.wikipedia.org/wiki/Schmitt_trigger
     """
 
-    V = 24 @ u_V
-    V_on = 13 @ u_V
-    V_off = 9 @ u_V
-
-    def willMount(self, V_on, V_off):
+    def willMount(self, V_on=7 @ u_V, V_off=3 @ u_V):
         self.load(self.V)
 
     def circuit(self):

@@ -11,7 +11,7 @@ class Modificator(Base):
 
     def create_bridge(self):
         D_in_out = Diode(type='generic')(V=self.V_out, Load=self.Load)
-        self.input & D_in_out['A,K'] & self.output
+        self.input & D_in_out & self.output
 
     def circuit(self, **kwargs):
         super().circuit(**kwargs)

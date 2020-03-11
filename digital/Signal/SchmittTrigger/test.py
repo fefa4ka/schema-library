@@ -9,14 +9,14 @@ class Case(Test):
                 },
                 'args': {
                     'V': {
-                        'value': 24,
+                        'value': 5,
                         'unit': {
                             'name': 'volt',
                             'suffix': 'V'
                         }
                     },
                     'offset': {
-                        'value': 11,
+                        'value': 5,
                         'unit': {
                             'name': 'volt',
                             'suffix': 'V'
@@ -41,7 +41,7 @@ class Case(Test):
                 },
                 'args': {
                     'V': {
-                        'value': 24,
+                        'value': 10,
                         'unit': {
                             'name': 'volt',
                             'suffix': 'V'

@@ -12,12 +12,7 @@ class Modificator(Base):
         R = Resistor()
         D = Diode(type='generic')
 
-        load = {
-            'V': self.V,
-            'Load': self.Load
-        }
-        
         signal = self.output
         self.output = Net('SignalLimitedOutput')
 
-        limiter = signal & R(value=1000@u_Ohm) & self.output & (D(**load)['A', 'K'] | D(**load)['K', 'A']) & self.v_ref
+        limiter = signal & R(value=1000@u_Ohm) & self.output & (D(**self.load_args) | D(**self.load_args)) & self.v_ref

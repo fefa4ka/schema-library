@@ -13,24 +13,18 @@ class Modificator(Base):
     * Paul Horowitz and Winfield Hill. "2.2.7 Common-emitter amplifier" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 88-89
     """
 
-    V_ref = 20 @ u_V
-    f_3db = 120 @ u_Hz
-
-    V_split = 0 @ u_V
-    R_out = 0 @ u_Ohm
-    C_in = 0 @ u_F
-    I_b = 0.001 @ u_A
-
-    def willMount(self, V_ref, f_3db):
+    def willMount(self, V_ref=20 @ u_V, f_3db=120 @ u_Hz):
         """
             f_3db -- Frequencies of interest are passed by the highpass filter
             C_in -- Blocking capacitor is chosen so that all frequencies of interest are passed by the highpass filter `C_(i\\n) >= 1 / (2 pi f_(3db) (R_s∥R_g))`
         """
 
         self.V_split = self.V_ref / 6
-        self.R_out = (u(self.V_split) / u(self.I_b) * 100) @ u_Ohm
 
         self.load(V_ref)
+
+        self.I_b = self.I_load
+        self.R_out = (u(self.V_split) / u(self.I_b) * 100) @ u_Ohm
 
     def circuit(self):
         super().circuit()

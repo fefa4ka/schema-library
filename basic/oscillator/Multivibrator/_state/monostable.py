@@ -25,10 +25,7 @@ class Modificator(Base):
         'gnd': True
     }
 
-    width = 0.03 @ u_s
-    frequency = 50 @ u_Hz
-
-    def willMount(self, frequency, width):
+    def willMount(self, width = 0.03 @ u_s, frequency = 20 @ u_Hz):
         pass
 
     def circuit(self):

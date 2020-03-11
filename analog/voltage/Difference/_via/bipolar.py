@@ -16,19 +16,7 @@ class Modificator(Base):
         'gnd': True
     }
 
-    V_gnd = -10 @ u_V
-
-    I_quiescent = 0.0001 @ u_A
-
-    R_c = 0 @ u_Ohm
-    R_e = 0 @ u_Ohm
-    R_out = 0 @ u_Ohm
-
-    G_diff = 0
-    G_cm = 0
-    CMMR = 0
-
-    def willMount(self, V_gnd, I_quiescent):
+    def willMount(self, V_gnd=-10 @ u_V, I_quiescent = 0.0001 @ u_A):
         """
         R_c -- `R_c = V_c / I_(quiescent)`
         R_e -- Hardcoded value `R_e = 1000 Ω`

@@ -12,12 +12,7 @@ class Modificator(Base):
     * Paul Horowitz and Winfield Hill. "1.7.9 RC lowpass filters" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 50-51
     """
 
-    f_3dB_low = 500000 @ u_Hz
-
-    C_pass = 1e-6 @ u_F
-    R_low = 1000 @ u_Ω
-
-    def willMount(self, f_3dB_low=None):
+    def willMount(self, f_3dB_low=5e5 @ u_Hz):
         """
             f_3dB_low -- `f_(3db) = 1/(2πR_(series)C_(gnd))`
         """

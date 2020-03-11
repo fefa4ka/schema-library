@@ -15,9 +15,7 @@ class Base(Network(port='two'), Electrical()):
         'wave': ['half']
     }
 
-    V_out = 10 @ u_V
-
-    def willMount(self, V_out=None,):
+    def willMount(self, V_out=10 @ u_V):
         """
             V_ripple -- Periodic variations in voltage about the steady value
             frequency -- Input signal frequency

@@ -4,14 +4,12 @@ from bem import Net
 from PySpice.Unit import u_H
 
 class Modificator(Base):
-    L_series = 1 @ u_H
-
-    def willMount(self, L_series):
+    def willMount(self, L_series=1 @ u_H):
         pass
 
     def circuit(self):
         super().circuit()
-        
+
         signal = None
         if not (self.input and self.output):
             signal = self.input = Net('RLCInput')
@@ -20,6 +18,4 @@ class Modificator(Base):
             signal = self.output
             self.output = Net('SeriesInductorOutput')
 
-        L_series = Inductor()(self.L_series, **self.load_args)
-
-        circuit = signal & L_series & self.output 
+        L_series = signal & Inductor()(self.L_series, **self.load_args) & self.output

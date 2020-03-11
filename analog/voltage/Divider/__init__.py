@@ -12,9 +12,7 @@ class Base(Electrical()):
     }
 
     # Props
-    V_out = 3 @ u_V
-
-    def willMount(self, V_out):
+    def willMount(self, V_out=3 @ u_V):
         """
            V_out -- Note that the output voltage is always less than (or equal to) the input voltage; that’s why it’s called a divider.
         """

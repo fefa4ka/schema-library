@@ -12,18 +12,22 @@ class Modificator(Base):
 
     * Paul Horowitz and Winfield Hill. "1.6.6 Circuit applications of diodes" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 35-36
     """
-    frequency = 50 @ u_Hz
 
-    def willMount(self, frequency):
+    def willMount(self, frequency=50 @ u_Hz):
         pass
 
     def circuit(self, *args, **kwargs):
         super().circuit(*args, **kwargs)
 
+        args = {
+            'frequency': self.frequency,
+            **self.load_args
+        }
+
         output = Net('SignalRecrifiedOutput')
         rectifier = self & \
-            Differentiator(via='rc')(V=self.V, Load=self.Load, frequency=self.frequency) & \
-                Rectifier(wave='half')(V=self.V, Load=self.Load, frequency=self.frequency) & \
+            Differentiator(via='rc')(**args) & \
+                Rectifier(wave='half')(**args) & \
                     output
 
         self.output = output

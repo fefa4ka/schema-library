@@ -10,10 +10,7 @@ import re
 from collections import defaultdict
 
 class Base(Electrical()):
-    series = 'ATmega8'
-    frequency = 8000000 @ u_Hz
-
-    def willMount(self, series, frequency):
+    def willMount(self, series='ATmega8', frequency=5e6 @ u_Hz):
         pass
 
     def circuit(self):

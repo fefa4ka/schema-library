@@ -14,7 +14,7 @@ class Base(Physical(), Network(port='two')):
     _|**COMMON BASE**|**COMMON COLLECTOR**|**COMMON EMITTER**
     -----|-----|-----|-----
     Voltage gain|High|Low|Medium
-    Current ga)in|Low|High|Medium
+    Current gain|Low|High|Medium
     Power gain|Low|Medium|High
     Phase shift|0°|0°|180°
     Input resistance|Low|High|Medium

@@ -11,15 +11,7 @@ class Modificator(Base):
     * Paul Horowitz and Winfield Hill. "2.2.7 Common-emitter amplifier" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 89
     """
 
-    V = 6 @ u_V
-    angle = 45
-    f_3db = 100 @ u_Hz
-
-    R_shift_out = 100000 @ u_Ohm
-    C_shift_in = 0 @ u_F
-
-
-    def willMount(self, angle, R_shift_out=None):
+    def willMount(self, angle=45, R_shift_out=100000 @ u_Ohm):
         """
             angle -- Phase shift angle `theta = 2 tan^-1 omega RC`
         """

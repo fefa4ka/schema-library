@@ -1,7 +1,6 @@
 from .. import Base
-from bem.basic import Resistor, Capacitor
-from bem import Net, u_Ohm, u_V
-from math import pi
+from bem.basic import Resistor
+from bem import Net, u_Ohm
 
 
 class Modificator(Base):
@@ -11,11 +10,12 @@ class Modificator(Base):
 
     def willMount(self):
         self.R_e = 1000 @ u_Ohm
-        self.V_drop += self.R_e * (self.V_ref / self.R_e)
-      
-    def ref(self):
+        print("V_DROPP ADD", self.R_e* self.I_load)
+        self.V_drop += self.R_e * self.I_load
+
+    def ref_input(self):
         ref = Net('Reference')
-        
-        line = self.input & Resistor()(self.R_e, ref='R_e') & ref
-        
+
+        line = self.input & Resistor()(self.R_e) & ref
+
         return ref

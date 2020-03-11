@@ -31,15 +31,8 @@ class Base(Electrical()):
 
     * Paul Horowitz and Winfield Hill. "1.4.2 RC circuits: V and I versus time" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 21-23
     """
-    V = 10 @ u_V
-    V_out = 5 @ u_V
-    Time_to_V_out = 0.005 @ u_s
 
-    R_in = 0 @ u_Ohm
-    C_out = 0 @ u_Ohm
-    reverse = False
-
-    def willMount(self, V_out, Time_to_V_out, reverse=False):
+    def willMount(self, V_out=5 @ u_V, Time_to_V_out=5e-3 @ u_s, reverse=False):
         """
             reverse -- Reverse capacitor connection
         """
@@ -47,14 +40,9 @@ class Base(Electrical()):
 
     # @subcircuit
     def circuit(self):
-        if not (self.R_in and self.C_out):
-            self.R_in = self.R_load / 10
+        self.R_in = self.R_load / 10
 
-        if self.R_in and not self.C_out:
-            self.C_out = (self.Time_to_V_out / (self.R_in * log(self.V / (self.V - self.V_out)))) @ u_F
-
-        if self.V_out and not self.R_in:
-            self.R_in = (self.Time_to_V_out / (self.C_Out * log(self.V / (self.V - self.V_out)))) @ u_Ohm
+        self.C_out = (self.Time_to_V_out / (self.R_in * log(self.V / (self.V - self.V_out)))) @ u_F
 
         current_source = Resistor()(self.R_in)
         discharger = Capacitor()(self.C_out)
