@@ -38,7 +38,7 @@ class Case(Test):
                 }
             },
             'pins': {
-                'input': ['input_a'],
+                'input': ['input'],
                 'output': ['gnd']
             }
         }, {
@@ -56,7 +56,7 @@ class Case(Test):
                 }
             },
             'pins': {
-                'input': ['v_ref', 'input_b'],
+                'input': ['v_ref', 'input_n'],
                 'output': ['gnd']
             }
         }, {

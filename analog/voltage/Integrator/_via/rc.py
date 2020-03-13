@@ -27,8 +27,8 @@ class Modificator(Base):
 
         self.tau = u(self.V / rate)
 
-        current_sensing = Resistor()(self.R_load / 10)
-        differetiator = Capacitor()((self.tau / current_sensing.value) @ u_F)
+        discharger = Resistor()(self.R_load / 10)
+        integrator = Capacitor()((self.tau / discharger.value) @ u_F)
 
-        self.input & self.v_ref & differetiator & self.output & current_sensing & self.gnd
+        self.input & self.v_ref & discharger & self.output & integrator & self.gnd
 

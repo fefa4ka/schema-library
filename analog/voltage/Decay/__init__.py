@@ -36,16 +36,14 @@ class Base(Electrical()):
         """
             reverse -- Reverse capacitor connection
         """
-        self.load(self.V)
+        pass
 
     # @subcircuit
     def circuit(self):
-        self.R_in = self.R_load / 10
-
-        self.C_out = (self.Time_to_V_out / (self.R_in * log(self.V / (self.V - self.V_out)))) @ u_F
-
-        current_source = Resistor()(self.R_in)
-        discharger = Capacitor()(self.C_out)
+        current_source = Resistor()(self.R_load / 10)
+        discharger = Capacitor()(
+            (self.Time_to_V_out / (current_source.value * log(self.V / (self.V - self.V_out)))) @ u_F
+        )
 
         if self.reverse:
             self.input & current_source & self.output

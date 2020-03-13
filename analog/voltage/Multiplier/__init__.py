@@ -13,34 +13,32 @@ class Base(Electrical()):
         * Paul Horowitz and Winfield Hill. "1.6.4 Rectifier configurations for power supplies" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 33-35
     """
 
-    def willMount(self, scale=2, frequency=120 @ u_Hz, V_ripple=1 @ u_V):
-        self.scale = int(scale)
+    def willMount(self, Scale=2, Frequency=120 @ u_Hz, V_ripple=1 @ u_V):
         self.input_n = self.gnd
 
-        self.load(self.V * self.scale)
+        self.load(self.V * self.Scale)
 
     def circuit(self):
         HalfBridge = Rectifier(wave='half', rectifier='full')
 
         sections = []
 
-        if self.scale % 2:
+        if self.Scale % 2:
             sections.append((self.input_n, self.input))
         else:
             sections.append((self.input, self.input_n))
 
-        for block in range(self.scale):
+        for block in range(int(self.Scale)):
             last = sections[-1]
 
-            half = HalfBridge(
-                V_out=self.V * self.scale,
-                frequency=self.frequency,
-                V_ripple=self.V_ripple,
-                Load=self.Load
+            scaler = HalfBridge(
+                V_out=self.V * self.Scale,
+                frequency=self.Frequency,
+                V_ripple=self.V_ripple
             )
-            half.gnd += last[0]
-            half.input += last[1]
+            scaler.gnd += last[0]
+            scaler.input += last[1]
 
-            sections.append((half.input, half.output))
+            sections.append((scaler.input, scaler.output))
 
         self.output += sections[-1][1]

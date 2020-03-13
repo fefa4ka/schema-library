@@ -6,7 +6,7 @@ from PySpice.Unit import u_Ohm, u_kOhm, u_A, u_V
 
 class Modificator(Base):
     """**Digital Low-Current Switch **
-    
+    * TODO: https://www.nutsvolts.com/magazine/article/may2015_Secura    
     """
 
     def circuit(self):

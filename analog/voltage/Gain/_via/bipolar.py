@@ -21,78 +21,23 @@ class Modificator(Electrical()):
             f_3db -- Frequencies of interest are passed by the highpass filter
             C_in -- Blocking capacitor is chosen so that all frequencies of interest are passed by the highpass filter `C_(i\\n) >= 1 / (2 pi f_(3db) (R_s∥R_g))`
             I_quiescent --  That current puts the collector at `V_(ref)`
-
-            V_je -- Base-emitter built-in potential
-            V_e -- `V_e = 1V` selected for temperature stability and maximum voltage swing
-            V_c -- `V_c = V_(ref) / 2`
-            R_c -- `R_c = (V_(ref) - V_c) / I_(quiescent)`
-            R_in -- `1/R_(i\\n) = 1/R_s + 1/R_g + 1 / R_(i\\n(base))`
-            R_e -- `R_e = V_e / I_(load)`
-
-            R_in_base_dc -- `R_(i\\n(base),dc) = beta * R_e`
-            R_in_base_ac -- `R_(i\\n(base),ac) = beta * (r_e + R_(load))`
-
-            G_v -- Amplifier gain `G_v = v_(out) / v_(i\\n) = - g_m * R_c = -R_c/R_e`
-            g_m -- The inverse of resistance is called conductance. An amplifier whose gain has units of conductance is called a transconductance amplifier. `g_m = i_(out)/v_(i\\n) = - G_v / R_c `
-            r_e -- Transresistance `r_e = V_T / I_e = ((kT) / q) / I_e = (0.0253 V) / I_e`
-
         """
-        self.I_quiescent = self.I_load 
+        self.I_quiescent = self.I_load
 
     def circuit(self):
-        self.input = self.output = Net('VoltageGainInput')
-        self.v_ref = Net('Vref')
-        self.gnd = Net()
+        amplifier = Bipolar(type='npn', emitter='amplifier')()
+        self.v_ref & amplifier.v_ref
+        self.gnd & amplifier.gnd
 
-        self.V_c = self.V / 2
-        self.R_c = (self.V - self.V_c) / self.I_quiescent
+        self.C_in = (1 / (2 * pi * self.f_3db * amplifier.R_in_base_ac)) @ u_F
+        self.C_out = (1 / (2 * pi * self.f_3db * (amplifier.r_e + amplifier.R_3))) @ u_F
 
-        self.V_e = 1.0 @ u_V  # For temperature stability
-        self.R_e = self.V_e / self.I_quiescent
-
-        R = Resistor()
-
-        amplifier = Bipolar(
-            common='emitter',
-            follow='collector'
-        )(
-            collector = R(self.R_c),
-            emitter = R(self.R_e)
-        )
-
-        stiff_voltage = Divider(type='resistive')(
-            V = self.V,
-            V_out = self.V_e + amplifier.V_je,
-            Load = amplifier.Beta * self.R_e
-        )
-
-        self.r_e = 0.026 @ u_V / self.I_quiescent
-
-        self.G_v = -1 * u(self.R_c / (self.R_e + self.r_e))
-        self.R_3 = (-1 * self.R_c - self.r_e * self.G_v) / self.G_v
-
-        self.g_m = self.G_v / self.R_c * -1
-
-        self.R_in_base_dc = amplifier.Beta * self.R_e
-
-        self.R_in_base_ac = amplifier.Beta * (self.r_e + self.R_3)
-        self.R_in = R.parallel_sum(R, [self.R_in_base_ac, stiff_voltage.R_in, stiff_voltage.R_out]) @ u_Ohm
-
-        stiff_voltage.input += self.v_ref
-
-        self.C_in = (1 / (2 * pi * self.f_3db * self.R_in)) @ u_F
-        self.C_out = (1 / (2 * pi * self.f_3db * (self.r_e + self.R_3))) @ u_F
-
-        amplified = Net('VoltageGainOutput')
-
-        circuit = stiff_voltage & self & amplifier & amplified
+        self.input & amplifier & self.output
 
         signal = Net('VoltageGainAcInput')
         ac_coupling = signal & Capacitor()(self.C_in) & self.input
-        ac_out = amplifier.emitter & R(self.R_3, ref='R_ac') & Capacitor()(self.C_in) & self.gnd
+        ac_out = amplifier.emitter & Resistor()(amplifier.R_3) & Capacitor()(self.C_in) & self.gnd
 
         self.input = signal
-        self.output = amplified
 
-        self.Power = (self.V_c - self.V_e) * self.I_quiescent
-        self.consumption(self.V_c)
+

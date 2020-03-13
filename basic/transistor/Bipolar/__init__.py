@@ -93,8 +93,8 @@ class Base(Physical(), Network(port='two')):
     }
 
     def willMount(self, collector=None, base=None, emitter=None):
-        self.Beta = self['BF'] or 100 #self.selected_part.spice_params.get('BF', 100)
-        self.V_je = (self['VJE'] or 0.6) @ u_V # (self.selected_part.spice_params.get('VJE', None) or 0.6) @ u_V
+        self.Beta = self['BF'] or 100
+        self.V_je = (self['VJE'] or 0.6) @ u_V
         self.V_ce = (self['VCE'] or 0.3) @ u_V
 
     def part_spice(self, *args, **kwargs):
@@ -137,6 +137,7 @@ class Base(Physical(), Network(port='two')):
             self.input += transistor[input_side]
 
         v_ref_side = 'emitter' if common == 'collector' else 'collector'
+
         if self[v_ref_side]:
             v_ref_line = self.v_ref & self[v_ref_side] & transistor[v_ref_side]
         else:
@@ -145,3 +146,4 @@ class Base(Physical(), Network(port='two')):
         self.collector, self.base, self.emitter = transistor['collector', 'base', 'emitter']
 
         self.output += self[follow]
+

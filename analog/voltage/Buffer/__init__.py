@@ -1,6 +1,5 @@
 from bem.abstract import Electrical
 from bem.basic import OpAmp, Resistor
-from bem.analog.current import Gain
 from bem.basic.transistor import Bipolar
 from bem import u_Hz
 from math import pi, sqrt
@@ -18,7 +17,7 @@ class Base(Electrical()):
         'via': ['opamp', 'bipolar', 'mosfet']
     }
 
-    def willMount(self, frequency=100 @ u_Hz):
+    def willMount(self, Frequency=100 @ u_Hz):
         """
             V -- Verify that the amplifier can achieve the desired output swing using the supply voltages provided
             V_signal -- Signal amplitude
@@ -26,7 +25,7 @@ class Base(Electrical()):
         """
         self.load(self.V)
         self.V_signal = self.V / sqrt(2) # RMS
-        self.slew_rate = 2 * pi * self.frequency * self.V
+        self.slew_rate = 2 * pi * self.Frequency * self.V
 
     def circuit(self):
         via = self.props.get('via', None)
@@ -42,11 +41,11 @@ class Base(Electrical()):
             the datasheet.
             6. High output current amplifiers may be required if driving low impedance loads
             """
-            buffer = OpAmp()(frequency=self.frequency)
+            buffer = OpAmp()(frequency=self.Frequency)
             buffer.input_n & buffer.output & self.output
 
         if via == 'bipolar':
-            buffer = Gain(drop='compensate')()
+            buffer = Bipolar(type='npn', emitter='follower')()
             buffer & self.output
 
         if buffer:

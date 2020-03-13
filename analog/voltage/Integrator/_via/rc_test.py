@@ -8,15 +8,15 @@ class Case(Test):
                 'flow': ['PULSEV'],
             },
             'args': {
-                'V': {
-                    'value': 5,
+                'initial_value': {
+                    'value': 0.1,
                     'unit': {
                         'name': 'volt',
                         'suffix': 'V'
                     }
                 },
-                'initial_value': {
-                    'value': 0.1,
+                'V': {
+                    'value': 10,
                     'unit': {
                         'name': 'volt',
                         'suffix': 'V'
@@ -42,39 +42,21 @@ class Case(Test):
                 'output': ['gnd']
             }
         }, {
-            'name': 'basic.source.VS',
+            'name': 'basic.RLC',
             'mods': {
-                'flow': ['V'],
+                'series': ['R']
             },
             'args': {
-                'V': {
-                    'value': 5,
+                'R_series': {
+                    'value': 1000,
                     'unit': {
-                        'name': 'volt',
-                        'suffix': 'V'
+                        'name': 'ohm',
+                        'suffix': 'Ω'
                     }
                 }
             },
             'pins': {
-                'input': ['v_ref', 'input_n'],
+                'input': ['output'],
                 'output': ['gnd']
             }
-        }, {
-                'name': 'basic.RLC',
-                'mods': {
-                    'series': ['R']
-                },
-                'args': {
-                    'R_series': {
-                        'value': 1000,
-                        'unit': {
-                            'name': 'ohm',
-                            'suffix': 'Ω'
-                        }
-                    }
-                },
-                'pins': {
-                    'input': ['output'],
-                    'output': ['gnd']
-                }
         }]

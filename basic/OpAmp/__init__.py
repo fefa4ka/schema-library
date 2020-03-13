@@ -35,8 +35,15 @@ class Base(Physical(), Network(port='two')):
     def circuit(self):
         self.element = self.part()
 
-        # part['input'] += self.input
-        # part['input_n'] += self.input_n
-        # part['output'] += self.output
-        # part['v_ref'] += self.v_ref
-        # part['gnd'] += self.gnd
+        # buffer.v_ref & self.v_ref
+        # if 'single' in self.props.get('supply', []):
+        #     split_power = Divider(type='resistive')(
+        #         V=self.V,
+        #         V_out=self.V / 2,
+        #         Load=source.value)
+        #     self.v_ref & split_power & buffer
+        #     buffer.gnd & self.gnd & split_power.gnd
+        # else:
+        #     buffer.input & self.gnd
+        #     buffer.gnd & self.v_inv
+       

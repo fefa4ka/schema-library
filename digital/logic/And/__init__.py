@@ -10,10 +10,7 @@ class Base(Network(port='many'), Electrical()):
 
     """
 
-    def circuit(self): 
-        if len(self.inputs) == 0:
-            return
-
+    def circuit(self):
         v_ref = self.v_ref
 
         for signal in self.inputs:

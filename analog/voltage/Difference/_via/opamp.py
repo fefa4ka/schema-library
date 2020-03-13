@@ -39,7 +39,7 @@ class Modificator(Base):
         input_n = self.input_n & R(self.R_in) & opamp.input_n
 
         sense = opamp.input_n & R(self.R_feedback) & opamp.output
-        ref = opamp.input & R(self.R_feedback) & self.v_inv
+        ref = opamp.input & R(self.R_feedback) & self.gnd
 
         self.v_ref += opamp.v_ref
         self.v_inv += opamp.gnd

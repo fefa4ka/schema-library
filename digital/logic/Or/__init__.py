@@ -13,19 +13,16 @@ class Base(Network(port='many'), Electrical()):
     """
 
     def circuit(self):
-        if len(self.inputs) == 0:
-            return
-
-        output = Net('LoginOrOutput')
         for signal in self.inputs:
-            or_input = Bipolar(type='npn', common='emitter', follow='emitter')(
+            or_gate = Bipolar(
+                type='npn',
+                common='emitter',
+                follow='emitter'
+            )(
                 collector = self.v_ref,
                 base = Resistor()(10000),
-                emitter = output
+                emitter = self.output
             )
-            or_input.input += signal
-            # or_input.emitter += output
+            signal & or_gate.input
 
-        self.outputs = [output]
-
-        pulldown = output & Resistor()(10000) & self.gnd
+        pulldown = self.output & Resistor()(10000) & self.gnd

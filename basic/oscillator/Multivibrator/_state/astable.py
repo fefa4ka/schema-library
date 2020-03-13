@@ -26,7 +26,7 @@ class Modificator(Base):
     def willMount(self, set_period=0.5 @ u_s, reset_period=0.3 @ u_s):
         self.load(self.V)
 
-        self.duty_cycle = reset_period / (reset_period + set_period)
+        self.duty_cycle = float(set_period / (reset_period + set_period)) * 100
 
     def circuit(self):
         Gate = Bipolar(type='npn', follow='collector', common='emitter')
@@ -38,7 +38,6 @@ class Modificator(Base):
             # Min. Base Current, Ibmin = Ic / β, where β is the hFE of the transistor
             # Safe Base Current,Ib = 10 * Ibmin = 3 x Ic / β
             return Decay()(
-                V = self.V,
                 V_out = self.V * 0.5,
                 Time_to_V_out = width,
                 Load = (self.V - controller.V_je) / (3 * self.I_load / controller.Beta) * 10, # * 10 because in Decay Load / 10
@@ -49,7 +48,7 @@ class Modificator(Base):
             return Gate(
                 # The resistance R should be designed to limit the collector current Ic with in a safe limit.
                 # In normal cases, V = (Vcc – Vce) 
-                collector = lambda T: R((self.V - (T['VCE'] or 0.3) @ u_V) / self.I_load)
+                collector = lambda T: R((self.V - T.V_ce) / self.I_load)
             )
 
         def Sharp(state, oscillator):
@@ -65,10 +64,10 @@ class Modificator(Base):
 
         self.v_ref & reset_oscillator.input & set_oscillator.input & set.v_ref & reset.v_ref
 
-        Sharp(set, set_oscillator) & self.output
-        Sharp(reset, reset_oscillator) & self.output_n
+        Sharp(set, reset_oscillator) & self.output
+        Sharp(reset, set_oscillator) & self.output_n
 
-        set_oscillator & reset.input
-        reset_oscillator & set.input
+        reset_oscillator & reset.input
+        set_oscillator & set.input
 
         self.gnd & set.gnd & reset.gnd
