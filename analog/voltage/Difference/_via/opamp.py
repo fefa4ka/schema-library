@@ -31,17 +31,17 @@ class Modificator(Base):
 
     def circuit(self):
         R = Resistor()
-        opamp = self.props.get('unit', None)
-        if not opamp:
-            opamp = OpAmp()(V=self.V)
+        diff = self.props.get('unit', None)
+        if not diff:
+            diff = OpAmp()(V=self.V)
 
-        input_p = self.input & R(self.R_in) & opamp.input
-        input_n = self.input_n & R(self.R_in) & opamp.input_n
+        input_p = self.input & R(self.R_in) & diff.input
+        input_n = self.input_n & R(self.R_in) & diff.input_n
 
-        sense = opamp.input_n & R(self.R_feedback) & opamp.output
-        ref = opamp.input & R(self.R_feedback) & self.gnd
+        sense = diff.input_n & R(self.R_feedback) & diff.output
+        ref = diff.input & R(self.R_feedback) & self.gnd
 
-        self.v_ref += opamp.v_ref
-        self.v_inv += opamp.gnd
+        self.v_ref += diff.v_ref
+        self.v_inv += diff.gnd
 
-        self.output += opamp.output
+        self.output += diff.output

@@ -38,10 +38,10 @@ class Base(Electrical()):
         feedback = R(self.Gain * source.value)
         self.NG = 1 + feedback.value / source.value
 
-        buffer = OpAmp()(frequency=self.Frequency)
+        inverter = OpAmp()(frequency=self.Frequency)
 
-        buffer.v_ref & self.v_ref
-        buffer.input & self.gnd
-        buffer.gnd & self.v_inv
+        inverter.v_ref & self.v_ref
+        inverter.input & self.gnd
+        inverter.gnd & self.v_inv
 
-        self.input & source & buffer.input_n & feedback & buffer.output & self.output
+        self.input & source & inverter.input_n & feedback & inverter.output & self.output

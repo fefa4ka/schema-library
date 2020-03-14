@@ -14,12 +14,9 @@ class Modificator(Base):
     * Paul Horowitz and Winfield Hill. "1.4.3 Differetiators" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 25
     """
 
-
-
     def willMount(self, Frequency=50 @ u_Hz):
         pass
 
-    # @subcircuit
     def circuit(self):
         period = 1 / self.Frequency
         quant = period / 4
