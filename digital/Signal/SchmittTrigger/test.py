@@ -59,7 +59,7 @@ class Case(Test):
                 },
                 'args': {
                     'R_series': {
-                        'value': 1000,
+                        'value': 10000,
                         'unit': {
                             'name': 'ohm',
                             'suffix': 'Ω'

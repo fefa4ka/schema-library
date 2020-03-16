@@ -5,12 +5,14 @@ from bem.analog.voltage import Divider
 from bem.basic.transistor import Bipolar
 
 class Base(Electrical()):
-    """**Schmitt Trigger**
+    """
     A Schmitt trigger is a decision-making circuit. It is used to convert a slowly varying analogue signal voltage into one of two possible binary states, depending on whether the analogue voltage is above or below a preset threshold value. A comparator can do much the same job.
-    TODO: Relaxation Oscillator https://en.wikipedia.org/wiki/Schmitt_trigger
+
+    * https://en.wikipedia.org/wiki/Schmitt_trigger
+    * http://www.johnhearfield.com/Eng/Schmitt.htm
     """
 
-    def willMount(self, V_on=7 @ u_V, V_off=3 @ u_V):
+    def willMount(self, Load=10000 @ u_Ohm, V_on=7 @ u_V, V_off=3 @ u_V):
         self.load(self.V)
 
     def circuit(self):
@@ -23,7 +25,7 @@ class Base(Electrical()):
 
         R_on = R((self.V - self.V_on) / self.I_load)
 
-        # Finally, choose T_ff's collector current and hence the lower threshold voltage VN. 
+        # Finally, choose T_off's collector current and hence the lower threshold voltage VN. 
         # The noise spikes look troublesome, so it would be sensible to aim for around V_on - V_off - which would give about V_histeresis of hysteresis
         self.V_histeresis = self.V_on - self.V_off
 
@@ -60,12 +62,12 @@ class Base(Electrical()):
             R_in = R_off.value
         )
 
-        off & bleed.input
+        off & bleed
         bleed.output & on.base
         on.emitter & off.emitter
 
         self.v_ref & on.v_ref & off.v_ref
-        self.gnd & off.gnd & bleed.gnd
+        self.gnd & off.gnd
 
         self.input & off
         on & self.output

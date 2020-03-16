@@ -7,7 +7,7 @@ from bem.basic import Resistor, Capacitor
 
 
 class Base(Electrical()):
-    """**Decay to equilibrium**
+    """# Decay to equilibrium
 
     The product RC is called the time constant of the circuit. For `R_s` in ohms and `C_g` in farads, the product RC is in seconds. A `C_g` microfarad across `R_s` 1.0k has a time constant Time_to_`V_(out)` of 1 ms; if the capacitor is initially charged to `V_(out) = 1.0 V`, the initial current `I_(out)` is 1.0 mA.
 
@@ -25,7 +25,7 @@ class Base(Electrical()):
 
     Once again there’s good intuition: as the capacitor charges up, the slope (which is proportional to current, because it’s a capacitor) is proportional to the remaining voltage (because that’s what appears across the resistor, producing the current); so we have a waveform whose slope decreases proportionally to the vertical distance it has still to go an exponential.
 
-    To figure out the time required to reach a voltage `V_(out)` on the way to the final voltage `V_(i\\n)`: 
+    To figure out the time required to reach a voltage `V_(out)` on the way to the final voltage `V_(i\\n)`:
 
     `t = R * C * log_e(V_(i\\n) / (V_(i\\n) - V_(out)))`
 
@@ -36,11 +36,11 @@ class Base(Electrical()):
         """
             reverse -- Reverse capacitor connection
         """
-        pass
+        self.load(V_out)
+        self.Power = self.power(self.V, self.R_load / 2)
 
-    # @subcircuit
     def circuit(self):
-        current_source = Resistor()(self.R_load / 10)
+        current_source = Resistor()(self.R_load / 2)
         discharger = Capacitor()(
             (self.Time_to_V_out / (current_source.value * log(self.V / (self.V - self.V_out)))) @ u_F
         )
@@ -50,3 +50,4 @@ class Base(Electrical()):
             self.gnd & discharger & self.output
         else:
             self.input & current_source & self.output & discharger & self.gnd
+

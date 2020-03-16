@@ -39,11 +39,14 @@ class Base(Physical()):
 
     def willMount(self):
         self.Power = self.I_load
-        self.V_j = (self.selected_part.spice_params.get('VJ', None) or 0.6) @ u_V
+
+    def circuit(self):
+        self.V_j = (self['VJ'] or 0.6) @ u_V
 
         self.consumption(self.V_j)
-        self.Z = (self.V_j * self.V_j) / self.P
         self.load(self.V - self.V_j)
+
+        super().circuit()
 
     def part_spice(self, *args, **kwargs):
         return Build('D').spice(*args, **kwargs)

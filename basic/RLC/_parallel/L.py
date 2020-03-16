@@ -10,8 +10,7 @@ class Modificator(Base):
     def circuit(self):
         super().circuit()
 
-        if not (self.input and self.output):
-            self.input = Net('RLCInput')
-            self.output = Net('RLCOutput')
+        signal = self.output
+        self.output = Net('RLCOutput')
 
-        L_parallel = self.input & Inductor()(self.L_parallel) & self.output
+        L_parallel = signal & Inductor()(self.L_parallel) & self.output

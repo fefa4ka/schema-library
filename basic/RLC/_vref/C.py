@@ -10,12 +10,7 @@ class Modificator(Base):
     def circuit(self):
         super().circuit()
 
-        signal = None
-        if not (self.input and self.output):
-            signal = self.input = Net('RLCInput')
-            self.output = Net('RLCOutput')
-        else:
-            signal = self.output
-            self.output = Net('VrefCapacitorOutput')
+        signal = self.output
+        self.output = Net('VrefCapacitorOutput')
 
         C_v_ref = self.v_ref & Capacitor()(self.C_vref) & self.output & signal

@@ -3,6 +3,12 @@ from bem.basic.transistor import Bipolar
 
 
 class Base(Electrical()):
+    """
+        ## PushPull power booster
+        Bipolar follower booster has the usual problem that the follower output can only source current. As with transistor circuits, the remedy is a push–pull booster.
+
+        * Paul Horowitz and Winfield Hill. "4.3.1 Linear circuits" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p.435
+    """
     pins = {
         'v_ref': True,
         'input': True,
@@ -16,7 +22,7 @@ class Base(Electrical()):
         down = Bipolar(type='pnp')()
 
         self.wire_input(up, down)
-        up.emitter & down.emitter & self.output
+        self.output & up.emitter & down.emitter
 
         self.v_ref & up.v_ref
         self.v_inv & down.collector

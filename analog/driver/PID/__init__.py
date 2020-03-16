@@ -3,6 +3,12 @@ from bem.analog.voltage import Summer, Inverter, Integrator, Differentiator, Dif
 from bem import u_Hz
 
 class Base(Electrical()):
+    """
+        * https://www.nutsvolts.com/magazine/article/the_pid_controller_part_1
+        * http://www.ecircuitcenter.com/Circuits/op_pid/op_pid.htm
+        * http://www.ecircuitcenter.com/Circuits/pid1/pid1.htm
+        * file:///Users/fefa4ka/Yandex.Disk.localized/%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8/op_amp_pid_paper_MATEC_FORMAT.pdf
+    """
     pins = {
         'v_ref': True,
         'set': ('SetPoint', ['input']),

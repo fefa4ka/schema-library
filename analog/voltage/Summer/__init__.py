@@ -35,7 +35,7 @@ class Base(Network(port='many'), Electrical()):
         summer = OpAmp()(frequency=self.Frequency)
         summer.v_ref & self.v_ref
         summer.input & self.gnd
-        summer.gnd & self.v_inv
+        summer.v_inv & self.v_inv
 
         for index, signal in enumerate(self.inputs):
             Gain = self.Gain[index] if type(self.Gain) == list else self.Gain

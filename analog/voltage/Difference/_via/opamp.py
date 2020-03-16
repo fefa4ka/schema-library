@@ -42,6 +42,6 @@ class Modificator(Base):
         ref = diff.input & R(self.R_feedback) & self.gnd
 
         self.v_ref += diff.v_ref
-        self.v_inv += diff.gnd
+        self.v_inv += diff.v_inv
 
         self.output += diff.output

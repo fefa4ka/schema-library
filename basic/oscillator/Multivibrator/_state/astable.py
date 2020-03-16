@@ -24,8 +24,6 @@ class Modificator(Base):
 
 
     def willMount(self, set_period=0.5 @ u_s, reset_period=0.3 @ u_s):
-        self.load(self.V)
-
         self.duty_cycle = float(set_period / (reset_period + set_period)) * 100
 
     def circuit(self):
@@ -40,7 +38,7 @@ class Modificator(Base):
             return Decay()(
                 V_out = self.V * 0.5,
                 Time_to_V_out = width,
-                Load = (self.V - controller.V_je) / (3 * self.I_load / controller.Beta) * 10, # * 10 because in Decay Load / 10
+                Load = (self.V - controller.V_je) / (3 * self.I_load / controller.Beta), # * 10 because in Decay Load / 10
                 reverse = True
             )
 

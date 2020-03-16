@@ -22,6 +22,8 @@ class Modificator(Base):
             R_in -- Output impeadance that could be used as part of the divider
         """
         self.load(self.V)
+
+        # Find right values
         A = np.array([[u(self.V_out), u(self.V_out - self.V) ], [1, 1]])
         B = np.array([[0], [u(self.V / self.I_load)]]) # + (1 * params_tolerance)))]])
         X = np.linalg.inv(A) @ B

@@ -1,11 +1,11 @@
-from bem import Build, Net
 from bem.abstract import Physical, Network
-from skidl import Part, TEMPLATE
-from skidl.Net import Net as NetType
-from PySpice.Unit import u_Ohm, u_uF, u_H, u_Hz
+from PySpice.Unit import u_Hz
+from math import pi
+
 
 class Base(Physical(), Network(port='two')):
     """
+        # Operational Amplifier
         Operational amplifiers are linear devices that have all the properties
         required for nearly ideal DC amplification and are therefore used extensively
         in signal conditioning, filtering or to perform mathematical operations
@@ -23,14 +23,17 @@ class Base(Physical(), Network(port='two')):
         'input': True,
         'input_n': True,
         'v_ref': True,
+        'v_inv': True,
         'output': True,
         'gnd': True
     }
 
-    frequency = 100 @ u_Hz
-
-    def willMount(self, frequency=None):
-        pass
+    def willMount(self, Frequency=1e3 @ u_Hz):
+        """
+            V -- Verify that the amplifier can achieve the desired output swing using the supply voltages provided
+            slew_rate -- The rate of change in the output voltage caused by a step change on the input.
+        """
+        self.slew_rate = 2 * pi * self.Frequency * self.V
 
     def circuit(self):
         self.element = self.part()

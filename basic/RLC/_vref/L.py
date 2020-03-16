@@ -9,13 +9,7 @@ class Modificator(Base):
 
     def circuit(self):
         super().circuit()
-
-        signal = None
-        if not (self.input and self.output):
-            signal = self.input = Net('RLCInput')
-            self.output = Net('RLCOutput')
-        else:
-            signal = self.output
-            self.output = Net('VrefInductorOutput')
+        signal = self.output
+        self.output = Net('VrefInductorOutput')
 
         L_v_ref = self.v_ref & Inductor()(self.L_vref) & self.output & signal

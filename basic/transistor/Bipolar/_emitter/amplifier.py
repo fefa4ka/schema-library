@@ -19,12 +19,12 @@ class Modificator(Base):
 
     def willMount(self):
         """
-            I_quiescent --  That current puts the collector at `V_(ref)`
+            I_load --  That current puts the collector at `V_(ref)`
 
             V_je -- Base-emitter built-in potential
             V_e -- `V_e = 1V` selected for temperature stability and maximum voltage swing
             V_c -- `V_c = V_(ref) / 2`
-            R_c -- `R_c = (V_(ref) - V_c) / I_(quiescent)`
+            R_c -- `R_c = (V_(ref) - V_c) / I_(load)`
             R_in -- `1/R_(i\\n) = 1/R_s + 1/R_g + 1 / R_(i\\n(base))`
             R_e -- `R_e = V_e / I_(load)`
 
@@ -39,15 +39,14 @@ class Modificator(Base):
         self.props['follow'] = 'collector'
         self.props['common'] = 'emitter'
 
-        self.I_quiescent = self.I_load
-
         self.V_c = self.V / 2
-        self.R_c = (self.V - self.V_c) / self.I_quiescent
+        self.R_c = (self.V - self.V_c) / self.I_load
 
         self.V_e = 1.0 @ u_V  # For temperature stability
-        self.R_e = self.V_e / self.I_quiescent
+        self.R_e = self.V_e / self.I_load
 
-        self.r_e = 0.026 @ u_V / self.I_quiescent
+        # TODO: Make it temperature dependent
+        self.r_e = 0.026 @ u_V / self.I_load
 
         self.G_v = -1 * u(self.R_c / (self.R_e + self.r_e))
         self.R_3 = (-1 * self.R_c - self.r_e * self.G_v) / self.G_v
@@ -57,7 +56,7 @@ class Modificator(Base):
         self.R_in_base_dc = self.Beta * self.R_e
         self.R_in_base_ac = self.Beta * (self.r_e + self.R_3)
 
-        self.Power = (self.V_c - self.V_e) * self.I_quiescent
+        self.Power = (self.V_c - self.V_e) * self.I_load
         self.consumption(self.V_c)
 
     def circuit(self):

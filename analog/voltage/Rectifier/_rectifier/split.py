@@ -5,8 +5,6 @@ from bem.basic import Capacitor
 from PySpice.Unit import u_Ohm, u_V, u_F, u_ms, u_Hz, u_A
 
 class Modificator(Base):
-    output_inverse = None
-
     def willMount(self, V_ripple=1 @ u_V, frequency=5e5 @ u_Hz):
         """
             V_ripple -- Periodic variations in voltage about the steady value
@@ -22,7 +20,7 @@ class Modificator(Base):
         self.output_n = Net('BridgeOutputGround')
 
         C = Capacitor(**self.mods, **self.props)
-        self.C_ripple = C_value = self.I_load / (self.frequency * self.V_ripple) @ u_F
+        self.C_ripple = self.I_load / (self.frequency * self.V_ripple) @ u_F
 
         C_ripple_out = C(self.C_ripple)
         C_ripple_inv = C(self.C_ripple)
