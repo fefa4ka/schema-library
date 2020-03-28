@@ -12,18 +12,16 @@ class Modificator(Base):
     * Paul Horowitz and Winfield Hill. "2.2.4 Emitter followers as voltage regulators" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 82-83
     """
 
-    R_protect = 0 @ u_Ohm
     def circuit(self):
         super().circuit()
 
-        self.R_protect = self.R_load / 10
-
+        protect = Resistor()(self.R_load * 5)
         follower = Bipolar(type='npn', follow='emitter')(
-            base = Resistor()(self.R_protect)
+            base = protect
         )
 
         follower.input += self.output
-        follower.v_ref += self.v_ref
+        follower.v_ref += self.input
         self.output = follower.output
 
 

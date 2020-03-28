@@ -4,9 +4,24 @@ from bem import Net
 from PySpice.Unit import u_ms, u_V, u_A, u_Hz, u_Ohm
 
 class Base(Electrical()):
-    """**Voltage Double, Tripler, Quadrupler, etc**
+    """# Voltage Double, Tripler, Quadrupler, etc
 
-    Voltage doubler. Think of it as *two half-wave rectifier circuits* in series. Variations of this circuit exist for voltage triplers, quadruplers, etc.
+    Voltage doubler. Think of it as *two half-wave rectifier circuits* in series.
+
+    Variations of this circuit by argument Scale exist for voltage triplers, quadruplers, etc. )
+
+    ```
+        vs = VS(flow='SINEV')(V=5, frequency=120)
+        load = Resistor()(1000)
+
+        doubler = Example()
+        # triplers = Multiplier()(Scale=3, Frequency=120)
+        # quadruplers = Multiplier()(Scale=4, Frequency=120)
+
+        vs & doubler & load & vs
+
+        watch = doubler
+    ```
 
     You can extend this scheme as far as you want, producing what’s called a Cockcroft–Walton generator; these are used in arcane applications (such as particle accelerators) and in everyday applications (such as image intensifiers, air ionizers, laser copiers, and even bug zappers) that require a high dc voltage but hardly any current.
 
@@ -32,7 +47,7 @@ class Base(Electrical()):
             last = sections[-1]
 
             scaler = HalfBridge(
-                V_out=self.V * self.Scale,
+                V=self.V * self.Scale,
                 frequency=self.Frequency,
                 V_ripple=self.V_ripple
             )

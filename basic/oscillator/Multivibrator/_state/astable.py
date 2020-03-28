@@ -9,8 +9,18 @@ from bem.digital.signal import SchmittTrigger
 class Modificator(Base):
     """
     An asatable multivibrator is a circuit that is not stable in either of two possible output states and it acts like an oscillator. It also requires no external trigger pulse, but uses positive feedback network and a RC timer network to create built-in triggering that switches the output between VCC and 0V. The result is a square wave frequency generator. In the circuit to the left, Q1 and Q2 are switching transistors connected in cross-coupled feedback network, along with two time-delay capacitors. The transistors are biased for linear operation and are operated as common emitter amplifiers with 100% positive feedback. When Q1 is OFF, its collector voltage rises toward VCC, while Q2 if ON. As this occurs, plate A of capacitor C1 rises towards VCC. Capacitor C1’s other plate B, which is connected to the base of Q2 is at 0.6V since Q2 is in conducting state, thus the voltage across C1 is 6.0 − 0.6V = 5.4V. (It’s high value of charge). The instant Q1 switches ON, plate A of C1 falls to 0.6V, causing an equal and instantaneous fall in voltage on plate B of C1. C1 is pulled down to −5.4 (reverse charge) and[…]
+    ```
+        vs = VS(flow='V')(V=10)
+        load = Resistor()(1000)
 
-    * Excerpt From: Paul Scherz. “Practical Electronics for Inventors, Fourth Edition”. Apple Books. 
+        oscillator = Multivibrator(state='astable')(set_period=0.3, reset_period=0.5)
+
+        vs & oscillator & load & vs
+
+        watch = oscillator
+    ```
+
+    * Excerpt From: Paul Scherz. “Practical Electronics for Inventors, Fourth Edition”. Apple Books.
     * https://electrosome.com/astable-multivibrator-transistors/
     """
 

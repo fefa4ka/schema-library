@@ -1,5 +1,5 @@
 from .. import Base
-from bem.analog import Signal
+from bem.analog import Filter
 from bem import u_Hz
 
 
@@ -22,10 +22,8 @@ class Modificator(Base):
 
         super().circuit()
 
-        reduce_ripple = Signal(filter=['lowpass'])(
-            input=self.input,
+        reduce_ripple = Filter(lowpass='rc')(
             f_3dB = self.frequency,
-            V = self.V,
             Load=self.R_load / 2,
         )
 

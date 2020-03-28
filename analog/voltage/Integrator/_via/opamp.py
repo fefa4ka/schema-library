@@ -6,16 +6,44 @@ from math import pi
 
 class Modificator(Electrical()):
     """
-        The integrator circuit outputs the integral of the input signal over a frequency range based on the circuit
-        time constant and the bandwidth of the amplifier. The input signal is applied to the inverting input so the
-        output is inverted relative to the polarity of the input signal. The ideal integrator circuit will saturate to the
-        supply rails depending on the polarity of the input offset voltage and requires the addition of a feedback
-        resistor, R_feedback, to provide a stable DC operating point. The feedback resistor limits the lower frequency range
-        over which the integration function is performed. This circuit is most commonly used as part of a larger
-        feedback/servo loop which provides the DC feedback path, thus removing the requirement for a feedback
-        resistor.
+    The integrator circuit outputs the integral of the input signal over a frequency range based on the circuit
+    time constant and the bandwidth of the amplifier. The input signal is applied to the inverting input so the
+    output is inverted relative to the polarity of the input signal.
 
-        * http://www.ti.com/lit/an/sboa275a/sboa275a.pdf
+    The ideal integrator circuit will saturate to the supply rails depending on the polarity of the input offset
+    voltage and requires the addition of a feedback resistor, R_feedback, to provide a stable DC operating point.
+    The feedback resistor limits the lower frequency range over which the integration function is performed.
+
+    ```
+    # Power supply
+    v_ref = VS(flow='V')(V=10)
+    v_inv = VS(flow='V')(V=-10)
+
+    signal = VS(flow='SINEV')(V=0.2, frequency=120)
+    load = Resistor()(1000)
+
+    # Amplifier
+    inverter = Example()
+
+    # Network
+    v_ref & inverter.v_ref
+    v_inv & inverter.v_inv
+
+    signal & inverter.input
+
+    inverter.output & load & v_ref
+
+    inverter.gnd & v_inv.gnd & v_ref.gnd & signal.gnd
+
+    watch = inverter
+    ```
+
+
+
+    This circuit is most commonly used as part of a larger feedback/servo loop which provides the DC feedback path,
+    thus removing the requirement for a feedback resistor.
+
+    * http://www.ti.com/lit/an/sboa275a/sboa275a.pdf
     """
 
     pins = {
@@ -31,7 +59,7 @@ class Modificator(Electrical()):
 
     def circuit(self):
         """
-            C_integrator -- `C_(integrator) = 1 / (2 * pi * R_(in) * f_(0db))`
+            C_integrator -- `(integrator) = 1 / (2 * pi * (sensor) * (Frequency))`
         """
         R = Resistor()
 
@@ -45,10 +73,8 @@ class Modificator(Electrical()):
         self.H = -1 / (sensor.value * integrator.value)
 
         # Select an amplifier with a gain bandwidth at least 10 times the desired maximum operating frequency
-        buffer = OpAmp()(frequency=self.Frequency * self.Q)
-
-        buffer.v_ref & self.v_ref
-        buffer.gnd & self.v_inv
+        buffer = OpAmp()(Frequency=self.Frequency * self.Q)
+        buffer.connect_power_bus(self)
 
         self.input & sensor & buffer.input_n & (feedback | integrator) & buffer.output & self.output
         self.gnd & buffer.input

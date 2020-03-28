@@ -9,7 +9,7 @@ from bem.basic import Resistor, Capacitor
 class Base(Electrical()):
     """# Decay to equilibrium
 
-    The product RC is called the time constant of the circuit. For `R_s` in ohms and `C_g` in farads, the product RC is in seconds. A `C_g` microfarad across `R_s` 1.0k has a time constant Time_to_`V_(out)` of 1 ms; if the capacitor is initially charged to `V_(out) = 1.0 V`, the initial current `I_(out)` is 1.0 mA.
+    The product RC is called the time constant of the circuit. For `R_s` in ohms and `C_g` in farads, the product RC is in seconds. A `C_g` microfarad across `R_s` 1.0k has a time constant `(Time_to_V_out)` of 1 ms; if the capacitor is initially charged to `V_(out) = 1.0 V`, the initial current `I_(out)` is 1.0 mA.
 
     At time `t = 0`, someone connects the battery. The equation for the circuit is then
 
@@ -18,6 +18,15 @@ class Base(Electrical()):
     with solution
 
     `V_(out) = V_(i\\n) + A * e ^ (-t / (R_s * C_g))`
+
+    ```
+    vs = VS(flow='PULSEV')(V=5, pulse_width=0.2, period=0.4)
+    load = Resistor()(1000)
+    delay = Decay()(V=5, V_out=3, Time_to_V_out=0.1)
+    vs & delay & load & vs
+
+    watch = delay
+    ```
 
     The constant `A` is determined by initial conditions: `V_(out) = 0` at `t = 0`; therefore, `A = −V_(i\\n)`, and
 
@@ -29,6 +38,8 @@ class Base(Electrical()):
 
     `t = R * C * log_e(V_(i\\n) / (V_(i\\n) - V_(out)))`
 
+
+
     * Paul Horowitz and Winfield Hill. "1.4.2 RC circuits: V and I versus time" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 21-23
     """
 
@@ -36,7 +47,7 @@ class Base(Electrical()):
         """
             reverse -- Reverse capacitor connection
         """
-        self.load(V_out)
+        self.load(self.V_out)
         self.Power = self.power(self.V, self.R_load / 2)
 
     def circuit(self):

@@ -22,21 +22,12 @@ class Modificator(Base):
         pass
 
     def circuit(self, **kwargs):
-        self.R_in = (
-            u(self.V - self.V_out)
-            / u(self.I_load) / 2
-        ) @ u_Ohm
+        # The minimum value of the series resistor, R_in
+        val = (self.V - self.V_out) / self.I_load / 10
+        source = Resistor()((self.V - self.V_out) / self.I_load / 10)
+        P_zener = ((self.V - self.V_out) / source.value - self.I_load) * self.V_out
+        regulator = Diode(type='zener', BV=self.V_out, P=P_zener)()
 
-        self.P_zener = ((self.V - self.V_out) / self.R_in - self.I_load) * self.V_out
+        self.input & source & self.output & regulator['K, A'] & self.gnd
 
-        self.v_ref += self.input
-
-        regulator = self.input \
-                        & Resistor()(self.R_in) \
-                            & self.output \
-                        & Diode(
-                            type='zener',
-                            BV=u(self.V_out)
-                        )(Load=self.Load, V=self.V,)['K, A'] \
-                    & self.gnd
 

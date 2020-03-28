@@ -5,13 +5,36 @@ from skidl import Part, TEMPLATE
 
 class Base(Physical()):
     """
-    **Diode**
+    # Diode
 
     A diode is a two-terminal electronic component that conducts current primarily in one direction (asymmetric conductance); it has low (ideally zero) resistance in one direction, and high (ideally infinite) resistance in the other.
 
     The most common function of a diode is to allow an electric current to pass in one direction (called the diode's forward direction), while blocking it in the opposite direction (the reverse direction). As such, the diode can be viewed as an electronic version of a check valve. This unidirectional behavior is called rectification, and is used to convert alternating current (ac) to direct current (dc). Forms of rectifiers, diodes can be used for such tasks as extracting modulation from radio signals in radio receivers.
 
     However, diodes can have more complicated behavior than this simple on–off action, because of their nonlinear current-voltage characteristics. Semiconductor diodes begin conducting electricity only if a certain threshold voltage or cut-in voltage is present in the forward direction (a state in which the diode is said to be forward-biased). 
+
+    ## Forward Current Versus Forward Voltage
+    The voltage drop across a forward-biased diode varies only a little with the current, and is a function of temperature; this effect can be used as a temperature sensor or as a voltage reference. 
+    ```
+    vs = VS(flow='V')(V=slice(0, 0.2, .01))
+    load = Resistor()(1000)
+    diode = Example()
+    vs & diode & load & vs
+
+    watch = diode
+    ```
+
+    ## Reverse Current Versus Reverse Voltage
+    Also, diodes' high resistance to current flowing in the reverse direction suddenly drops to a low resistance when the reverse voltage across the diode reaches a value called the breakdown voltage.
+
+    ```
+    vs = VS(flow='V')(V=slice(-0.3, 0.1, .01))
+    load = Resistor()(1000)
+    diode = Example()
+    vs & diode & load & vs
+
+    watch = diode
+    ```
 
     """
 

@@ -4,4 +4,3 @@ class Base(Electrical()):
     mods = {
         'state': ['astable']
     }
-    pass

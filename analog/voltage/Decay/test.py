@@ -38,8 +38,8 @@ class Case(Test):
                 }
             },
             'pins': {
-                'input': ['input'],
-                'output': ['gnd']
+                'input': ['gnd'],
+                'output': ['input']
             }
         }, {
             'name': 'basic.RLC',

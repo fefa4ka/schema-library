@@ -3,13 +3,22 @@ from bem.abstract import Physical, Network
 from skidl import Part, Net, TEMPLATE
 
 class Base(Physical()):
-    reset = None
+    """
 
-    flash = 8 * 1024 @ u_B
-    eeprom = 512 @ u_B
-    sram = 1024 @ u_B
+    ```
+    vs = VS(flow='V')(V=5)
+    mcu = Microcontroller(series='ATmega8')()
+    vs & mcu.v_ref
+    mcu.gnd & vs
 
-    def willMount(self, frequency=0 @ u_Hz):
+    watch = mcu 
+    ```
+    """
+    mods = {
+        'series': 'ATmega8'
+    }
+
+    def willMount(self, frequency=12000000 @ u_Hz):
         pass
 
 

@@ -11,21 +11,39 @@ class Base(Electrical(), Network(port='two')):
 
     When both inputs change levels together, that’s a _common-mode_ input change. A differential change is called _normal mode_, or sometimes _differential mode_.
 
+    ```
+    # Power supply
+    v_ref = VS(flow='V')(V=10)
+    v_inv = VS(flow='V')(V=-10)
+
+    # Signals
+    signal_1 = VS(flow='SINEV')(V=0.2, frequency=120)
+    signal_2 = VS(flow='SINEV')(V=0.3, frequency=1200)
+
+    # Load
+    load = Resistor()(1000)
+
+    # Amplifier
+    diff = Difference(via='bipolar')(V=10, V_inv=-10)
+
+    # Network
+    v_ref & diff.v_ref
+    v_inv & diff.v_inv
+
+    signal_1 & diff.input
+    signal_2 & diff.input_n
+
+    diff.output & load & v_ref
+
+    diff.gnd & v_inv.gnd & v_ref.gnd & signal_1.gnd & signal_2.gnd
+
+    watch = diff
+    ```
+
     * Paul Horowitz and Winfield Hill. "2.3.8 Differential amplifier" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 102-104
     """
+
     mods = {
         'via': ['bipolar']
     }
-  
 
-# from bem.analog.voltage import Difference
-# from bem import u_V, u_Ω, u_A
-
-# opamps = OpAmp(units=3)(V=10)
-# Difference(via='opamp', unit=opamps.A)(
-# 	V = 10 @ u_V,
-# 	Load = 1000 @ u_Ω,
-# 	V_ref = 10 @ u_V,
-# 	V_gnd = -10 @ u_V,
-# 	I_quiescent = 0.0001 @ u_A
-# )

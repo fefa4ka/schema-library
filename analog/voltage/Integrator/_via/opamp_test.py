@@ -12,31 +12,38 @@ class Case(Test):
         return [{
                 'name': 'basic.source.VS',
                 'mods': {
-                    'flow': ['SINEV']
+                    'flow': ['PULSEV'],
                 },
                 'args': {
                     'V': {
-                        'value': 3.2,
+                        'value': 5,
                         'unit': {
                             'name': 'volt',
                             'suffix': 'V'
                         }
                     },
-                    'offset': {
-                        'value': 0,
+                    'initial_value': {
+                        'value': -5,
                         'unit': {
                             'name': 'volt',
                             'suffix': 'V'
                         }
                     },
-                    'frequency': {
-                        'value': 1e3,
+                    'pulse_width': {
+                        'value': 0.0005,
                         'unit': {
-                            'name': 'herz',
-                            'suffix': 'Hz'
+                            'name': 'sec',
+                            'suffix': 's'
+                        }
+                    },
+                    'period': {
+                        'value': 0.001,
+                        'unit': {
+                            'name': 'sec',
+                            'suffix': 's'
                         }
                     }
-                },
+            },
                 'pins': {
                     'input': ['input'],
                     'output': ['gnd']

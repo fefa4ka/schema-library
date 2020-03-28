@@ -42,7 +42,8 @@ class Modificator(Base):
 
         amplifier = Bipolar(
             type='npn',
-            common='emitter', follow='collector'
+            common='emitter',
+            follow='collector'
         )
 
         left = amplifier(

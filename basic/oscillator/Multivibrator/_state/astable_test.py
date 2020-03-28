@@ -17,8 +17,8 @@ class Case(Test):
                 }
             },
             'pins': {
-                'input': ['v_ref'],
-                'output': ['gnd']
+                'output': ['gnd'],
+                'input': ['v_ref']
             }
         }, {
                 'name': 'basic.RLC',

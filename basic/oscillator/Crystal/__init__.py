@@ -6,11 +6,6 @@ from PySpice.Unit import u_Hz
 class Base(Physical()):
     """
     """
-
-    mods = {
-        'type': 'crystal'
-    }
-
     frequency = 8000000 @ u_Hz
 
     def willMount(self, frequency):

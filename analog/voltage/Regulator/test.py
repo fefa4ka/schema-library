@@ -11,7 +11,7 @@ class Case(Test):
             },
             'args': {
                 'V': {
-                    'value': 19,
+                    'value': 10,
                     'unit': {
                         'name': 'volt',
                         'suffix': 'V'

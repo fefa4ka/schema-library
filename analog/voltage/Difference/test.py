@@ -38,8 +38,8 @@ class Case(Test):
                     }
                 },
                 'pins': {
-                    'input': ['input'],
-                    'output': ['gnd']
+                    'input': ['gnd'],
+                    'output': ['input']
                 }
         },  {
                 'name': 'basic.source.VS',
@@ -70,8 +70,8 @@ class Case(Test):
                     }
                 },
                 'pins': {
-                    'input': ['input_n'],
-                    'output': ['gnd']
+                    'input': ['gnd'],
+                    'output': ['input_n']
                 }
         }, {
                 'name': 'basic.source.VS',
@@ -88,8 +88,8 @@ class Case(Test):
                     }
                 },
                 'pins': {
-                    'input': ['v_ref'],
-                    'output': ['gnd']
+                    'input': ['gnd'],
+                    'output': ['v_ref']
                 }
         }, {
                 'name': 'basic.source.VS',
@@ -106,8 +106,8 @@ class Case(Test):
                     }
                 },
                 'pins': {
-                    'input': ['v_inv'],
-                    'output': ['gnd']
+                    'input': ['gnd'],
+                    'output': ['v_inv']
                 }
         }, {
             'name': 'basic.RLC',

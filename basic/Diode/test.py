@@ -72,6 +72,7 @@ class Case(Test):
             for run in simulation:
                 index = run['sweep']
                 chart[index]['V_input'] = index
+                chart[index]['V_output'] = run['V_output']
                 chart[index][label + ' I_vvvs_0'] = run['I_vvvs_0']
 
         sweep = list(chart.keys())
