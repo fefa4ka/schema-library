@@ -5,7 +5,7 @@ from PySpice.Unit import u_Ohm, u_V, u_F, u_ms, u_Hz, u_A
 
 class Modificator(Base):
     """
-        **Power-supply filtering**
+        ## Power-supply filtering
 
         The preceding rectified waveforms aren’t good for much as
         they stand. They’re “dc” only in the sense that they don’t

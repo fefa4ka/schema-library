@@ -6,7 +6,7 @@ from PySpice.Unit import u_V, u_Ohm, u_uF, u_H, u_kHz
 
 class Base(Physical(), Network(port='two')):
     """**Bipolar Transistor**
-    
+
     When designing or looking at a transistor circuit there are **three different circuit configurations** that can be used.
 
     The three different transistor circuit configurations are: common emitter, common base and common collector (emitter follower), these three circuit configurations have different characteristics and one type will be chosen for a circuit dependent upon what is required.

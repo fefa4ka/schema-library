@@ -9,7 +9,7 @@ from bem.basic import Resistor, Capacitor
 class Base(Electrical()):
     """# Decay to equilibrium
 
-    The product RC is called the time constant of the circuit. For `R_s` in ohms and `C_g` in farads, the product RC is in seconds. A `C_g` microfarad across `R_s` 1.0k has a time constant `(Time_to_V_out)` of 1 ms; if the capacitor is initially charged to `V_(out) = 1.0 V`, the initial current `I_(out)` is 1.0 mA.
+    The product RC is called the time constant of the circuit. For `R_s` in ohms and `C_g` in farads, the product RC is in seconds. A `C_g` microfarad across `R_s = 1.0kΩ` has a time constant of 1 ms; if the capacitor is initially charged to `V_(out) = 1.0 V`, the initial current `I_(out) = 1.0 mA`.
 
     At time `t = 0`, someone connects the battery. The equation for the circuit is then
 

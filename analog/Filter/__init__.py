@@ -2,6 +2,7 @@ from bem.abstract import Electrical
 
 class Base(Electrical()):
     """
+    # Filter
     * TODO: https://www.nutsvolts.com/magazine/article/filter-basics-stop-block-and-rolloff
     * https://www.nutsvolts.com/magazine/article/filter-design-software
     ```
@@ -13,6 +14,10 @@ class Base(Electrical()):
     watch = filter
     ```
     """
+
+    mods = {
+        'bandpass': 'rlc'
+    }
 
     pins = {
         'v_ref': True,

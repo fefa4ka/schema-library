@@ -5,14 +5,14 @@ from PySpice.Unit import u_Ω, u_F, u_Hz, u_H
 from math import pi, sqrt
 
 class Modificator(Base):
-    """**LC Bandpass Filter**
+    """## RLC Bandpass Filter
 
     * Paul Horowitz and Winfield Hill. "1.7.9 RC lowpass filters" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 52-53
     """
 
     def willMount(self, f_0_band = 5e5 @ u_Hz, Q_band=2, C_tank=1e-9 @ u_F):
-        self.R_band = Q_band / (2 * pi * f_0_band * C_tank) @ u_Ω
-        self.L_tank = pow(1 / (2 * pi * f_0_band * sqrt(C_tank)), 2) @ u_H
+        self.R_band = self.Q_band / (2 * pi * self.f_0_band * self.C_tank) @ u_Ω
+        self.L_tank = pow(1 / (2 * pi * self.f_0_band * sqrt(self.C_tank)), 2) @ u_H
         self.tau = self.R_band * self.C_tank
 
     def circuit(self):

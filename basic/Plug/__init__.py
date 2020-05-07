@@ -3,14 +3,14 @@ import inspect
 
 class Base(Physical()):
     @classmethod
-    def pins(self):
+    def pins(cls):
         pins = {
             'v_ref': True,
             'gnd': True
         }
 
-        for interface in self.mods.get('interface', []):
-            for pin in getattr(self, interface.upper()):
+        for interface in cls.mods.get('interface', []):
+            for pin in getattr(cls, interface.upper()):
                 pins[pin] = True
 
         return pins

@@ -3,7 +3,7 @@ from .. import Base
 
 class Modificator(Base):
     """
-        **Full-Wave Bridge**
+        ## Full-Wave Bridge
 
         The entire input waveform is used.
 

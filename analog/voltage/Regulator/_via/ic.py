@@ -14,7 +14,7 @@ class Modificator(Base, Physical()):
 
     def circuit(self):
         self.element = self.part()
-        
+
         # In Spice models pins defined as below
         pins = {
             'input': ['VI', 'VIN', 'IN'],
@@ -25,7 +25,6 @@ class Modificator(Base, Physical()):
         for pin in pins.keys():
             for part_pin in pins[pin]:
                 if self.element[part_pin]:
-                    print(self.element[part_pin], getattr(self, pin))
                     self.element[part_pin] += getattr(self, pin)
                     break
 

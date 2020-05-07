@@ -1,4 +1,4 @@
-from bem import Block, Net, u_V, u_uF, u_pF
+from bem import Block, Net, u_V, u_uF, u_pF, u_Hz
 from .. import Base
 from bem.basic import Capacitor
 from bem.basic.oscillator import Crystal
@@ -63,26 +63,26 @@ class ATmega(Base):
     throughputs approaching 1MIPS per MHz, allowing the system designer to optimize power consumption
     versus processing speed.
     """
-    V = 5 @ u_V 
 
-    def apply_part(self, part):
-        super().apply_part(part)
-
-        self.set_pins_aliases(self.pins_alias())
+    def willMount(self, V=5 @ u_V, frequency=16000000 @ u_Hz):
+        pass
 
     def pins_alias(self):
         return pins[self.model]
 
     def circuit(self):
-        ref = self.props.get('ref', self.name)
-        self.element = self.part(ref=ref)
+        #ref = self.props.get('ref', self.name)
+        #self.element = self.part(ref=ref)
+
+        self.element= self.part()
 
         # Power Supply
-        v_stable = self.v_ref & Capacitor()(0.1 @ u_uF) | Capacitor()(4.7 @ u_uF) & self.gnd
-        self.v_ref += self['vcc'], self['avcc']
-        self.gnd += self.element['gnd']
+        self.v_ref & self['vcc'] & self['avcc']
+        self.gnd & self.element['gnd']
         if self['agnd']:
-            self.gnd += self['agnd']
+            self.gnd & self['agnd']
+
+        v_stable = self['vcc'] & (Capacitor()(0.1 @ u_uF) | Capacitor()(4.7 @ u_uF)) & self.element['gnd']
 
         # External resonator if frequency non 0
         if self.frequency != 0:

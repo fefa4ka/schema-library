@@ -6,7 +6,7 @@ from bem.abstract import Network
 class Modificator(Base):
     def circuit(self):
         super().circuit()
-        
+
         """
         The reset line has an internal pull-up resistor. If the environment is noisy, it can be insufficient and reset
         may occur sporadically. Refer to the device datasheet for the value of the pull-up resistor that must be
@@ -26,7 +26,7 @@ class Modificator(Base):
         be large enough to generate high voltages at the RESET pin. An example connection is shown in the
         following diagram.
         """
-        reset = self['RESET'] & Resistor()(330 @ u_Ohm) & Switch(input='physical')() & self.gnd
+        reset = self['RESET'] & Resistor()(330 @ u_Ohm, V=1) & Switch(input='physical')() & self.gnd
 
         """
         To protect the RESET line from further noise, connect a capacitor from the RESET pin to ground. This is

@@ -7,7 +7,7 @@ from math import pi
 from lcapy import LSection, R, C
 
 class Modificator(Base):
-    """# RC Highpass Filter
+    """## RC Highpass Filter
 
     We’ve seen that by combining resistors with capacitors it is possible to make frequency-dependent voltage dividers, owing to the
     frequency dependence of a capacitor’s impedance `Z_c = −j/(ωC)`.

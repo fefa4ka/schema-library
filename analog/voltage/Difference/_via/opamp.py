@@ -5,7 +5,8 @@ from bem import Net, u, u_Ohm, u_V, u_A, u_kOhm
 
 class Modificator(Base):
     """
-        This design inputs two signals, `input` and `input_n`, and outputs their difference (subtracts). The input signals
+        ## OpAmp Based
+        This design inputs two signals, `\input` and `\input_n`, and outputs their difference (subtracts). The input signals
         typically come from low-impedance sources because the input impedance of this circuit is determined by
         the resistive network. Difference amplifiers are typically used to amplify differential input signals and reject
         common-mode voltages. A common-mode voltage is the voltage common to both inputs. The

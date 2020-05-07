@@ -8,6 +8,8 @@ from bem import u_MHz
 class Modificator(Base):
      def circuit(self):
         mcu = self & Microcontroller(series='ATmega8U2')(model='ATmega16U2', frequency=16 @ u_MHz)
+        mcu['D+'] & self['D+']
+        mcu['D-'] & self['D-']
         self.element = mcu
 
         spi = mcu & Plug(interface='spi')()

@@ -3,6 +3,8 @@ from bem.abstract import Electrical, Network
 
 class Base(Electrical(), Network(port='two')):
     """
+    # Differential amplifier
+
     The differential amplifier shown here is a device that compares two separate input signals, takes the difference between them, and then amplifies this difference. In the ideal case the output is entirely independent of the individual signal levels – only the difference matters. The differential amplifier is sometimes called a “long-tailed pair.”
 
     To understand how the circuit works, treat both transistors as identical, and then notice that both transistors are set in the common-emitter configuration. 
@@ -24,7 +26,7 @@ class Base(Electrical(), Network(port='two')):
     load = Resistor()(1000)
 
     # Amplifier
-    diff = Difference(via='bipolar')(V=10, V_inv=-10)
+    diff = Example() 
 
     # Network
     v_ref & diff.v_ref

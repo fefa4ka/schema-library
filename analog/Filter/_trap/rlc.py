@@ -6,15 +6,15 @@ from PySpice.Unit import u_Ω, u_F, u_Hz, u_H
 from math import pi, sqrt
 
 class Modificator(Base):
-    """**LC Bandpass Filter**
+    """## Trap Filter
 
     * Paul Horowitz and Winfield Hill. "1.7.9 RC lowpass filters" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 52-53
     """
 
     def willMount(self, f_0_trap=5e5 @ u_Hz, Q_trap=2, C_notch=1e-9 @ u_F):
-        self.R_trap = Q_trap / (2 * pi * f_0_trap * C_notch) @ u_Ω
+        self.R_trap = self.Q_trap / (2 * pi * self.f_0_trap * self.C_notch) @ u_Ω
 
-        self.L_notch = pow(1 / (2 * pi * f_0_trap * sqrt(C_notch)), 2) @ u_H
+        self.L_notch = pow(1 / (2 * pi * self.f_0_trap * sqrt(self.C_notch)), 2) @ u_H
         self.tau = self.R_trap * self.C_notch
 
     def circuit(self):

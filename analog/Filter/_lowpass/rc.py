@@ -7,7 +7,7 @@ from math import pi
 from lcapy import LSection, R, C
 
 class Modificator(Base):
-    """**RC Lowpass Filter**
+    """## RC Lowpass Filter
 
     * Paul Horowitz and Winfield Hill. "1.7.9 RC lowpass filters" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 50-51
     """

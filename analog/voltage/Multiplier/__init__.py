@@ -21,6 +21,7 @@ class Base(Electrical()):
         vs & doubler & load & vs
 
         watch = doubler
+        end_time = 50 @ u_ms
     ```
 
     You can extend this scheme as far as you want, producing what’s called a Cockcroft–Walton generator; these are used in arcane applications (such as particle accelerators) and in everyday applications (such as image intensifiers, air ionizers, laser copiers, and even bug zappers) that require a high dc voltage but hardly any current.
