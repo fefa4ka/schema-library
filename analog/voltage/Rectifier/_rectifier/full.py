@@ -25,10 +25,10 @@ class Modificator(Base):
         * Paul Horowitz and Winfield Hill. "1.6.3 Power-supply filtering" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 32-33
     """
 
-    def willMount(self, V_ripple=1 @ u_V, frequency=500e3 @ u_Hz):
+    def willMount(self, V_ripple=1 @ u_V, Frequency=500e3 @ u_Hz):
         """
             V_ripple -- Periodic variations in voltage about the steady value
-            frequency -- Input signal frequency
+            Frequency -- Input signal frequency
             C_ripple -- A relatively large value capacitor; it charges up to the peak output voltage during the diode conduction.  The capacitor value is chosen so that `R_(load)C_(rippl\e) ≫ 1/f`
         """
         pass
@@ -40,7 +40,7 @@ class Modificator(Base):
         bridge_output = self.output
         self.output = Net('BridgeOutput')
 
-        self.C_ripple = (self.I_load / (self.frequency * self.V_ripple * (2 if is_full_wave else 1))) @ u_F
+        self.C_ripple = (self.I_load / (self.Frequency * self.V_ripple * (2 if is_full_wave else 1))) @ u_F
         C_ripple = Capacitor()(value=self.C_ripple)
 
         circuit = bridge_output & self.output & C_ripple & self.output_n

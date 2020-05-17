@@ -24,15 +24,15 @@ class Base(Network(port='many'), Electrical()):
     def circuit(self):
         R = Resistor()
 
+        R_init = self.R_load * 10
+        Gain = max(self.Gain) if type(self.Gain) == list else self.Gain
         # Determine the starting value of R_input.
         # The relative size of R_input to the signal source impedance affects the
         # gain error. Assuming the impedance from the signal source is low (for example, 100 Ω), set R_input = 10 kΩ
         # for 1% gain error.
-        R_init = self.R_load * 10
-        Gain = max(self.Gain) if type(self.Gain) == list else self.Gain
         feedback = R(Gain * R_init)
 
-        summer = OpAmp()(frequency=self.Frequency)
+        summer = OpAmp()(Frequency=self.Frequency)
         summer.v_ref & self.v_ref
         summer.input & self.gnd
         summer.v_inv & self.v_inv

@@ -5,6 +5,4 @@ from bem import u_Hz, u_Ohm, u_kOhm, u_F
 from math import pi
 
 class Base(Electrical()):
-    mods = {
-        'via': 'opamp'
-    }
+    pass

@@ -5,7 +5,7 @@ from bem.basic import Resistor
 from bem import Net, u, u_Ohm, u_V, u_A
 
 class Modificator(Base):
-    """**Emitter-Follower** Common-Collector Amplifier
+    """## Emitter-Follower Common-Collector Amplifier
 
     The circuit shown here is called a common-collector amplifier, which has current gain but no voltage gain. It makes use of the emitter-follower arrangement but is modified to avoid clipping during negative input swings. The voltage divider (`R_s` and `R_g`) is used to give the input signal (after passing through the capacitor) a positive dc level or operating point (known as the quiescent point). Both the input and output capacitors are included so that an ac input-output signal can be added without disturbing the dc operating point. The capacitors, as you will see, also act as filtering elements.”
 
@@ -49,7 +49,7 @@ class Modificator(Base):
 
         super().circuit()
 
-
+        # R_in -- `1/R_(i\\n) = 1/R_s + 1/R_g + 1 / R_(i\\n(base))`
         stiff_voltage = Divider(type='resistive')(
             V = self.V,
             V_out = self.V_e + self.V_je,
@@ -57,6 +57,7 @@ class Modificator(Base):
         )
         stiff_voltage.gnd & self.gnd
 
+        # Stiffed voltage
         self.v_ref & stiff_voltage & self.input
 
         self.R_in = R.parallel_sum(R, [self.R_in_base_dc, stiff_voltage.R_in, stiff_voltage.R_out]) 

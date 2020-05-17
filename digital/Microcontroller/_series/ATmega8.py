@@ -71,10 +71,7 @@ class ATmega(Base):
         return pins[self.model]
 
     def circuit(self):
-        #ref = self.props.get('ref', self.name)
-        #self.element = self.part(ref=ref)
-
-        self.element= self.part()
+        self.element = self.part()
 
         # Power Supply
         self.v_ref & self['vcc'] & self['avcc']

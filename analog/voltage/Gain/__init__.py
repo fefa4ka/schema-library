@@ -9,7 +9,5 @@ class Base(Electrical()):
     """
     """
 
-    mods = {
-        'via': 'bipolar'
-    }
+    pass
 

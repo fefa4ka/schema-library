@@ -1,6 +1,6 @@
 from math import log
 
-from PySpice.Unit import u_A, u_F, u_Ohm, u_s, u_V
+from bem import u_A, u_F, u_Ohm, u_s, u_V
 
 from bem.abstract import Electrical
 from bem.basic import Resistor, Capacitor

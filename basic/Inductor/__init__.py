@@ -12,7 +12,6 @@ class Base(Combination()):
     `V = L * (dI) / (dT)`
 
     ```
-    #vs = VS(flow='V')(V=slice(0, 0.2, .01))
     vs = VS(flow='SINEV')(V=5, frequency=[1e3, 1e6])
     load = Resistor()(1000)
     inductor = Example()

@@ -1,17 +1,17 @@
-from bem import Build 
+from bem import Build
 from bem.abstract import Physical, Network
 from skidl import Part, Net, TEMPLATE
 from skidl.Net import Net as NetType
 from PySpice.Unit import u_V, u_Ohm, u_uF, u_H, u_kHz
 
 class Base(Physical(), Network(port='two')):
-    """**Bipolar Transistor**
+    """# Bipolar Transistor
 
     When designing or looking at a transistor circuit there are **three different circuit configurations** that can be used.
 
     The three different transistor circuit configurations are: common emitter, common base and common collector (emitter follower), these three circuit configurations have different characteristics and one type will be chosen for a circuit dependent upon what is required.
 
-    _|**COMMON BASE**|**COMMON COLLECTOR**|**COMMON EMITTER**
+    **COMMON**|**BASE**|**COLLECTOR**|**EMITTER**
     -----|-----|-----|-----
     Voltage gain|High|Low|Medium
     Current gain|Low|High|Medium

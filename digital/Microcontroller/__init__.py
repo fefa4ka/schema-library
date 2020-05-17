@@ -14,9 +14,6 @@ class Base(Physical()):
     watch = mcu
     ```
     """
-    mods = {
-        'series': 'ATmega8'
-    }
 
     def mount(self, *args, **kwargs):
         super().mount(*args, **kwargs)

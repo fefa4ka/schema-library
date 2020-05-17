@@ -46,9 +46,10 @@ class Modificator(Base):
             follow='collector'
         )
 
+        # First amplifier INVERTING
         left = amplifier(
             collector=R(self.R_c),
-            emitter = R(self.R_e)
+            emitter = R(self.R_e) # Emitter resistore conected to bipolar
         )
         right = amplifier(
             collector=R(self.R_c),

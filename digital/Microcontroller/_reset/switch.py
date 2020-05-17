@@ -19,7 +19,7 @@ class Modificator(Base):
         the switch is pressed, it will short the capacitor and the current (I) through the switch can have high peak
         values. This causes the switch to bounce and generate steep spikes in 2ms - 10ms (t) periods until the
         capacitor is discharged. The PCB tracks and the switch metal introduces a small inductance (L) and the
-        high current through these tracks can generate high voltages up to VL = L * dI/dt.
+        high current through these tracks can generate high voltages up to `VL = L * dI/dt`.
 
         This spike voltage VL is most likely outside the specification of the RESET pin. By adding a series resistor
         between the switch and the capacitor, the peak currents generated will be significantly low and it will not

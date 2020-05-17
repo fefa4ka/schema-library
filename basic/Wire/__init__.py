@@ -1,11 +1,11 @@
-from bem import Build, u, u_Ohm, u_m, u_Hz, u_s
+from bem import Build, u, u_Ohm, u_m, u_Hz, u_s, u_A, u_W
 from bem.abstract import Physical
 from math import pi
 from scipy.constants import speed_of_light
 from skidl import Part, TEMPLATE
 
 class Base(Physical()):
-    """**Transmittion Line**
+    """# Transmittion Line
 
     * Paul Scherz. "2.5.1 How the Shape of a Conductor Affects Resistance" Practical Electronics for Inventors — 4th Edition. McGraw-Hill Education, 2016
     """
@@ -33,23 +33,6 @@ class Base(Physical()):
     def part_spice(self, *args, **kwargs):
         return Build('T').spice(*args, **kwargs)
 
-    def part_template(self):
-        pin_head = {
-            'library': 'Connector_Generic',
-            'name': 'Conn_01x04',
-            'footprint': 'Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical'
-        }
-
-        part = Part(pin_head['library'], pin_head['name'], footprint=pin_head['footprint'], dest=TEMPLATE)
-
-        part.set_pin_alias('ip', 1)
-        part.set_pin_alias('op', 3)
-
-        part.set_pin_alias('in', 2)
-        part.set_pin_alias('on', 4)
- 
-        return part
-
     def circuit(self):
         c = speed_of_light * (1 @ u_m) / (1 @ u_s)
         frequency = self.frequency #self.input.signal.frequency
@@ -57,10 +40,12 @@ class Base(Physical()):
         self.normalized_length = u(self.length / self.wave_length)
 
         self.element = self.part(impedance=self.Z, frequency=frequency, normalized_length=self.normalized_length)
+        # ip, op -- positive line in Spice Transmmittion element
+        self.input & (self.element['ip'] or self.element[1])
+        self.output & (self.element['op'] or self.element[2])
 
-        self.input += self.element['ip']
-        self.output += self.element['op']
-
-        self.gnd += self.element['in', 'on']
+        # in, on -- negative line, used for ground
+        if self.element['in']:
+            self.gnd += self.element['in', 'on']
 
 

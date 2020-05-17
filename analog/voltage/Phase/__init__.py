@@ -1,10 +1,6 @@
 from bem.abstract import Electrical
 
 class Base(Electrical()):
-    mods = {
-        'split': ['unity']
-    }
-
     pins = {
         'v_ref': True,
         'input': ('Some', ['output']),

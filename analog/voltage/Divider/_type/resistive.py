@@ -8,18 +8,18 @@ from settings import params_tolerance
 
 
 class Modificator(Base):
-    """**Two Resistor Voltage Divider**
-
-    Voltage dividers are often used in circuits to generate a particular voltage from a larger fixed (or varying) voltage.
-
+    """## Two Resistor Voltage Divider
     The humble voltage divider is even more useful, though, as a way of thinking about a circuit: the input voltage and upper resistance might represent the output of an amplifier, say, and the lower resistance might represent the input of the following stage.
 
-    In this case the voltage-divider equation tells you how much signal gets to the input of that last stage. This will all become clearer after you know about a remarkable fact (Thévenin’s theorem) that will be discussed later. First, though, a short aside on voltage sources and current sources.
+    In this case the voltage-divider equation tells you how much signal gets to the input of that last stage.
+
+    * Paul Horowitz and Winfield Hill. "1.2.3 Voltage Dividers" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 7-8
     """
 
-    def willMount(self, R_in = 0 @ u_Ohm):
+    def willMount(self, R_in = 0 @ u_Ohm, R_out = 0 @ u_Ohm):
         """
-            R_in -- Output impeadance that could be used as part of the divider
+            R_in -- The input voltage and upper resistance might represent the output of an amplifier
+            R_out -- The lower resistance might represent the input of the following stage
         """
         self.load(self.V)
 
@@ -29,7 +29,7 @@ class Modificator(Base):
         X = np.linalg.inv(A) @ B
 
         self.R_in = X[0][0] @ u_Ohm - self.R_in
-        self.R_out = X[1][0] @ u_Ohm
+        self.R_out = X[1][0] @ u_Ohm - self.R_out
 
     def network(self):
         return LSection(
@@ -38,15 +38,15 @@ class Modificator(Base):
         )
 
     def circuit(self):
-        """
-            R_in -- The input voltage and upper resistance might represent the output of an amplifier
-            R_out -- The lower resistance might represent the input of the following stage
-        """
         if self.R_in > 0 @ u_Ohm:
             input = self.input & Resistor()(self.R_in) & self.output
         else:
             self.input & self.output
-        output = self.output & Resistor()(self.R_out) & self.gnd
+
+        if self.R_out > 0 @ u_Ohm:
+            output = self.output & Resistor()(self.R_out) & self.gnd
+        else:
+            self.output & self.gnd
 
         self.Power = self.R_in + self.R_out
         self.consumption(self.V)

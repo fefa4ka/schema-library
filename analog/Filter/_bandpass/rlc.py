@@ -20,10 +20,13 @@ class Modificator(Base):
 
         output = Net('FilterBandpassOutput')
 
+        # Sink resistor
         R_band = Resistor()(self.R_band)
+        # Inductor tanker
         L_tank = Inductor()(self.L_tank)
         C_tank = Capacitor()(self.C_tank)
 
+		# Filter Network
         self & R_band & output & (L_tank | C_tank) & self.gnd
 
         self.output = output

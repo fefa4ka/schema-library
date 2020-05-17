@@ -44,8 +44,4 @@ class Base(Electrical(), Network(port='two')):
 
     * Paul Horowitz and Winfield Hill. "2.3.8 Differential amplifier" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 102-104
     """
-
-    mods = {
-        'via': ['bipolar']
-    }
-
+    pass

@@ -30,27 +30,26 @@ class Base(Electrical()):
     """
 
     def willMount(self, Scale=2, Frequency=120 @ u_Hz, V_ripple=1 @ u_V):
-        self.input_n = self.gnd
-
         self.load(self.V * self.Scale)
 
     def circuit(self):
         HalfBridge = Rectifier(wave='half', rectifier='full')
 
+
+        bridge = self.gnd
+
         sections = []
 
         if self.Scale % 2:
-            sections.append((self.input_n, self.input))
+            sections.append((bridge, self.input))
         else:
-            sections.append((self.input, self.input_n))
+            sections.append((self.input, bridge))
 
         for block in range(int(self.Scale)):
             last = sections[-1]
 
             scaler = HalfBridge(
-                V=self.V * self.Scale,
-                frequency=self.Frequency,
-                V_ripple=self.V_ripple
+                V=self.V * self.Scale
             )
             scaler.gnd += last[0]
             scaler.input += last[1]

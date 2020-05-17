@@ -14,7 +14,7 @@ models['L7805'] = [0.33 @ u_uF, 0.1 @ u_F]
 class Modificator(Base):
     def circuit(self):
         if 'ic' not in self.mods.get('via', []):
-            raise TypeError("Regulator should build with via=ic modificator")
+            raise TypeError("Bypass capacitors using for IC. Regulator should build with via=ic modificator")
 
         super().circuit()
 

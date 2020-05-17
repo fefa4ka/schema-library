@@ -8,13 +8,9 @@ class Base(Electrical(), Network(port='two')):
     """
     increase = False
 
-    V = 25 @ u_V
-    V_out = 10 @ u_V
-    coupling_factor = 0.9
-    turns_ration = 5
 
 
-    def willMount(self, V_out, coupling_factor, turns_ration):
+    def willMount(self, V=25 @ u_V, V_out=10 @ u_V, coupling_factor=0.9, turns_ratio=5):
         self.load(self.V_out)
 
     #  def __series__(self, instance):
@@ -56,7 +52,7 @@ class Base(Electrical(), Network(port='two')):
         return Transformer
 
     def circuit(self, *args, **kwargs):
-        transformer = self.part_spice() if self.SIMULATION else self.part()
+        transformer = self.part()
 
         self.v_ref = Net()
         self.gnd = Net()

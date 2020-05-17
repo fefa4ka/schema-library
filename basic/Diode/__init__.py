@@ -56,11 +56,12 @@ class Base(Physical()):
         'XTI': {'description': 'Saturation-current temp.exp', 'unit': { 'suffix': '', 'name': 'number' }, 'value': ''}
     }
 
-    mods = {
-        'type': ['generic']
-    }
-
     def willMount(self):
+        """
+        V_j -- Junction potential
+        V_drop -- Voltage drop
+        """
+
         self.Power = self.I_load
 
     def circuit(self):

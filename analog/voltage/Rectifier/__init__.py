@@ -24,10 +24,6 @@ class Base(Network(port='two'), Electrical()):
     * Paul Horowitz and Winfield Hill. "1.6.2 Rectification" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 31-32
     """
 
-    mods = {
-        'wave': ['half']
-    }
-
     def willMount(self):
         """
             V_ripple -- Periodic variations in voltage about the steady value

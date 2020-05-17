@@ -8,6 +8,12 @@ from lcapy import LSection, R, C
 
 class Modificator(Base):
     """## RC Lowpass Filter
+    The circuit is called a lowpass filter, because it passes low frequencies and blocks high frequencies.
+
+    If you think of it as a frequency-dependent voltage divider, this makes sense: the lower leg
+    of the divider (the capacitor) has a decreasing reactance with increasing frequency,
+    so the ratio of `V_(out)/V_(i\\n)` decreases accordingly:
+    `V_(out) / V_(i\\n) ≈ X_C / (R + X_C) ≈ (1 / ωC) /  (R + 1 / ωC) ≈ 1 / (1 + ωC)`
 
     * Paul Horowitz and Winfield Hill. "1.7.9 RC lowpass filters" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 50-51
     """
@@ -33,4 +39,5 @@ class Modificator(Base):
         signal = self.output
         self.output = Net('FilterLowpassOutput')
 
+        # Low pass mother fucker
         low_pass = signal & Resistor()(self.R_low) & self.output & Capacitor()(self.C_pass) & self.gnd
