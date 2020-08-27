@@ -39,5 +39,4 @@ class Modificator(Base):
         signal = self.output
         self.output = Net('FilterLowpassOutput')
 
-        # Low pass mother fucker
         low_pass = signal & Resistor()(self.R_low) & self.output & Capacitor()(self.C_pass) & self.gnd

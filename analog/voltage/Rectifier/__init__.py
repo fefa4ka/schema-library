@@ -6,7 +6,8 @@ from PySpice.Unit import u_ms, u_Ohm, u_A, u_V, u_Hz, u_W
 class Base(Network(port='two'), Electrical()):
     """# Diode Bridge
 
-    A diode bridge is an arrangement of four (or more) diodes in a bridge circuit configuration that provides the same polarity of output for either polarity of input.
+    A diode bridge is an arrangement of four (or more) diodes in a bridge circuit
+    configuration that provides the same polarity of output for either polarity of input.
 
     ```
     vs = VS(flow='SINEV')(V=220, frequency=60)
@@ -31,7 +32,6 @@ class Base(Network(port='two'), Electrical()):
         """
         self.load(self.V)
 
-
     def __series__(self, instance):
         if self.output and instance.input:
             self.output._name = instance.input._name = f'{self.name}{instance.name}_Net'
@@ -45,3 +45,6 @@ class Base(Network(port='two'), Electrical()):
 
     def circuit(self, **kwargs):
         self.create_bridge()
+
+    def create_bridge(self):
+        pass

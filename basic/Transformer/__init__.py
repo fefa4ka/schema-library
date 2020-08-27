@@ -1,14 +1,12 @@
-from bem.abstract import Electrical, Network
+from bem.abstract import Physical, Network
 from bem.basic import Resistor, RLC
 from skidl import Part, Net, TEMPLATE, subcircuit
 from PySpice.Unit import u_V, u_H, u_Ohm
 
-class Base(Electrical(), Network(port='two')):
+class Base(Network(port='two'), Physical()):
     """
     """
     increase = False
-
-
 
     def willMount(self, V=25 @ u_V, V_out=10 @ u_V, coupling_factor=0.9, turns_ratio=5):
         self.load(self.V_out)

@@ -1,6 +1,7 @@
 from bem import u_Ohm, u_V, u_A
 from bem.abstract import Electrical
 
+
 class Base(Electrical()):
     """# Voltage Divider
     Voltage dividers are often used in circuits to gener- ate a particular voltage from a larger fixed (or varying) voltage.

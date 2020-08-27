@@ -1,14 +1,16 @@
-from bem.abstract import Electrical 
+from bem.abstract import Electrical
 from bem.analog.voltage import Rectifier
-from bem import Net
-from PySpice.Unit import u_ms, u_V, u_A, u_Hz, u_Ohm
+from PySpice.Unit import u_V, u_Hz
+
 
 class Base(Electrical()):
     """# Voltage Double, Tripler, Quadrupler, etc
 
-    Voltage doubler. Think of it as *two half-wave rectifier circuits* in series.
+    Voltage doubler. Think of it as *two half-wave rectifier circuits*
+    in series.
 
-    Variations of this circuit by argument Scale exist for voltage triplers, quadruplers, etc. )
+    Variations of this circuit by argument Scale exist for voltage triplers,
+    quadruplers, etc. )
 
     ```
         vs = VS(flow='SINEV')(V=5, frequency=120)
@@ -24,9 +26,17 @@ class Base(Electrical()):
         end_time = 50 @ u_ms
     ```
 
-    You can extend this scheme as far as you want, producing what’s called a Cockcroft–Walton generator; these are used in arcane applications (such as particle accelerators) and in everyday applications (such as image intensifiers, air ionizers, laser copiers, and even bug zappers) that require a high dc voltage but hardly any current.
+    You can extend this scheme as far as you want, producing what’s called
+    a Cockcroft–Walton generator;
 
-        * Paul Horowitz and Winfield Hill. "1.6.4 Rectifier configurations for power supplies" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 33-35
+    these are used in arcane applications (such as particle accelerators)
+    and in everyday applications (such as image intensifiers, air ionizers,
+    laser copiers, and even bug zappers) that require a high dc voltage
+    but hardly any current.
+
+        * Paul Horowitz and Winfield Hill. "1.6.4 Rectifier configurations
+        for power supplies" The Art of Electronics – 3rd Edition.
+        Cambridge University Press, 2015, pp. 33-35
     """
 
     def willMount(self, Scale=2, Frequency=120 @ u_Hz, V_ripple=1 @ u_V):
@@ -34,7 +44,6 @@ class Base(Electrical()):
 
     def circuit(self):
         HalfBridge = Rectifier(wave='half', rectifier='full')
-
 
         bridge = self.gnd
 

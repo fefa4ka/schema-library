@@ -46,3 +46,4 @@ class Modificator(Base):
         self.v_inv += diff.v_inv
 
         self.output += diff.output
+		
