@@ -38,7 +38,7 @@ class Base(Electrical()):
         feedback = R(self.Gain * source.value)
         self.NG = 1 + feedback.value / source.value
 
-        inverter = OpAmp(boost='bipolar')(frequency=self.Frequency)
+        inverter = OpAmp(boost='bipolar')(Frequency=self.Frequency)
 
         inverter.v_ref & self.v_ref
         inverter.input & self.gnd

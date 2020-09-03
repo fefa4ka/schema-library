@@ -26,7 +26,7 @@ class Modificator(Electrical()):
     def circuit(self):
         R = Resistor()
 
-        amplifier = OpAmp()(frequency=self.Frequency)
+        amplifier = OpAmp()(Frequency=self.Frequency)
         self.v_ref & amplifier.v_ref
         self.v_inv & amplifier.gnd
 

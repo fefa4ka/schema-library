@@ -11,10 +11,20 @@ class Base(Electrical()):
         This circuit is commonly used to drive low-impedance loads, analog-to-digital converters (ADC) and buffer
         reference voltages. The output voltage of this circuit is equal to the input voltage.
 
+        ```
+        vs = VS(flow='SINEV')(V=5, frequency=100)
+        buffer = Example()
+        load = Resistor()(1000)
+
+        vs & buffer & load & vs
+
+        watch = buffer
+        ```
+
         * http://www.ti.com/lit/an/sboa269a/sboa269a.pdf
     """
     props = {
-        'via': ['opamp', 'bipolar', 'mosfet']
+        'via': ['opamp', 'bipolar']
     }
 
     def willMount(self, Frequency=100 @ u_Hz):
@@ -28,10 +38,10 @@ class Base(Electrical()):
         self.slew_rate = 2 * pi * self.Frequency * self.V
 
     def circuit(self):
-        via = self.props.get('via', None)
-        buffer = None
+        via = self.props.get('via', [None])
+        buff = None
 
-        if via == 'opamp':
+        if 'opamp' in via:
             """
             1. Use the op-amp linear output operating range, which is usually specified under the AOL test conditions.
             2. The small-signal bandwidth is determined by the unity-gain bandwidth of the amplifier.
@@ -41,17 +51,17 @@ class Base(Electrical()):
             the datasheet.
             6. High output current amplifiers may be required if driving low impedance loads
             """
-            buffer = OpAmp()(frequency=self.Frequency)
-            buffer.input_n & buffer.output & self.output
+            buff = OpAmp()(V=self.V)
+            buff.input_n & buff.output & self.output
 
-        if via == 'bipolar':
-            buffer = Bipolar(type='npn', emitter='follower')()
-            buffer & self.output
+        if 'bipolar' in via:
+            buff = Bipolar(type='npn', emitter='follower')()
+            buff & self.output
 
-        if buffer:
-            self.input & buffer
+        if buff:
+            self.input & buff
 
-            buffer.v_ref & self.v_ref
-            buffer.gnd & self.gnd
+            buff.v_ref & self.v_ref
+            buff.gnd & self.gnd
         else:
             self.input & self.output

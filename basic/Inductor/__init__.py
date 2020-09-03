@@ -20,7 +20,7 @@ class Base(Combination()):
     watch = inductor
     ```
 
-    Where L is called the inductance and is measured in henrys (or mH, μH, nH, etc.). Putting a constant voltage across an inductor causes the current to rise as a ramp (compare with a capacitor, in which a constant current causes the voltage to rise as a ramp); 
+    Where `L` is called the inductance and is measured in henrys (or mH, μH, nH, etc.). Putting a constant voltage across an inductor causes the current to rise as a ramp (compare with a capacitor, in which a constant current causes the voltage to rise as a ramp); 
 
     1 V across 1 H produces a current that increases at 1 amp per second.
 
@@ -39,7 +39,6 @@ class Base(Combination()):
             value -- L is called the inductance and is measured in henrys (or mH, μH, nH, etc.).
         """
         pass
-        #self.value = self.value_closest(self.value) if not self.SIMULATION else self.value
 
     def part_spice(self, *args, **kwargs):
         return Build('L').spice(*args, **kwargs)

@@ -1,8 +1,7 @@
-from .. import Base
 from bem import u_V, u_s
 from bem.analog.voltage import Decay
 
-class Modificator(Base):
+class Modificator:
     def circuit(self):
         super().circuit()
 

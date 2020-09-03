@@ -7,7 +7,7 @@ from bem.basic import Resistor, Capacitor
 
 
 class Modificator(Base):
-    """**Simple RC Differentiator**
+    """## Simple RC Integrator
 
     `V_(out)(t) = RC * (d/dt) * V_(in)(t)`
 

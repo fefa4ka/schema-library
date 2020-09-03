@@ -42,7 +42,7 @@ class Modificator(Electrical()):
         self.tau = feedback.value * differentiator.value
 
         # Calculate the necessary op amp gain bandwidth product (GBP) for the circuit to be stable
-        buffer = OpAmp()(frequency=self.Frequency)
+        buffer = OpAmp()(Frequency=self.Frequency)
 
         buffer.v_ref & self.v_ref
         buffer.gnd & self.v_inv

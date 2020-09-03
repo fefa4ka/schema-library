@@ -1,9 +1,8 @@
-from .. import Base
 from bem import Net, u_kOhm, u_nF, u_Ohm
 from bem.basic import Switch, Resistor, Capacitor, Diode
 from bem.abstract import Network
 
-class Modificator(Base):
+class Modificator:
     def circuit(self):
         super().circuit()
 

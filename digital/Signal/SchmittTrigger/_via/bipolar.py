@@ -44,12 +44,12 @@ class Modificator(Base):
             collector = R_on
         )
 
-        # The two resistors form a potential divider which must set T_on's base at (say) V_base with T_off off,
-        # and draw a current significantly higher than T_on's base current, which can't exceed [I_load / 30] = I_on
-        # Choose the bleed current through RA & RB to be about I_bleed = I_on * 5, so that it's much larger than T_on's base current.
         I_bleed = self.I_load / 6
         V_base = self.V_on + off.V_je
 
+        # The two resistors form a potential divider which must set T_on's base at (say) V_base with T_off off,
+        # and draw a current significantly higher than T_on's base current, which can't exceed [I_load / 30] = I_on
+        # Choose the bleed current through RA & RB to be about I_bleed = I_on * 5, so that it's much larger than T_on's base current.
         bleed = Divider(type='resistive')(
             V = self.V,
             V_out = V_base,

@@ -4,7 +4,7 @@ from bem.basic.transistor import Bipolar
 from PySpice.Unit import u_Ohm, u_V, u_A
 
 class Modificator(Base):
-    """**Transistor Switch**
+    """## Transistor Switch
  
     """
 
@@ -16,4 +16,5 @@ class Modificator(Base):
                 & Bipolar(
                     type='npn',
                     common='emitter'
-                )(collector=self.load_block) & self.gnd
+                )(collector=self.load_block) \
+            & self.gnd
