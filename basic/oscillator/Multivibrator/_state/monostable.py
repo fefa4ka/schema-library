@@ -25,14 +25,14 @@ class Modificator(Base):
         'gnd': True
     }
 
-    def willMount(self, width = 0.03 @ u_s, frequency = 20 @ u_Hz):
+    def willMount(self, Width = 0.03 @ u_s, Frequency = 20 @ u_Hz):
         pass
 
     def circuit(self):
         R = Resistor()
         Gate = Bipolar(type='npn', follow='collector', common='emitter')
 
-        rectifier = Signal(clamp='rectifier')(V = self.V, Load = self.Load, frequency = self.frequency)
+        rectifier = Signal(clamp='rectifier')(V = self.V, Load = self.Load, Frequency = self.Frequency)
 
         trigger = Gate(
             collector=R(self.R_load, ref='Trigger_Collector'),
@@ -44,7 +44,7 @@ class Modificator(Base):
         delay = Decay()(
             V = self.V,
             V_out = self.V / 2,
-            Time_to_V_out = self.width,
+            Time_to_V_out = self.Width,
             Load = (self.V - trigger.V_je) / (3 * self.I_load / pulse.Beta),
             reverse = True
         )

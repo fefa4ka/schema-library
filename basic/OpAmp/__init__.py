@@ -10,10 +10,7 @@ class Base(Physical(), Network(port='two')):
         required for nearly ideal DC amplification and are therefore used extensively
         in signal conditioning, filtering or to perform mathematical operations
         such as add, subtract, integration and differentiation.
-    """
 
-
-    """
         An Operational Amplifier is basically a three-terminal device which consists
         of two high impedance inputs. One of the inputs is called the Inverting Input,
         marked with a negative or “minus” sign, ( – ).

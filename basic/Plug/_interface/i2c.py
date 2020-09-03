@@ -1,6 +1,6 @@
 from .. import Base
 from bem.abstract import Network
 
-class Modificator(Network(interface='i2c'), Base):
+class Modificator(Base, Network(interface='i2c')):
     pass
 

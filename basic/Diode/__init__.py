@@ -65,6 +65,7 @@ class Base(Physical()):
         self.Power = self.I_load
 
     def circuit(self):
+        # Тесты хуесты
         self.V_j = (self['VJ'] or 0.6) @ u_V
 
         self.consumption(self.V_j)
@@ -82,6 +83,7 @@ class Base(Physical()):
 
         if not part['K']:
             part.set_pin_alias('K', 2)
+
 
         return part
 
