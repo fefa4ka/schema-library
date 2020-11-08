@@ -7,11 +7,21 @@ from .. import Base
 
 class Modificator(Base):
     """
+
+    ```
+    vs = VS(flow='SINEV')(V=10, frequency=1e6)
+    load = Resistor()(1000)
+    trigger = Example()
+    vs & trigger & load & vs
+
+    watch = trigger
+    ```
+
     * http://www.johnhearfield.com/Eng/Schmitt.htm
     """
 
     def circuit(self):
-        Gate = Bipolar(type='npn', foloow='collector', common='emitter')
+        Gate = Bipolar(type='npn', follow='collector', common='emitter')
         R = Resistor()
 
         # Next, choose the current that will flow in T2. A low value saves energy but implies a high value of collector load resistor, which might slow down the switching edges. 
@@ -44,12 +54,12 @@ class Modificator(Base):
             collector = R_on
         )
 
-        I_bleed = self.I_load / 6
-        V_base = self.V_on + off.V_je
-
         # The two resistors form a potential divider which must set T_on's base at (say) V_base with T_off off,
         # and draw a current significantly higher than T_on's base current, which can't exceed [I_load / 30] = I_on
         # Choose the bleed current through RA & RB to be about I_bleed = I_on * 5, so that it's much larger than T_on's base current.
+        I_bleed = self.I_load / 6
+        V_base = self.V_on + off.V_je
+
         bleed = Divider(type='resistive')(
             V = self.V,
             V_out = V_base,

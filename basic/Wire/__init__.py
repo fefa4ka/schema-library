@@ -6,6 +6,19 @@ from skidl import Part, TEMPLATE
 
 class Base(Physical()):
     """# Transmittion Line
+    The resistance of a conducting wire of a given material varies with its shape. Doubling
+    the length of a wire doubles the resistance, allowing half the current to flow, assuming similar applied voltages. Conversely, doubling the cross-sectional area A has the
+    opposite effect—the resistance is cut in half, and twice as much current will flow,
+    again assuming similar applied voltages.
+
+    ```
+    vs = VS(flow='SINEV')(V=10, frequency=1 @ u_GHz)
+    load = Resistor()(1000)
+    wire = Example()
+    vs & wire & load & vs
+
+    watch = wire 
+    ```
 
     * Paul Scherz. "2.5.1 How the Shape of a Conductor Affects Resistance" Practical Electronics for Inventors — 4th Edition. McGraw-Hill Education, 2016
     """
