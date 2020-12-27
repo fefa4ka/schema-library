@@ -23,7 +23,6 @@ class Modificator(Base, Network(port='many')):
 
         self.input & self.gnd
 
-        print('summer', self.inputs)
         for index, signal in enumerate(self.inputs):
             Gain = self.Gain[index] if type(self.Gain) == list else self.Gain
             source = R(feedback.value / Gain)

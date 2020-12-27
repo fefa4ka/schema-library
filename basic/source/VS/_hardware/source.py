@@ -46,7 +46,6 @@ class JDS6600(Device):
 
 
     def set_channel(self, channel, waveform='sine', amplitude=5 @ u_V, frequency=100 @ u_Hz, offset=0 @ u_V, duty_cycle=50):
-        print(channel, waveform, frequency, amplitude, offset, duty_cycle)
         channel = int(channel)
         self.device.setfrequency(channel, u(frequency))
         self.device.setwaveform(channel, waveform)

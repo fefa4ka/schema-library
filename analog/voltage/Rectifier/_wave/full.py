@@ -17,6 +17,6 @@ class Modificator(Base):
         left = (D()['A,K'] & self.input & D()['A,K'])
         right = (D()['A,K'] & self.input_n & D()['A,K'])
 
-        self.output_n & (left | right) & self.output
+        self.gnd & self.output_n & (left | right) & self.output
 
 

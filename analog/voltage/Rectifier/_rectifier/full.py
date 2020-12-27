@@ -25,7 +25,7 @@ class Modificator(Base):
         * Paul Horowitz and Winfield Hill. "1.6.3 Power-supply filtering" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 32-33
     """
 
-    def willMount(self, V_ripple=1 @ u_V, Frequency=500e3 @ u_Hz):
+    def willMount(self, V_ripple=1 @ u_V, Frequency=60 @ u_Hz):
         """
             V_ripple -- Periodic variations in voltage about the steady value
             Frequency -- Input signal frequency
@@ -43,4 +43,4 @@ class Modificator(Base):
         self.C_ripple = (self.I_load / (self.Frequency * self.V_ripple * (2 if is_full_wave else 1))) @ u_F
         C_ripple = Capacitor()(value=self.C_ripple)
 
-        circuit = bridge_output & self.output & C_ripple & self.output_n
+        circuit = bridge_output & self.output & C_ripple & self.gnd

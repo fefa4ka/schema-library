@@ -4,38 +4,56 @@ from bem.basic import Transformer
 
 from bem import u_V, u_Hz
 
-
 class Base(Network(port=['two']), Electrical()):
-    def willMount(self, V=220 @ u_V, V_out=5 @ u_V, Frequency = 60 @ u_Hz):
-        self.V_stiff = self.V_out * 1.2
-        pass
+    """# Power Supply
+
+    ```
+    vs = VS(flow='SINEV')(V=220, frequency=60, wire_gnd=False)
+
+    load = Resistor()(1000)
+
+    power_supply = Example()
+
+    vs.output & power_supply
+    vs.gnd & power_supply.input_n
+    power_supply.gnd & gnd
+
+    power_supply.output & load & gnd
+
+    watch = power_supply
+    ```
+
+    * Paul Horowitz and Winfield Hill. "1.6.2 Rectification" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 31-32
+    """
+    def willMount(self,
+                  V=220 @ u_V,
+                  V_out=3.3 @ u_V,
+                  Frequency=60 @ u_Hz):
+        """
+        V_stiff -- Integrated NPN regulator needs at least 2 * V_be of "dropout voltage"
+        """
+        self.V_stiff = self.V_out * 2
 
     def circuit(self):
-        print(str(self.pins))
         transformer = Transformer()(V_out=self.V_stiff)
+
         # TODO: Fuses before
         # self.input & switch & fuse
-        self.input & transformer.input
-        self.input_n & transformer.input_n
-
-        #transformer.output & load & transformer.output_n
-
-        bridge = Rectifier(wave='full', rectifier='full')(
-                V = self.V_stiff,
-                V_ripple = 1 @ u_V,
-                Frequency = self.Frequency
+        rectifier = Rectifier(wave='full', rectifier='full')(
+            V = self.V_stiff, 
+            V_ripple = self.V_stiff * 0.01
         )
 
-        transformer & bridge
-
-        # Filter
+        # TODO: Filter
         # Regulator
-        regulator = Regulator(via='ic', stability=['lowpass', 'bypass'])(
-                V = self.V_stiff,
-                V_out = self.V_out
+        regulator = Regulator(via='ic', stability='bypass')(
+            V = self.V_stiff,
+            V_out = self.V_out
         )
-        bridge.output & regulator.input
-        bridge.output_n & regulator.gnd
 
-        self.output & regulator.output
-        self.gnd & regulator.gnd & self.output_n
+        self.input & transformer.input
+        self.input_n & transformer.input_n & self.gnd
+        transformer.gnd & self.gnd
+
+        transformer & rectifier & regulator & self.output
+

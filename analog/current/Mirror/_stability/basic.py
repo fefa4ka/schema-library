@@ -10,7 +10,6 @@ class Modificator(Base):
 
     def willMount(self):
         self.R_e = 1000 @ u_Ohm
-        print("V_DROPP ADD", self.R_e* self.I_load)
         self.V_drop += self.R_e * self.I_load
 
     def ref_input(self):

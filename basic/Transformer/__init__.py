@@ -116,9 +116,6 @@ class Base(Network(port='two'), Physical()):
     def circuit(self, *args, **kwargs):
         transformer = self.element = self.part()
 
-        self.v_ref = Net()
-        self.gnd = Net()
-
         self.input = transformer['1']
         self.input_n = transformer['2']
 

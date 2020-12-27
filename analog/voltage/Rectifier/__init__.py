@@ -10,14 +10,18 @@ class Base(Network(port='two'), Electrical()):
     configuration that provides the same polarity of output for either polarity of input.
 
     ```
-    vs = VS(flow='SINEV')(V=220, frequency=60)
+    vs = VS(flow='SINEV')(V=10, frequency=60, wire_gnd=False)
+
     load = Resistor()(1000)
     rectifier = Example()
 
-    vs & rectifier
+    vs.output & rectifier.input
     vs.gnd & rectifier.input_n
 
     rectifier.output & load & rectifier.output_n
+    rectifier.gnd & gnd
+
+    # vs.gnd for simulation
 
     watch = rectifier
     ```
@@ -32,19 +36,9 @@ class Base(Network(port='two'), Electrical()):
         """
         self.load(self.V)
 
-    def __series__(self, instance):
-        if self.output and instance.input:
-            self.output._name = instance.input._name = f'{self.name}{instance.name}_Net'
-            self.output += instance.input
-
-        if self.output_n and instance.input_n:
-            self.output_n += instance.input_n
-
-        if self.v_ref and instance.v_ref:
-            self.v_ref += instance.v_ref
-
     def circuit(self, **kwargs):
         self.create_bridge()
+
 
     def create_bridge(self):
         pass
