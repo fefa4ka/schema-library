@@ -15,6 +15,27 @@ class Modificator(Base):
         the datasheet.
         6. High output current amplifiers may be required if driving low impedance loads
 
+
+        ```
+        # Power Supply
+        signal = VS(flow='SINEV')(V=2.5, frequency=100)
+
+        # Signal
+        v_ref = VS(flow='V')(V=10)
+
+        load = Resistor()(1000)
+
+        # Amplifier
+        buffer = Example() 
+
+        # Network
+        v_ref & buffer.v_ref
+        signal & buffer.input
+        buffer & load & buffer.v_inv & signal.gnd & v_ref
+
+
+        watch = buffer
+        ```
         * http://www.ti.com/lit/an/sboa269a/sboa269a.pdf
     """
 

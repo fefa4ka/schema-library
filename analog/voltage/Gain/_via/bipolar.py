@@ -10,13 +10,37 @@ class Modificator(Electrical()):
 
     The circuit shown here is known as a common-emitter amplifier. Unlike the common-collector amplifier, the common-emitter amplifier provides voltage gain. This amplifier makes use of the common-emitter arrangement and is modified to allow for ac coupling.
 
+    ```
+    # Power supply
+    v_ref = VS(flow='V')(V=10)
+
+    # Signals
+    signal = VS(flow='SINEV')(V=0.2, frequency=25000)
+
+    # Load
+    load = Resistor()(1000)
+
+    # Amplifier
+    amplifier = Example() 
+
+    # Network
+    v_ref & amplifier.v_ref
+
+    signal & amplifier.input
+
+    amplifier.output & load & amplifier.gnd & signal.gnd & v_ref
+
+
+    watch = amplifier
+    ```
+
     * Paul Scherz. "4.3.2 Bipolar Transistors" Practical Electronics for Inventors — 4th Edition. McGraw-Hill Education, 2016
     * Paul Horowitz and Winfield Hill. "2.2.7 Common-emitter amplifier" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 87
 
 
     """
 
-    def willMount(self, f_3db=1000000 @ u_Hz):
+    def willMount(self, f_3db=20000 @ u_Hz):
         """
             f_3db -- Frequencies of interest are passed by the highpass filter
             C_in -- Blocking capacitor is chosen so that all frequencies of interest are passed by the highpass filter `C_(i\\n) >= 1 / (2 pi f_(3db) (R_s∥R_g))`

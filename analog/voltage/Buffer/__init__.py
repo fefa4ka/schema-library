@@ -12,11 +12,24 @@ class Base(Electrical()):
         reference voltages. The output voltage of this circuit is equal to the input voltage.
 
         ```
-        vs = VS(flow='SINEV')(V=5, frequency=100)
-        buffer = Example()
+        # Power Supply
+        v_ref = VS(flow='V')(V=10)
+        v_inv = VS(flow='V')(V=-10)
+
+        # Signal
+        signal = VS(flow='SINEV')(V=0.7, frequency=100)
+
         load = Resistor()(1000)
 
-        vs & buffer & load & vs
+        # Amplifier
+        buffer = Example() 
+
+        # Network
+        v_ref & buffer.v_ref
+        v_inv & buffer.gnd
+        signal & buffer.input
+        buffer & load & signal.gnd & v_ref
+
 
         watch = buffer
         ```
@@ -62,6 +75,10 @@ class Base(Electrical()):
             self.input & buff
 
             buff.v_ref & self.v_ref
-            buff.gnd & self.gnd
+
+            gnd = buff.gnd
+            if hasattr(buff, 'v_inv'):
+                gnd = buff.v_inv
+            gnd & self.gnd
         else:
             self.input & self.output

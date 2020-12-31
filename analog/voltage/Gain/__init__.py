@@ -7,6 +7,7 @@ from bem import Net, u, u_F, u_Ohm, u_V, u_Hz, u_A
 
 class Base(Electrical()):
     """
+
     """
 
     pass

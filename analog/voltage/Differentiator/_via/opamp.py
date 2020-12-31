@@ -13,6 +13,29 @@ class Modificator(Electrical()):
         stable. The components required for stability limit the bandwidth over which the differentiator function is
         performed.
 
+       ```
+        # Power Supply
+        v_ref = VS(flow='V')(V=10)
+        v_inv = VS(flow='V')(V=-10)
+
+        # Signal
+        vs = VS(flow='PULSEV')(V=5, pulse_width=0.00002, period=0.00004)
+
+        load = Resistor()(1000)
+
+        # Amplifier
+        buffer = Example() 
+
+        # Network
+        v_ref & buffer.v_ref
+        v_inv & buffer.v_inv
+        signal & buffer.input
+        buffer & load & signal.gnd & buffer.gnd & v_ref
+
+
+        watch = buffer
+        ```
+
         * http://www.ti.com/lit/an/sboa276a/sboa276a.pdf
     """
 
@@ -24,7 +47,7 @@ class Modificator(Electrical()):
         'gnd': True
     }
 
-    def willMount(self, gain=1, Frequency=1e3 @ u_Hz):
+    def willMount(self, gain=1, Frequency=5e3 @ u_Hz):
         pass
 
     def circuit(self):
@@ -45,7 +68,7 @@ class Modificator(Electrical()):
         buffer = OpAmp()(Frequency=self.Frequency)
 
         buffer.v_ref & self.v_ref
-        buffer.gnd & self.v_inv
+        buffer.v_inv & self.v_inv
 
         self.input & differentiator & sensor & buffer.input_n & feedback & buffer.output & self.output
-        self.gnd & buffer.input
+        self.gnd & buffer.input & buffer.gnd

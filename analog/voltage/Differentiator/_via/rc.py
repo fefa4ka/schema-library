@@ -11,6 +11,16 @@ class Modificator(Base):
 
     `V_(out)(t) = RC * (d/dt) * V_(in)(t)`
 
+    ```
+    vs = VS(flow='PULSEV')(V=5, pulse_width=0.02, period=0.04)
+    load = Resistor()(1000)
+    diff = Example()
+    vs & diff & load & vs
+
+
+    watch = diff 
+    ```
+
     * Paul Horowitz and Winfield Hill. "1.4.3 Differetiators" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 25
     """
 
@@ -24,7 +34,7 @@ class Modificator(Base):
 
         self.tau = u(self.V / rate)
 
-        current_sensing = Resistor()(self.R_load * 2)
+        current_sensing = Resistor()(self.R_load * 2 / 10)
         differetiator = Capacitor()((self.tau / current_sensing.value) @ u_F)
 
         self.input & self.v_ref & differetiator & self.output & current_sensing & self.gnd
