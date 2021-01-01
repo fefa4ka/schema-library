@@ -14,7 +14,7 @@ class Modificator(Base):
         super().circuit()
 
         """
-        The collector resistor  can be added to protect the transistor from momentary output
+        The collector resistor can be added to protect the transistor from momentary output
         short circuits by limiting the current, even though it is not essential to the emitter follower
         function.
 
@@ -35,6 +35,7 @@ class Modificator(Base):
 
         follower.input & self.output
         follower.v_ref & self.input
+
         self.output = follower.output
 
 

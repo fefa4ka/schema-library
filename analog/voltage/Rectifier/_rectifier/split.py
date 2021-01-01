@@ -26,3 +26,4 @@ class Modificator(Base):
         C_ripple_inv = C(self.C_ripple)
 
         circuit = self.output & C_ripple_out & self.output_n & C_ripple_inv & self.output_inverse
+        self.output_inverse.fixed_name = False

@@ -66,7 +66,6 @@ class Base(Electrical()):
         )
 
         if self.reverse:
-
             self.input & current_source & self.output
             self.gnd & discharger & self.output
         else:

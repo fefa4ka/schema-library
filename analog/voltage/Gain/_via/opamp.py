@@ -16,12 +16,12 @@ class Modificator(Electrical()):
         v_inv = VS(flow='V')(V=-10)
 
         # Signal
-        signal = VS(flow='SINEV')(V=0.7, frequency=25000)
+        signal = VS(flow='SINEV')(V=0.7, frequency=1e4)
 
         load = Resistor()(1000)
 
         # Amplifier
-        buffer = Example() 
+        buffer = Example()
 
         # Network
         v_ref & buffer.v_ref
@@ -43,7 +43,7 @@ class Modificator(Electrical()):
         'gnd': True
     }
 
-    def willMount(self, Gain=2, Frequency=25e3 @ u_Hz):
+    def willMount(self, Gain=2, Frequency=1e4 @ u_Hz):
         # Calculate the minimum slew rate required to minimize slew-induced distortion
         self.Slew_rate = 2 * pi * self.V * Frequency
 

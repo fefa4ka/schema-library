@@ -19,12 +19,12 @@ class Modificator(Electrical()):
         v_inv = VS(flow='V')(V=-10)
 
         # Signal
-        vs = VS(flow='PULSEV')(V=5, pulse_width=0.00002, period=0.00004)
+        signal = VS(flow='PULSEV')(V=5, pulse_width=0.00002, period=0.00004)
 
         load = Resistor()(1000)
 
         # Amplifier
-        buffer = Example() 
+        buffer = Example()
 
         # Network
         v_ref & buffer.v_ref
@@ -35,8 +35,7 @@ class Modificator(Electrical()):
 
         watch = buffer
         ```
-
-        * http://www.ti.com/lit/an/sboa276a/sboa276a.pdf
+        * https://www.scribd.com/document/423377802/sboa276a-pdf
     """
 
     pins = {
