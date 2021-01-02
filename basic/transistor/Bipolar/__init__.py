@@ -133,7 +133,6 @@ class Base(Physical(), Network(port='two')):
 
         input_side = 'emitter' if common == 'base' else 'base'
         if self[input_side]:
-            self.log('%s connected to %s' % (input_side, self[input_side]))
             input_line = self.input & self[input_side] & transistor[input_side]
         else:
             self.input += transistor[input_side]
@@ -141,7 +140,6 @@ class Base(Physical(), Network(port='two')):
         v_ref_side = 'emitter' if common == 'collector' else 'collector'
 
         if self[v_ref_side]:
-            self.log('%s connected to %s' % (v_ref_side, self[v_ref_side]))
             v_ref_line = self.v_ref & self[v_ref_side] & transistor[v_ref_side]
         else:
             self.v_ref += transistor[v_ref_side]

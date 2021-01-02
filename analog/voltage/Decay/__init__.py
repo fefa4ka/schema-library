@@ -57,10 +57,10 @@ class Base(Electrical()):
             reverse -- Reverse capacitor connection
         """
         self.load(self.V_out)
-        self.Power = self.power(self.V, self.R_load / 10 / 2)
+        self.Power = self.power(self.V, self.R_load / 2)
 
     def circuit(self):
-        current_source = Resistor()(self.R_load / 10 / 2)
+        current_source = Resistor()(self.R_load / 2)
         discharger = Capacitor()(
             (self.Time_to_V_out / (current_source.value * log(self.V / (self.V - self.V_out)))) @ u_F
         )

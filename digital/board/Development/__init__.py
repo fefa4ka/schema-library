@@ -20,13 +20,13 @@ class Base(Electrical()):
     watch = mcu
     ```
     """
-    def willMount(self, series='ATmega8', frequency=5e6 @ u_Hz):
+    def willMount(self, V_mcu=5 @ u_V, series='ATmega8', frequency=5e6 @ u_Hz):
         pass
 
     def circuit(self):
         mcu = Microcontroller(
             series=self.series,
-            reset='switch')(V=1, frequency=self.frequency)
+            reset='switch')(V=self.V_mcu, frequency=self.frequency)
 
         self.V_max = mcu.V * 2
 
@@ -36,9 +36,9 @@ class Base(Electrical()):
 
         power & mcu
 
-        supply_indication = power & Led(via='resistor')(diodes=Diode(type='led')(color='green'))
+        supply_indication = power & Led(via='resistor')(V=power.V_out, diodes=Diode(type='led')(V=power.V_out, color='green'))
 
-        usb = mcu & UsbUart(via='atmega16u2')() & Plug(interface='usb', type='b')()
+        usb = mcu & UsbUart(via='atmega16u2')(V=power.V_out) & Plug(interface='usb', type='b')()
 
         interfaces = {}
         for interface in mcu.mods['interface']:
@@ -59,6 +59,7 @@ class Base(Electrical()):
                 connector = Physical(part='Connector_Generic:Conn_01x0' + str(bus_width), footprint='Connector_PinHeader_2.54mm:PinHeader_1x0' + str(bus_width) + '_P2.54mm_Vertical')(ref=bus)
                 for index, pin in enumerate(buses[bus]):
                     connector[index + 1] & mcu[pin]
+
 
 
 

@@ -64,12 +64,14 @@ class Base(Physical()):
 
         self.Power = self.I_load
 
-    def circuit(self):
-        # Тесты хуесты
+    def init_params(self):
         self.V_j = (self['VJ'] or 0.6) @ u_V
 
         self.consumption(self.V_j)
         self.load(self.V - self.V_j)
+
+    def circuit(self):
+        self.init_params()
 
         super().circuit()
 

@@ -34,13 +34,12 @@ class Modificator(Base):
         # The noise spikes look troublesome, so it would be sensible to aim for around V_on - V_off - which would give about V_histeresis of hysteresis
         self.V_histeresis = self.V_on - self.V_off
 
-        # It follows that the designer must ensure that the current in T_off (I1) is smaller than the current in T_on (I2), or the circuit won't work!
         I_off = self.V_off / R_E.value
+        # It follows that the designer must ensure that the current in T_off (I1) is smaller than the current in T_on (I2), or the circuit won't work!
         R_off = R((self.V - self.V_off) / I_off)
 
-        # R_limit limits T_off's maximum base current, which could safely be I_off / 30 (because the transistor won't have a current gain lower than 30)
         I_limit = I_off / 30 # Amplifier Gain
-
+        # R_limit limits T_off's maximum base current, which could safely be I_off / 30 (because the transistor won't have a current gain lower than 30)
         # I'm assuming that the circuit is driven from a zero-impedance voltage source. If it's not, then the source impedance can be subtracted from R_limit.
         R_limit = R((self.V - self.V_off) / I_limit)
 
@@ -54,12 +53,12 @@ class Modificator(Base):
             collector = R_on
         )
 
-        # The two resistors form a potential divider which must set T_on's base at (say) V_base with T_off off,
-        # and draw a current significantly higher than T_on's base current, which can't exceed [I_load / 30] = I_on
-        # Choose the bleed current through RA & RB to be about I_bleed = I_on * 5, so that it's much larger than T_on's base current.
         I_bleed = self.I_load / 6
         V_base = self.V_on + off.V_je
 
+        # The two resistors form a potential divider which must set T_on's base at (say) V_base with T_off off,
+        # and draw a current significantly higher than T_on's base current, which can't exceed [I_load / 30] = I_on
+        # Choose the bleed current through RA & RB to be about I_bleed = I_on * 5, so that it's much larger than T_on's base current.
         bleed = Divider(type='resistive')(
             V = self.V,
             V_out = V_base,
