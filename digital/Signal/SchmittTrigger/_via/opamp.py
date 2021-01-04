@@ -4,6 +4,13 @@ from bem.analog.voltage import Divider
 
 
 class Modificator(Base):
+    pins = {
+        'input': True,
+        'output': True,
+        'v_ref': True,
+        'v_inv': True,
+        'gnd': True
+    }
     def willMount(self):
         trigger = OpAmp()()
 
