@@ -22,11 +22,11 @@ class Modificator(Base):
 
         reduce_ripple = Filter(lowpass='rc')(
             f_3dB_low = self.Frequency,
-            Load=self.R_load / 2,
+            Load=self.R_source
         )
 
-        reduce_ripple.input & self.input
+        reduce_ripple.input & self.output
         reduce_ripple.gnd & self.gnd
 
-        self.input = reduce_ripple.output
+        self.input & reduce_ripple.output
 

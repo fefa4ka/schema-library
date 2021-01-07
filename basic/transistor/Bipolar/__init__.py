@@ -6,6 +6,7 @@ from PySpice.Unit import u_V, u_Ohm, u_uF, u_H, u_kHz
 
 class Base(Physical(), Network(port='two')):
     """# Bipolar Transistor
+    The transistor is our most important example of an “active” component, a device that can amplify, producing an output signal with more power in it than the input signal. The additional power comes from an external source of power (the power supply, to be exact).
 
     When designing or looking at a transistor circuit there are **three different circuit configurations** that can be used.
 
@@ -20,6 +21,7 @@ class Base(Physical(), Network(port='two')):
     Input resistance|Low|High|Medium
     Output resistance|High|Low|Medium
 
+    * Paul Horowitz and Winfield Hill. "2. Transistors" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 71
     * [Transistor Configurations: circuit configurations](https://www.electronics-notes.com/articles/analogue_circuits/transistor/transistor-circuit-configurations.php)
     """
 
@@ -93,9 +95,7 @@ class Base(Physical(), Network(port='two')):
     }
 
     def willMount(self, collector=None, base=None, emitter=None):
-        self.Beta = self['BF'] or 100
-        self.V_je = (self['VJE'] or 0.6) @ u_V
-        self.V_ce = (self['VCE'] or 0.3) @ u_V
+        pass
 
     def part_spice(self, *args, **kwargs):
         return Build('BJT').spice(*args, **kwargs)
@@ -116,6 +116,10 @@ class Base(Physical(), Network(port='two')):
     def circuit(self):
         transistor = self.element = self.part()
 
+        self.Beta = self['BF'] or 100
+        self.V_je = (self['VJE'] or 0.6) @ u_V
+        self.V_ce = (self['VCE'] or 0.3) @ u_V
+
         common = self.props.get('common', 'emitter')
         follow = self.props.get('follow', 'collector')
 
@@ -129,22 +133,22 @@ class Base(Physical(), Network(port='two')):
             self.log('%s connected to %s' % (common, self[common]))
             common_line = transistor[common] & self[common] & common_end
         elif common and common:
-            common_end += transistor[common]
+            common_end & transistor[common]
 
         input_side = 'emitter' if common == 'base' else 'base'
         if self[input_side]:
             input_line = self.input & self[input_side] & transistor[input_side]
         else:
-            self.input += transistor[input_side]
+            self.input & transistor[input_side]
 
         v_ref_side = 'emitter' if common == 'collector' else 'collector'
 
         if self[v_ref_side]:
             v_ref_line = self.v_ref & self[v_ref_side] & transistor[v_ref_side]
         else:
-            self.v_ref += transistor[v_ref_side]
+            self.v_ref & transistor[v_ref_side]
 
         self.collector, self.base, self.emitter = transistor['collector', 'base', 'emitter']
 
-        self.output += self[follow]
+        self.output & self[follow]
 

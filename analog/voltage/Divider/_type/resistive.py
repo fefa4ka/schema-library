@@ -21,7 +21,7 @@ class Modificator(Base):
             R_in -- The input voltage and upper resistance might represent the output of an amplifier
             R_out -- The lower resistance might represent the input of the following stage
         """
-        self.load(self.V)
+        self.load(self.V_out)
 
         # Find right values
         A = np.array([[u(self.V_out), u(self.V_out - self.V) ], [1, 1]])

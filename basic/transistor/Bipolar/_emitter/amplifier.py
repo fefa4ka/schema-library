@@ -1,13 +1,15 @@
 from .. import Base
 from bem.basic import Resistor
 from bem.analog.voltage import Divider
+from bem.analog import Filter
 from math import pi
 from bem import Net, u, u_F, u_Ohm, u_V, u_Hz, u_A
 
 R = Resistor()
+psum = lambda values: R.parallel_sum(R, values) @ u_Ohm
 
 class Modificator(Base):
-    """**Common-Emitter Amplifier**
+    """## Common-Emitter Amplifier**
 
     The circuit shown here is known as a common-emitter amplifier. Unlike the common-collector amplifier, the common-emitter amplifier provides voltage gain. This amplifier makes use of the common-emitter arrangement and is modified to allow for ac coupling.
 
@@ -17,7 +19,7 @@ class Modificator(Base):
 
     """
 
-    def willMount(self):
+    def willMount(self, Frequency=0 @ u_Hz):
         """
             I_load --  That current puts the collector at `V_(ref)`
 
@@ -53,9 +55,6 @@ class Modificator(Base):
 
         self.g_m = self.G_v / self.R_c * -1
 
-        self.R_in_base_dc = self.Beta * self.R_e
-        self.R_in_base_ac = self.Beta * (self.r_e + self.R_3)
-
         self.Power = (self.V_c - self.V_e) * self.I_load
         self.consumption(self.V_c)
 
@@ -73,4 +72,18 @@ class Modificator(Base):
         self.v_ref & stiff_voltage & self
         stiff_voltage.gnd & self.gnd
 
-        self.R_in = R.parallel_sum(R, [self.R_in_base_ac, stiff_voltage.R_in, stiff_voltage.R_out])
+        if self.Frequency:
+            # Blocking capacitor `C_(resistive)` is chosen so that all frequencies of interest are passed by the highpass filter it forms in combination with the parallel resistance of the base biasing resistors.
+            # `C_(resonator) >= 1 / (2 pi f_(3db) (R_(input)∥R_(output)))`
+            pre_filter = Filter(highpass='rc')(
+                f_3dB_high = self.Frequency,
+                R_shunt=psum([stiff_voltage.R_in, stiff_voltage.R_out])
+            )
+
+            ac_input = Net("AcCoupledInput")
+            ac_input & pre_filter & stiff_voltage.output & self.input
+            self.input = ac_input
+
+        self.Z_in_base_dc = self.Beta * self.R_e
+        self.Z_in_base_ac = self.Beta * (self.r_e + self.R_3)
+        self.Z_in = R.parallel_sum(R, [self.Z_in_base_ac, stiff_voltage.R_in, stiff_voltage.R_out])

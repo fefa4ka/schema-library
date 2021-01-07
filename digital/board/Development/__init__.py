@@ -20,7 +20,7 @@ class Base(Electrical()):
     watch = mcu
     ```
     """
-    def willMount(self, V_mcu=5 @ u_V, series='ATmega8', frequency=5e6 @ u_Hz):
+    def willMount(self, V_mcu=5 @ u_V, series='ATmega8', frequency=8e6 @ u_Hz):
         pass
 
     def circuit(self):

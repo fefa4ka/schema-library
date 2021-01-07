@@ -4,7 +4,7 @@ from bem.abstract import Electrical
 
 class Base(Electrical()):
     """# Voltage Divider
-    Voltage dividers are often used in circuits to gener- ate a particular voltage from a larger fixed (or varying) voltage.
+    Voltage dividers are often used in circuits to generate a particular voltage from a larger fixed (or varying) voltage.
 
     Voltage divider from `V_(\i\\n)` to `V_(out)` could be implemented in different ways and provide enought current to `Load`.
 

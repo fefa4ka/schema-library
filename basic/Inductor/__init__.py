@@ -38,7 +38,7 @@ class Base(Combination()):
         """
             value -- L is called the inductance and is measured in henrys (or mH, μH, nH, etc.).
         """
-        pass
+        self.consumption(0)
 
     def part_spice(self, *args, **kwargs):
         return Build('L').spice(*args, **kwargs)

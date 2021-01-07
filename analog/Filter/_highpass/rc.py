@@ -2,7 +2,7 @@ from .. import Base
 
 from bem.basic import Resistor, Capacitor
 from bem import Net
-from PySpice.Unit import u_Ω, u_F, u_Hz
+from PySpice.Unit import u_Ω, u_F, u_Hz, u_Ohm
 from math import pi
 from lcapy import LSection, R, C
 
@@ -23,11 +23,8 @@ class Modificator(Base):
     * Paul Horowitz and Winfield Hill. "1.7.8 RC highpass filters" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 48-49
     """
 
-    def willMount(self, f_3dB_high=5e5 @ u_Hz):
+    def willMount(self, f_3dB_high=5e5 @ u_Hz, R_shunt = 0 @ u_Ohm, C_block = 0 @ u_F):
         self.load(self.V)
-        self.R_shunt = self.R_load
-        self.C_block = 1 / (2 * pi * self.R_shunt * f_3dB_high) @ u_F
-        self.tau = self.R_shunt * self.C_block
 
     def network(self):
         return LSection(
@@ -41,4 +38,16 @@ class Modificator(Base):
         signal = self.output
         self.output = Net('FilterHighpassOutput')
 
-        high_pass = signal & Capacitor()(self.C_block) & self.output & Resistor()(self.R_shunt) & self.gnd
+        if not self.R_shunt:
+            self.R_shunt = self.R_load
+            divider = self.output & Resistor()(self.R_shunt) & self.gnd
+        else:
+            self.output & self.gnd
+
+        if not self.C_block:
+            self.C_block = 1 / (2 * pi * self.R_shunt * self.f_3dB_high) @ u_F
+            resonator = signal & Capacitor()(self.C_block) & self.output
+        else:
+            signal & self.output
+
+        self.tau = self.R_shunt * self.C_block

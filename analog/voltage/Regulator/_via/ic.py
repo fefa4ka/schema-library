@@ -12,6 +12,9 @@ class Modificator(Base, Physical()):
         'gnd': True
     }
 
+    def willMount(self):
+        self.Power = self.I_load * self.V
+
     def circuit(self):
         self.element = self.part()
 

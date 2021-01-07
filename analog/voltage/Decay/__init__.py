@@ -9,18 +9,18 @@ from bem.basic import Resistor, Capacitor
 class Base(Electrical()):
     """# Decay to equilibrium
 
-    The product RC is called the time constant of the circuit. For `R_s` in ohms
-    and `C_g` in farads, the product RC is in seconds. A `C_g` microfarad across
-    `R_s = 1.0kΩ` has a time constant of 1 ms; if the capacitor is initially
+    The product `RC` is called the time constant of the circuit. For `R` in ohms
+    and `C` in farads, the product RC is in seconds. A `C` microfarad across
+    `R = 1.0kΩ` has a time constant of 1 ms; if the capacitor is initially
     charged to `V_(out) = 1.0 V`, the initial current `I_(out) = 1.0 mA`.
 
     At time `t = 0`, someone connects the battery. The equation for the circuit is then
 
-    `I = C * (dV) / (dT) = (V_(i\\n) - V_(out)) / R_s`
+    `I = C * (dV) / (dT) = (V_(i\\n) - V_(out)) / R`
 
     with solution
 
-    `V_(out) = V_(i\\n) + A * e ^ (-t / (R_s * C_g))`
+    `V_(out) = V_(i\\n) + A * e ^ (-t / (R * C))`
 
     ```
     vs = VS(flow='PULSEV')(V=5, pulse_width=0.2, period=0.4)
@@ -34,7 +34,7 @@ class Base(Electrical()):
     The constant `A` is determined by initial conditions: `V_(out) = 0`
     at `t = 0`; therefore, `A = −V_(i\\n)`, and
 
-    `V_(out) = V_(i\\n) * (1 − e ^ (−t / (R_s * C_g)))`
+    `V_(out) = V_(i\\n) * (1 − e ^ (−t / (R * C)))`
 
     Once again there’s good intuition: as the capacitor charges up, the slope
     (which is proportional to current, because it’s a capacitor) is proportional

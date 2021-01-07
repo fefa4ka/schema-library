@@ -21,13 +21,26 @@ class Modificator(Base):
     """
 
     def circuit(self, **kwargs):
-        # Some current must flow through the zener, so you choose `(V_(min) - V_(out))/R_(source) > I_(load)(max)`
-        source = Resistor()((self.V - self.V_out) / self.I_load / 10)
-        P_zener = ((self.V - self.V_out) / source.value - self.I_load) * self.V_out
+        R_source = (self.V - self.V_out) / self.I_load / 10
+
+        P_zener = ((self.V - self.V_out) / R_source - self.I_load) * self.V_out
 
         # The zener must be able to dissipate `P_(zen\er) =  ((V - V_(out))/R_(source) - I_(load)) * V_(out)`
-        regulator = Diode(type='zener', BV=self.V_out, P=P_zener)()
+        regulator = Diode(
+            type='zener',
+            BV=self.V_out,
+            P=P_zener,
+            upper_limit=self.props.get('upper_limit', [])
+        )()
 
-        self.input & source & self.output & regulator['K, A'] & self.gnd
+        self.V_out = regulator['BV']
+
+        if 'lowpass' not in self.mods.get('stability', []):
+            # Some current must flow through the zener, so you choose `(V_(min) - V_(out))/R_(source) > I_(load)(max)`
+            source = Resistor()(R_source)
+            self.input & source & self.output
+
+        self.output & regulator['K, A'] & self.gnd
+
 
 
