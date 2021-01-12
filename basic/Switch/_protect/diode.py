@@ -1,7 +1,7 @@
-from .. import Base
 from bem.basic import Diode
 
-class Modificator(Base):
+
+class Modificator:
     """**Suppression Diode**
 
     Protect the transistor with a diode across the load.

@@ -1,9 +1,8 @@
-from .. import Base
 from bem import Net, u_Hz
 from bem.basic import Diode, Resistor
 from bem.analog import Filter
 
-class Modificator(Base):
+class Modificator:
     """**Compensating Diode Forward Voltage Drop**
 
     A possible circuit solution to this problem of finite diode drop. Here D1 compensates D2’s forward drop by providing 0.6 V of bias

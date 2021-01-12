@@ -1,10 +1,10 @@
-from .. import Base, Net
+from .. import Net
 from bem.basic import Resistor
 from bem.basic.transistor import Bipolar
 from PySpice.Unit import u_Ohm, u_kOhm, u_A, u_V
 
 
-class Modificator(Base):
+class Modificator:
     """## Digital Low-Current Switch
     * TODO: https://www.nutsvolts.com/magazine/article/may2015_Secura
     """

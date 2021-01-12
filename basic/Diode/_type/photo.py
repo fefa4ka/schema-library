@@ -1,4 +1,3 @@
-from .. import Base
 
-class Modificator(Base):
+class Modificator:
     pass

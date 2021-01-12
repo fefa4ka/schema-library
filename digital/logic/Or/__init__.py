@@ -1,10 +1,11 @@
 from skidl import Net
-from bem.abstract import Electrical, Network
+from bem.abstract import Electrical
 from bem.basic import Resistor
 from bem.basic.transistor import Bipolar
 from PySpice.Unit import u_Ohm, u_V, u_A
 
-class Base(Network(port='many'), Electrical()):
+
+class Base(Electrical(port='many')):
     """
     **OR Gate**
 

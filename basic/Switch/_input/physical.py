@@ -1,9 +1,9 @@
-from .. import Base
 from bem import Build, u_Ohm, u_A, u_V
 from skidl import Part, TEMPLATE
 from bem.abstract import Physical
 
-class Modificator(Base, Physical()):
+
+class Modificator(Physical(port='two')):
     """**Physical Switch Input**
     
     Switch connected series to the signal.

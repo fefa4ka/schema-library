@@ -1,10 +1,10 @@
-from .. import Base
 from skidl import Net
 from bem.basic import Resistor, Diode
 
 from PySpice.Unit import u_Ohm
 
-class Modificator(Base):
+
+class Modificator:
     #@subcircuit
     def circuit(self):
         super().circuit()

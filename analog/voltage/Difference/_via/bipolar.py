@@ -1,9 +1,9 @@
-from .. import Base
 from bem.basic import Resistor
 from bem.basic.transistor import Bipolar
 from bem import Net, u, u_Ohm, u_V, u_A
 
-class Modificator(Base):
+
+class Modificator:
     """
     """
     pins = {

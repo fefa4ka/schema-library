@@ -1,4 +1,3 @@
-from .. import Base
 from bem.analog import Signal
 from bem.basic import Capacitor
 from bem import u_uF, u_F
@@ -11,7 +10,7 @@ for model in ['ADJ', '1.2', '1.5', '1.8', '2.5', '3.3', '5.0']:
 
 models['L7805'] = [0.33 @ u_uF, 0.1 @ u_F]
 
-class Modificator(Base):
+class Modificator:
     def circuit(self):
         if 'ic' not in self.mods.get('via', []):
             raise TypeError("Bypass capacitors using for IC. Regulator should build with via=ic modificator")

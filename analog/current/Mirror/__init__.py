@@ -1,5 +1,5 @@
 
-from bem.abstract import Electrical, Network
+from bem.abstract import Electrical
 from bem.basic import Resistor
 from bem.basic.transistor import Bipolar
 
@@ -8,7 +8,8 @@ from bem import u, u_ms, u_Ohm, u_A, u_V
 from settings import params_tolerance
 from random import randint
 
-class Base(Electrical(), Network(port='two')):
+
+class Base(Electrical(port='two')):
     """**Bipolar Transistor Current Mirror**
 
     The technique of matched base–emitter biasing can be used to make what is called a current mirror, an interesting current-source circuit that simply reverses the sign of a “programming” current.

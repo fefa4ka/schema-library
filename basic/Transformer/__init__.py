@@ -2,13 +2,13 @@ from PySpice.Unit import u_H, u_Hz, u_Ohm, u_V, u_Wb
 from skidl import TEMPLATE, Net, Part, subcircuit
 
 from bem import Build, u, u_Ω, u_H, u_pF, u_mH
-from bem.abstract import Network, Physical, Virtual
+from bem.abstract import Physical, Virtual
 from bem.basic import RLC, Resistor, Capacitor, Inductor
 
 from math import pi, sqrt
 
 
-class Base(Network(port='two'), Physical()):
+class Base(Physical(port='two')):
     """
     # Transformer
 

@@ -54,7 +54,7 @@ class Modificator(Base):
 
         def State():
             return Gate(
-                collector = lambda T: R((self.V - T.V_ce) / self.I_load) # The resistance R should be designed to limit the collector current Ic with in a safe limit. In normal cases, V = (Vcc – Vce)
+                collector = lambda T: R((self.V - (T['VCE'] or 0.3) @ u_V) / self.I_load) # The resistance R should be designed to limit the collector current Ic with in a safe limit. In normal cases, V = (Vcc – Vce)
             )
 
         def Sharp(state, oscillator):

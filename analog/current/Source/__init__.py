@@ -1,5 +1,5 @@
 
-from bem.abstract import Electrical, Network, Virtual
+from bem.abstract import Electrical, Virtual
 from bem.analog.voltage import Divider, Regulator
 from bem.basic import Resistor, Diode
 from bem.basic.transistor import Bipolar
@@ -9,7 +9,8 @@ from bem.utils.args import has_prop
 from settings import params_tolerance
 from random import randint
 
-class Base(Electrical(), Network(port='two')):
+
+class Base(Electrical(port='two')):
     """# Transistor Current Source
     Happily, it is possible to make a very good current source with a transistor. It works like this: applying `V_b` to the base, with `V_b>0.6 V`, ensures that the emitter is always conducting:
     

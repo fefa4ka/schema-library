@@ -2,7 +2,9 @@ from bem import Block, Build, u_B, u_Hz, u_V
 from bem.abstract import Physical, Network
 from skidl import Part, Net, TEMPLATE
 
-class Base(Physical()):
+class Base:
+    inherited = Physical
+
     """
 
     ```

@@ -1,9 +1,10 @@
-from bem.abstract import Electrical, Network, Virtual
+from bem.abstract import Electrical, Virtual
 from bem import Net
 
 from PySpice.Unit import u_Ohm, u_A, u_V
 
-class Base(Electrical(), Network(port='two')):
+
+class Base(Electrical(port='two')):
     """**Switch**
     
     Switch connected series to the signal.

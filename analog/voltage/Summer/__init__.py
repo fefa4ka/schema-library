@@ -1,9 +1,10 @@
-from bem.abstract import Electrical, Network
+from bem.abstract import Electrical
 from bem.basic import Resistor, OpAmp
 from bem import u_Hz, u_Ohm
 from math import pi
 
-class Base(Network(port='many'), Electrical()):
+
+class Base(Electrical(port='many')):
     pins = {
         'input': True,
         'input_n': True,

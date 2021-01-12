@@ -1,11 +1,12 @@
-from bem.abstract import Electrical, Network
+from bem.abstract import Electrical
 from bem.analog.voltage import Divider
 from bem.basic import Resistor
 from bem.basic.transistor import Bipolar
 
 from bem import Net, u, u_Ohm, u_V, u_A
 
-class Base(Electrical(), Network(port='two')):
+
+class Base(Electrical(port='two')):
     """**Emitter-Follower** Common-Collector Amplifier
 
     The circuit shown here is called a common-collector amplifier, which has current gain but no voltage gain. It makes use of the emitter-follower arrangement but is modified to avoid clipping during negative input swings. The voltage divider (`R_s` and `R_g`) is used to give the input signal (after passing through the capacitor) a positive dc level or operating point (known as the quiescent point). Both the input and output capacitors are included so that an ac input-output signal can be added without disturbing the dc operating point. The capacitors, as you will see, also act as filtering elements.”
@@ -24,7 +25,7 @@ class Base(Electrical(), Network(port='two')):
     pins = {
         'v_ref': True,
         'input': ('Signal', ['output']),
-        'gnd': True
+        'gnd': ('Gnd', ['input_n', 'output_n'])
     } 
 
     def willMountbunt(self):

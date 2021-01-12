@@ -3,9 +3,8 @@ from bem.analog.voltage import Divider
 from bem.basic import Diode, Resistor
 from skidl import Net
 
-from .. import Base
 
-class Modificator(Base):
+class Modificator:
     """**Diode Voltage Clamp**
 
     Sometimes it is desirable to limit the range of a signal (i.e., prevent it from exceeding certain voltage limits) somewhere in a circuit.

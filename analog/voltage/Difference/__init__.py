@@ -1,7 +1,7 @@
-from bem.abstract import Electrical, Network
+from bem.abstract import Electrical
 
 
-class Base(Electrical(), Network(port='two')):
+class Base(Electrical(port='two')):
     """
     # Differential amplifier
 

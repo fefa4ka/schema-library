@@ -5,7 +5,7 @@ from bem import u
 
 from PySpice.Unit import u_Ohm, u_V, u_A, u_F, u_W
 
-class Modificator(Base):
+class Modificator:
     """## Zener Voltage Regulator
 
     The simplest regulated supply of voltage is simply a zener.
@@ -40,6 +40,8 @@ class Modificator(Base):
             source = Resistor()(R_source)
             self.input & source & self.output
 
+        print(regulator, regulator['K'], regulator.element['K','A'])
+        print(regulator['K,A'], self.output, self.gnd)
         self.output & regulator['K, A'] & self.gnd
 
 

@@ -1,9 +1,10 @@
-from bem.abstract import Electrical, Network
+from bem.abstract import Electrical
 from bem.basic import Resistor
 from bem.basic.transistor import Bipolar
 from PySpice.Unit import u_Ohm, u_V, u_A
 
-class Base(Network(port='many'), Electrical()):
+
+class Base(Electrical(port='many')):
     """**AND Gate**
 
     If either transistor is turned off, then the output at the second transistor’s collector will be pulled low. If both transistors are “on” (bases both high), then the output of the circuit is also high.

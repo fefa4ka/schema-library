@@ -1,11 +1,10 @@
-from .. import Base
-from bem.abstract import Network
 from bem.digital import Microcontroller
 from bem.basic import Plug, Diode
 from bem.analog.driver import Led
 from bem import u_MHz, u_V, u_MOhm
 
-class Modificator(Base):
+
+class Modificator:
      def circuit(self):
         mcu = self & Microcontroller(series='ATmega8U2')(model='ATmega16U2', V=5 @ u_V, frequency=16 @ u_MHz)
         mcu['D+'] & self['D+']

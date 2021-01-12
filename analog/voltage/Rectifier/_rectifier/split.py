@@ -1,10 +1,9 @@
-from .. import Base
 from skidl import Net
 from bem.basic import Capacitor
-
 from PySpice.Unit import u_Ohm, u_V, u_F, u_ms, u_Hz, u_A
 
-class Modificator(Base):
+
+class Modificator:
     def willMount(self, V_ripple=1 @ u_V, Frequency=5e5 @ u_Hz):
         """
             V_ripple -- Periodic variations in voltage about the steady value

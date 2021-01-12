@@ -1,7 +1,7 @@
 from bem.basic import Diode
-from .. import Base
 
-class Modificator(Base):
+
+class Modificator:
     """
         ## Full-Wave Bridge
 

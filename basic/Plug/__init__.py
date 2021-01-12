@@ -1,7 +1,9 @@
 from bem.abstract import Physical
 import inspect
 
-class Base(Physical()):
+class Base:
+    inherited = [Physical]
+
     @classmethod
     def pins(cls):
         pins = {

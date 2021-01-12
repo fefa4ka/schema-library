@@ -1,7 +1,7 @@
 from .. import Base
 from bem.abstract import Physical, Virtual
 
-class Modificator(Physical()):
+class Modificator:
     def __init__(self, *args, **kwargs):
         rows = self.props.get('rows', 1)
         columns = self.props.get('columns', 1)

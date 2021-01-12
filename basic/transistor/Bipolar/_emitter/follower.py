@@ -60,6 +60,7 @@ class Modificator(Base):
         )
         stiff_voltage.gnd & self.gnd
 
+        print('ref', self.v_ref, self.input)
         self.v_ref & stiff_voltage
 
         if self.Frequency:
@@ -82,6 +83,8 @@ class Modificator(Base):
             ac_output = Net("AcCoupledOutput")
             self.output & post_filter & ac_output
             self.output = ac_output
+        else:
+            stiff_voltage & self.input
 
 
         self.Z_in_base_dc = self.Beta * R_e

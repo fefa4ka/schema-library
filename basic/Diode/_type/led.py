@@ -1,9 +1,8 @@
-from .. import Base
 from bem import u, u_m, u_V, u_A
 from bem.basic import Resistor
 from skidl import Net
 
-class Modificator(Base):
+class Modificator:
     # wavelength = 535e-9 @ u_m
     # wavelength_range = 35e-9 @ u_m
 

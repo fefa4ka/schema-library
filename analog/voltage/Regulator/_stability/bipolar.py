@@ -1,10 +1,9 @@
-from .. import Base
 from bem.basic import Resistor
 from bem.basic.transistor import Bipolar
 
 from PySpice.Unit import u_Ohm, u_V, u_A, u_F
 
-class Modificator(Base):
+class Modificator:
     """## Emittor Follower as Voltage Regilator
 
     * Paul Horowitz and Winfield Hill. "2.2.4 Emitter followers as voltage regulators" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 82-83

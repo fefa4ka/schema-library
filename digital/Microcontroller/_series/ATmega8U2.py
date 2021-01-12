@@ -1,5 +1,4 @@
 from .ATmega8 import ATmega
-from bem.abstract import Network
 from bem.basic import Capacitor
 from bem import u_uF
 
@@ -29,7 +28,9 @@ pins = {
     'PD7': ['CTS', 'HWB', 'AIN6', 'T0', 'INT7']
 }
 
-class Modificator(Network(interface=['uart', 'i2c', 'spi', 'usb']), ATmega):
+
+class Modificator(ATmega):
+    mods = { 'interface': ['uart', 'i2c', 'spi', 'usb'] }
     def pins_alias(self):
         return pins
 

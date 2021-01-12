@@ -1,9 +1,9 @@
-from bem.abstract import Physical, Network
+from bem.abstract import Physical
 from PySpice.Unit import u_Hz
 from math import pi
 
 
-class Base(Physical(), Network(port='two')):
+class Base(Physical(port='two')):
     """
         # Operational Amplifier
         Operational amplifiers are linear devices that have all the properties

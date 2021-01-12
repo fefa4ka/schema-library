@@ -1,8 +1,7 @@
 from bem.basic import Diode
-from .. import Base
 
 
-class Modificator(Base):
+class Modificator:
     """
     ## Half-Wave Rectifier
 

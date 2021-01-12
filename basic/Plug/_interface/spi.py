@@ -1,10 +1,10 @@
-from bem.abstract import Network
 from bem.basic import Resistor
 from bem import u_Ohm
 from skidl import Net
-from .. import Base
 
-class Modificator(Base, Network(interface='spi')):
+class Modificator:
+    mods = { 'interface': 'spi' }
+
     def spi(self, instance):
         """
         If additional devices are connected to the ISP lines, the programmer must be protected from any device

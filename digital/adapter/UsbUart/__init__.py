@@ -1,9 +1,9 @@
 from bem import Block
-from bem.abstract import Electrical, Network
+from bem.abstract import Electrical
 from bem.basic import Plug
 
 
-class Base(Network(interface=['uart', 'usb']), Electrical()):
+class Base(Electrical(interface=['uart', 'usb'])):
     """
 
     ```

@@ -1,12 +1,11 @@
-from .. import Base
-
 from bem import Net
 from bem import u, u_Ω, u_F, u_Hz, u_Ohm
 from bem.basic import Resistor, Capacitor 
 from math import pi
 from lcapy import LSection, R, C
 
-class Modificator(Base):
+
+class Modificator:
     """## RC Lowpass Filter
     The circuit is called a lowpass filter, because it passes low frequencies and blocks high frequencies.
 

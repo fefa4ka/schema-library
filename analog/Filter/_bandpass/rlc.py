@@ -1,10 +1,10 @@
-from .. import Base
 from bem.basic import Resistor, Capacitor, Inductor
 from bem import Net
 from PySpice.Unit import u_Ω, u_F, u_Hz, u_H
 from math import pi, sqrt
 
-class Modificator(Base):
+
+class Modificator:
     """## RLC Bandpass Filter
 
     * Paul Horowitz and Winfield Hill. "1.7.9 RC lowpass filters" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 52-53

@@ -1,9 +1,9 @@
-from bem.abstract import Electrical, Network
+from bem.abstract import Electrical
 
 from PySpice.Unit import u_ms, u_Ohm, u_A, u_V, u_Hz, u_W
 
 
-class Base(Network(port='two'), Electrical()):
+class Base(Electrical(port='two')):
     """# Diode Bridge
 
     A diode bridge is an arrangement of four (or more) diodes in a bridge circuit

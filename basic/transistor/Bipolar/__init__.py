@@ -1,10 +1,11 @@
 from bem import Build
-from bem.abstract import Physical, Network
+from bem.abstract import Physical
 from skidl import Part, Net, TEMPLATE
 from skidl.Net import Net as NetType
 from PySpice.Unit import u_V, u_Ohm, u_uF, u_H, u_kHz
 
-class Base(Physical(), Network(port='two')):
+
+class Base(Physical(port='two')):
     """# Bipolar Transistor
     The transistor is our most important example of an “active” component, a device that can amplify, producing an output signal with more power in it than the input signal. The additional power comes from an external source of power (the power supply, to be exact).
 
@@ -130,7 +131,6 @@ class Base(Physical(), Network(port='two')):
             common_end = common
 
         if common and self[common]:
-            self.log('%s connected to %s' % (common, self[common]))
             common_line = transistor[common] & self[common] & common_end
         elif common and common:
             common_end & transistor[common]

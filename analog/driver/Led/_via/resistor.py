@@ -1,7 +1,7 @@
-from .. import Base
 from bem.basic import Resistor
 
-class Modificator(Base):
+
+class Modificator:
     def circuit(self):
         for led in self.diodes:
             led.load(self.V - led.V_j)

@@ -1,7 +1,6 @@
-from .. import Base
 from bem import u_A, u_V
 
-class Modificator(Base):
+class Modificator:
     """
     ## Zener Diode
     Zeners are used to create a constant voltage inside a circuit somewhere, simply done by providing

@@ -1,9 +1,9 @@
-from .. import Base
 from bem.basic import Capacitor
 from bem import Net
 from PySpice.Unit import u_Ohm, u_V, u_F, u_ms, u_Hz, u_A
 
-class Modificator(Base):
+
+class Modificator:
     """
         ## Power-supply filtering
 

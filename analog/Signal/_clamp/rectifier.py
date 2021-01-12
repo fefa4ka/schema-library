@@ -1,11 +1,11 @@
-from .. import Base
-from skidl import Net 
+from skidl import Net
 from bem.basic import Resistor, Diode, Capacitor
 from bem.analog.voltage import Differentiator, Rectifier
 
 from PySpice.Unit import u_pF, u_Ohm, u_Hz
 
-class Modificator(Base):
+
+class Modificator:
     """**Signal Rectifier**
 
     There are other occasions when you use a diode to make a waveform of one polarity only. If the input waveform isn’t a sinewave, you usually don’t think of it as a rectification in the sense of a power supply. For instance, you might want a train of pulses corresponding to the rising edge of a square wave. The easiest way is to rectify the differentiated wave. Always keep in mind the 0.6 V(approximately) forward drop of the diode. This circuit, for instance, gives no output for square waves smaller than 0.6 V pp. If this is a problem, there are various tricks to circumvent this limitation. One possibility is to use hot carrier diodes (Schottky diodes), with a forward drop of about 0.25 V.

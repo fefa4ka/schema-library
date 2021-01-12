@@ -1,10 +1,11 @@
 from bem import Build 
-from bem.abstract import Physical, Network
+from bem.abstract import Physical
 from skidl import Part, Net, TEMPLATE
 from skidl.Net import Net as NetType
 from PySpice.Unit import u_Ohm, u_uF, u_H, u_kHz
 
-class Base(Physical(), Network(port='two')):
+
+class Base(Physical(port='two')):
     """**Field Transistor**
 
     """

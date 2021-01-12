@@ -1,12 +1,11 @@
-from .. import Base
-
 from bem.basic import Resistor, Capacitor
 from bem import Net
 from PySpice.Unit import u_Ω, u_F, u_Hz, u_Ohm
 from math import pi
 from lcapy import LSection, R, C
 
-class Modificator(Base):
+
+class Modificator:
     """## RC Highpass Filter
 
     We’ve seen that by combining resistors with capacitors it is possible to make frequency-dependent voltage dividers, owing to the
@@ -42,9 +41,11 @@ class Modificator(Base):
             self.R_shunt = self.R_load
             divider = self.output & Resistor()(self.R_shunt) & self.gnd
         else:
+            self.R_load = self.R_shunt
             self.output & self.gnd
 
         if not self.C_block:
+            self.R_load = self.R_shunt
             self.C_block = 1 / (2 * pi * self.R_shunt * self.f_3dB_high) @ u_F
             resonator = signal & Capacitor()(self.C_block) & self.output
         else:

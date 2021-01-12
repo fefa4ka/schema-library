@@ -4,7 +4,7 @@ from bem.basic import Transformer
 
 from bem import u_V, u_Hz
 
-class Base(Network(port=['two']), Electrical()):
+class Base(Electrical(port='two')):
     """# Power Supply
 
     ```
