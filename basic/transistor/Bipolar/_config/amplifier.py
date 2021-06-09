@@ -38,8 +38,8 @@ class Modificator(Base):
             r_e -- Transresistance `r_e = V_T / I_e = ((kT) / q) / I_e = (0.0253 V) / I_e`
 
         """
-        self.props['follow'] = 'collector'
-        self.props['common'] = 'emitter'
+        self.props['follow'] = ['collector']
+        self.props['common'] = ['emitter']
 
         self.V_c = self.V / 2
         self.R_c = (self.V - self.V_c) / self.I_load

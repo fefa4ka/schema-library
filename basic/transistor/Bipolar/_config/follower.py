@@ -60,7 +60,6 @@ class Modificator(Base):
         )
         stiff_voltage.gnd & self.gnd
 
-        print('ref', self.v_ref, self.input)
         self.v_ref & stiff_voltage
 
         if self.Frequency:
