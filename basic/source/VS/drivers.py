@@ -1,5 +1,6 @@
-from . import get_arg_units
+from ._hardware import get_arg_units
 from bem import u, u_V, u_Hz, u_s, u_A
+
 
 class Device:
     name = ''
@@ -7,27 +8,28 @@ class Device:
     waveforms = {}
     channels = 2
 
+
 class JDS6600(Device):
     channels = 2
     device = None
 
     def __init__(self, port):
-        from .driver.jds6600 import jds6600
+        from .jds6600 import jds6600
 
         self.device = jds6600(port)
 
-    @property 
+    @property
     def name(self):
         return self.device.getinfo_devicetype()
-    
+
     @property
     def serial_number(self):
         return self.device.getinfo_serialnumber()
-    
+
     @property
     def channels(self):
         channels_status = {}
-        
+
         for ch in (1,2):
             channel = {
                 'waveform': self.device.getwaveform(ch),
@@ -46,6 +48,7 @@ class JDS6600(Device):
 
 
     def set_channel(self, channel, waveform='sine', amplitude=5 @ u_V, frequency=100 @ u_Hz, offset=0 @ u_V, duty_cycle=50):
+        print(channel, waveform, frequency, amplitude, offset, duty_cycle)
         channel = int(channel)
         self.device.setfrequency(channel, u(frequency))
         self.device.setwaveform(channel, waveform)
@@ -106,7 +109,7 @@ class JDS6600(Device):
 
         return waveforms
 
-    def SINEV(self, channel, amplitude, frequency, offset=0 @ u_V):
+    def SINEV(self, channel, amplitude, frequency, offset=0 @ u_V, **kwargs):
         self.set_channel(channel, 'sine', amplitude, frequency, offset)
 
     def PULSEV(self, channel, initial_value, pulsed_value, pulse_width, period, delay_time):
@@ -133,7 +136,7 @@ class KA3005P(Device):
     device = None
 
     def __init__(self, port):
-        from .driver.ka3005d import KoradSerial
+        from .ka3005d import KoradSerial
 
         self.device = KoradSerial(port)
         self.name = self.serial_number = self.device.model
@@ -228,5 +231,5 @@ def simulation_sources():
                 'pins': pins,
                 'args': args
             })
-    
+
     return sources
