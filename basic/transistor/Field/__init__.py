@@ -76,9 +76,9 @@ class Base(Physical(port='two')):
 
         return part(*args, **kwargs)
 
-    def part_template(self):
+    def part(self, *args, **kwargs):
         # TODO: Search for models and footprints using low level attributes of Block
-        part = super().part_template()
+        part = super().part(*args, **kwargs)
 
         part.set_pin_alias('drain', 2)
         part.set_pin_alias('gate', 1)
