@@ -7,3 +7,4 @@ class Modificator(Base):
         lower_eliminator = self.input & Diode(type='generic')() & Resistor()(self.R_load * down.Beta) & self.v_inv
 
         eliminator = self.input & Resistor()(100, V=0.1) & self.output
+        super().wire_input(up, down)

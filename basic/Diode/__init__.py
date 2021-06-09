@@ -37,6 +37,7 @@ class Base(Physical()):
     ```
 
     """
+    mods = { 'type': 'generic' }
 
     spice_params = {
         'AF': {'description': 'Flicker noise exponent', 'unit': { 'suffix': '', 'name': 'number' }, 'value': ''},

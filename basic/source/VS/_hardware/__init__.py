@@ -38,7 +38,7 @@ def get_arg_units(part, arg):
             unit = u_A
         else:
             unit = u_V
-    
+
     return unit
 
 def get_minimum_period(sources):
@@ -52,15 +52,15 @@ def get_minimum_period(sources):
                     time = float(source['args'][arg]['value'])
                     if period < time:
                         period = time
-                    
+
                     if not min_period or min_period > time:
                         min_period = time
-            
+
             if arg.find('frequency') != -1:
                 time = 1 / float(source['args'][arg]['value'])
                 if period < time:
                     period = time
-                
+
                 if not min_period or min_period > time:
                     min_period = time
 

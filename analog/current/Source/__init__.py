@@ -1,7 +1,7 @@
 
 from bem.abstract import Electrical, Virtual
 from bem.analog.voltage import Divider, Regulator
-from bem.basic import Resistor, Diode
+from bem.basic import Resistor, Diode, OpAmp
 from bem.basic.transistor import Bipolar
 from bem import u, u_ms, u_Ohm, u_A, u_V
 from bem.utils.args import has_prop
@@ -43,13 +43,19 @@ class Base(Electrical(port='two')):
 
     """ 
 
-    props = { 'stiff': ['resistive', 'zener'] }
+    props = {
+        'via': ['bipolar', 'opamp'],
+        'stiff': ['resistive', 'zener'] 
+    }
 
     pins = {
-        'v_ref': ('Vref', ['input', 'output']),
+        'v_ref': ('Vref', ['input']),
+        'input_n': True,
+        'output': True,
         'output_n': True,
         'gnd': True
     }
+
 
     def willMount(self, Load=0.001 @ u_A):
         """
@@ -59,9 +65,18 @@ class Base(Electrical(port='two')):
 
     def circuit(self, **kwargs):
         is_stiff = lambda mode: has_prop(self, 'stiff', mode)
+        via = self.props.get('via', ['bipolar'])
 
-        generator = Bipolar(type='npn', follow='emitter')()
-        generator.collector += self.output_n
+        if 'opamp' in via:
+            generator = OpAmp()()
+            generator.v_ref & self.input
+            generator.v_inv & self.input_n
+            generator.V_je = 0
+            generator.Beta = 1000
+
+        elif 'bipolar' in via:
+            generator = Bipolar(type='npn', follow='emitter')()
+            generator.collector += self.output_n
 
         if is_stiff('zener'):
             controller = Regulator(via='zener', upper_limit="BV")(
@@ -99,9 +114,31 @@ class Base(Electrical(port='two')):
                 Load = self.I_load / (generator.Beta / 10)
             )
 
-        self.R_e = self.V_e / self.I_load
 
-        source = controller.output & generator & Resistor()(self.R_e) & self.gnd
+        if 'opamp' in via and 'bipolar' in via:
+            if is_stiff('zener'):
+                pass
+            else:
+                self.R_e = self.V * controller.R_in / (self.I_load * (controller.R_in + controller.R_out))
+        else:
+            self.R_e = self.V_e / self.I_load
+
+        source = Resistor()(self.R_e)
+        controller.output & generator
+        if 'opamp' in via:
+            if 'bipolar' in via:
+                amplifier = Bipolar(type='pnp', follow='collector')()
+                generator.output & amplifier & self.output
+                amplifier.emitter & generator.input_n & source & self.v_ref
+                self.output_n & self.gnd
+            elif 'mosfet' in via:
+                amplifier = None
+            else:
+                generator & self.output
+                generator.input_n & self.output_n & source & self.gnd
+
+        elif 'bipolar' in via:
+            generator & source & self.gnd
 
         controller.input += self.v_ref
         controller.gnd += self.gnd

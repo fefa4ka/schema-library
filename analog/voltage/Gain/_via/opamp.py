@@ -1,6 +1,7 @@
 from bem.abstract import Electrical
+from bem.analog import Filter
 from bem.basic import OpAmp, Resistor
-from bem import u_Hz
+from bem import u_Hz, Net
 from math import pi
 
 class Modificator(Electrical()):
@@ -58,5 +59,17 @@ class Modificator(Electrical()):
         feedback = R(self.R_load * 10) # Common principle to use much larger input impeadance compared to load before amplifier TODO: Why?
         source = R(feedback.value / (self.Gain - 1))
 
-        self.input & amplifier.input
+        if self.Frequency:
+            pre_filter = Filter(highpass='rc')(
+                f_3dB_high = self.Frequency,
+                Load = self.I_load / 100
+            )
+            pre_filter.gnd & self.gnd
+
+            ac_input = Net("AcCoupledInput")
+            ac_input & pre_filter & amplifier.input
+            self.input = ac_input
+        else:
+            self.input & amplifier.input
+
         self.gnd & amplifier.gnd & source & amplifier.input_n & feedback & amplifier.output & self.output

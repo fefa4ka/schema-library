@@ -38,6 +38,12 @@ class Base(Physical(port='two')):
         'gnd': True
     }
 
+    pins_alias = {
+        'C': 'collector',
+        'B': 'base',
+        'E': 'emitter'
+    }
+
     emitter = None
     base = None
     collector = None
@@ -101,16 +107,6 @@ class Base(Physical(port='two')):
     def part_spice(self, *args, **kwargs):
         return Build('BJT').spice(*args, **kwargs)
 
-    def part_template(self):
-        # TODO: Search for models and footprints using low level attributes of Block
-        part = super().part_template()
-
-        part.set_pin_alias('collector', 'C')
-        part.set_pin_alias('base', 'B')
-        part.set_pin_alias('emitter', 'E')
-
-        return part
-
     def part(self):
         return super().part(model=self.model, ref=self.ref)
 
@@ -121,8 +117,8 @@ class Base(Physical(port='two')):
         self.V_je = (self['VJE'] or 0.6) @ u_V
         self.V_ce = (self['VCE'] or 0.3) @ u_V
 
-        common = self.props.get('common', 'emitter')
-        follow = self.props.get('follow', 'collector')
+        common = self.props.get('common', ['emitter'])[0]
+        follow = self.props.get('follow', ['collector'])[0]
 
         common_end = self.gnd
         if not common:

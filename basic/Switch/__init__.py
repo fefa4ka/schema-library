@@ -5,28 +5,12 @@ from PySpice.Unit import u_Ohm, u_A, u_V
 
 
 class Base(Electrical(port='two')):
-    """**Switch**
+    """# Switch
     
     Switch connected series to the signal.
     """
 
-    pins = {
-        'v_ref': True,
-        'input': 'ControlP',
-        'input_n': 'ControllerN',
-        'output': 'LoadP',
-        'output_n': 'LoadN'
-    }
-
-    def willMount(self, V_ref=15 @ u_V):
-        if not self.gnd:
-            self.gnd = Net()
-
-        self.load_block = Virtual()(input=self.output, output=self.output_n)
-        self.load(self.V_ref)
-
-    def circuit(self):
-        pass
+    pass
 
     # @property
     # def part(self):

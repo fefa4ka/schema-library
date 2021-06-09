@@ -66,6 +66,7 @@ class ATmega:
     def willMount(self, V=5 @ u_V, frequency=16000000 @ u_Hz):
         pass
 
+    @property
     def pins_alias(self):
         return pins[self.model]
 

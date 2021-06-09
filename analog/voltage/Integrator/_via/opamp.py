@@ -6,6 +6,7 @@ from math import pi
 
 class Modificator(Electrical()):
     """
+    ## OpAmp Integrator
     The integrator circuit outputs the integral of the input signal over a frequency range based on the circuit
     time constant and the bandwidth of the amplifier. The input signal is applied to the inverting input so the
     output is inverted relative to the polarity of the input signal.
@@ -19,23 +20,23 @@ class Modificator(Electrical()):
     v_ref = VS(flow='V')(V=10)
     v_inv = VS(flow='V')(V=-10)
 
-    signal = VS(flow='SINEV')(V=0.2, frequency=120)
+    signal = VS(flow='PULSEV')(V=3, Frequency=1e3)
     load = Resistor()(1000)
 
     # Amplifier
-    inverter = Example()
+    integrator = Example()
 
     # Network
-    v_ref & inverter.v_ref
-    v_inv & inverter.v_inv
+    v_ref & integrator.v_ref
+    v_inv & integrator.v_inv
 
-    signal & inverter.input
+    signal & integrator.input
 
-    inverter.output & load & v_ref
+    integrator.output & load & v_ref
 
-    inverter.gnd & v_inv.gnd & v_ref.gnd & signal.gnd
+    integrator.gnd & v_inv.gnd & v_ref.gnd & signal.gnd
 
-    watch = inverter
+    watch = integrator
     ```
 
 
@@ -54,7 +55,7 @@ class Modificator(Electrical()):
         'gnd': True
     }
 
-    def willMount(self, Q=100, Frequency=1e3 @ u_Hz):
+    def willMount(self, Q=10, Frequency=1e3 @ u_Hz):
         pass
 
     def circuit(self):
@@ -65,10 +66,10 @@ class Modificator(Electrical()):
 
         # Set R_input to a standard value
         sensor = R(100 @ u_kOhm)
-        # Calculate C_integrator to set the unety-gain integration frequency.
+        # Calculate C_integrator to set the unity-gain integration frequency
         integrator = Capacitor()((1 / (2 * pi * sensor.value * self.Frequency)) @ u_F)
         # Calculate R_feedback to set the lower cutoff frequency a decade less than the minimum operating frequency
-        feedback = R((10  / (2 * pi * integrator.value * self.Frequency / self.Q)) @ u_Ohm)
+        feedback = R((10  / (2 * pi * integrator.value * self.Frequency * self.Q)) @ u_Ohm)
 
         self.H = -1 / (sensor.value * integrator.value)
 

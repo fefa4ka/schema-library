@@ -44,7 +44,7 @@ class Base(Electrical()):
         """
             V -- Verify that the amplifier can achieve the desired output swing using the supply voltages provided
             V_signal -- Signal amplitude
-            slew_rate -- The rate of change in the output voltage caused by a step change on the input.
+            slew_rate -- The rate of change in the output voltage caused by a step change on the input
         """
         self.load(self.V)
         self.V_signal = self.V / sqrt(2) # RMS

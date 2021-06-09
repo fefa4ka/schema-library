@@ -1,4 +1,5 @@
-from .source import JDS6600, KA3005P
+from ..drivers import JDS6600, KA3005P
+
 
 class Modificator:
     device = ''
@@ -7,7 +8,7 @@ class Modificator:
         """
         device -- URL Example: jds6600:/dev/tty.usbDevice_1:CH1
         """
-        pass
+        self.set_device()
 
     def devices(self):
         if 'SINEV' in self.mods['flow'] or 'PULSEV' in self.mods['flow']:
@@ -31,8 +32,7 @@ class Modificator:
     def set_device(self):
         # self.device = 'protocol:/dev/tty.port:CH1'
         protocol, port, channel = self.device.split(':')
-        flow = self.mods['flow']
-        flow = flow if type(flow) == str else flow[0]
+        flow = self.mods['flow'][0]
         args = self.get_spice_arguments()
         device = None
 

@@ -16,8 +16,3 @@ class Base:
     watch = mcu
     ```
     """
-
-    def mount(self, *args, **kwargs):
-        super().mount(*args, **kwargs)
-
-        self.set_pins_aliases(self.pins_alias())

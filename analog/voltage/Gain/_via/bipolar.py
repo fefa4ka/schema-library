@@ -49,7 +49,7 @@ class Modificator(Electrical()):
         self.I_quiescent = self.I_load
 
     def circuit(self):
-        amplifier = Bipolar(type='npn', emitter='amplifier')(Frequency=self.f_3db)
+        amplifier = Bipolar(type='npn', config='amplifier')(Frequency=self.f_3db)
         self.v_ref & amplifier.v_ref
         self.gnd & amplifier.gnd
 
