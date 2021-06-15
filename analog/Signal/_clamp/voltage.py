@@ -5,7 +5,7 @@ from skidl import Net
 
 
 class Modificator:
-    """**Diode Voltage Clamp**
+    """## Diode Voltage Clamp
 
     Sometimes it is desirable to limit the range of a signal (i.e., prevent it from exceeding certain voltage limits) somewhere in a circuit.
 
@@ -25,7 +25,7 @@ class Modificator:
 
         Rref = None
         clamp = Diode(type='generic')()
-        if self.V_out and self.V and self.V >  self.V_out:
+        if self.V_out and self.V and self.V > self.V_out:
             Rref = Divider(type='resistive')(
                 V = self.V,
                 V_out = self.V_out - clamp.V_j,

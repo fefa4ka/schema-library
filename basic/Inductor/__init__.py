@@ -31,8 +31,7 @@ class Base(Combination()):
 
     * Paul Horowitz and Winfield Hill. "1.5.1 Inductors" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 28
     """
-
-    increase = False
+    __increase = False
 
     def willMount(self, value = 0.001 @ u_H):
         """

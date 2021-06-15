@@ -68,7 +68,7 @@ class Base(Electrical()):
             buff.input_n & buff.output & self.output
 
         if 'bipolar' in via:
-            buff = Bipolar(type='npn', emitter='follower')(Frequency=self.Frequency)
+            buff = Bipolar(type='npn', config='follower')(Frequency=self.Frequency)
             buff & self.output
 
         if buff:

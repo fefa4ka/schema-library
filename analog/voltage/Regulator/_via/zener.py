@@ -40,8 +40,6 @@ class Modificator:
             source = Resistor()(R_source)
             self.input & source & self.output
 
-        print(regulator, regulator['K'], regulator.element['K','A'])
-        print(regulator['K,A'], self.output, self.gnd)
         self.output & regulator['K, A'] & self.gnd
 
 

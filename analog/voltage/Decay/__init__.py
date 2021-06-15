@@ -16,11 +16,11 @@ class Base(Electrical()):
 
     At time `t = 0`, someone connects the battery. The equation for the circuit is then
 
-    `I = C * (dV) / (dT) = (V_(i\\n) - V_(out)) / R`
+    `I = C * (dV) / (dT) = (V_(in) - V_(out)) / R`
 
     with solution
 
-    `V_(out) = V_(i\\n) + A * e ^ (-t / (R * C))`
+    `V_(out) = V_(in) + A * e ^ (-t / (R * C))`
 
     ```
     vs = VS(flow='PULSEV')(V=5, pulse_width=0.2, period=0.4)
@@ -32,9 +32,9 @@ class Base(Electrical()):
     ```
 
     The constant `A` is determined by initial conditions: `V_(out) = 0`
-    at `t = 0`; therefore, `A = −V_(i\\n)`, and
+    at `t = 0`; therefore, `A = −V_(in)`, and
 
-    `V_(out) = V_(i\\n) * (1 − e ^ (−t / (R * C)))`
+    `V_(out) = V_(in) * (1 − e ^ (−t / (R * C)))`
 
     Once again there’s good intuition: as the capacitor charges up, the slope
     (which is proportional to current, because it’s a capacitor) is proportional
@@ -43,29 +43,27 @@ class Base(Electrical()):
     proportionally to the vertical distance it has still to go an exponential.
 
     To figure out the time required to reach a voltage `V_(out)` on the way
-    to the final voltage `V_(i\\n)`:
+    to the final voltage `V_(in)`:
 
-    `t = R * C * log_e(V_(i\\n) / (V_(i\\n) - V_(out)))`
+    `t = R * C * log_e(V_(in) / (V_(in) - V_(out)))`
 
 
     * Paul Horowitz and Winfield Hill. "1.4.2 RC circuits: V and I versus time"
     The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, pp. 21-23
     """
+    props = { 'capacitor': ['grounded'] }
 
-    def willMount(self, V_out=5 @ u_V, Time_to_V_out=5e-3 @ u_s, reverse=False):
-        """
-            reverse -- Reverse capacitor connection
-        """
+    def willMount(self, V_out=5 @ u_V, Time_to_V_out=5e-3 @ u_s):
         self.load(self.V_out)
         self.Power = self.power(self.V, self.R_load / 2)
 
     def circuit(self):
-        current_source = Resistor()(self.R_load / 2)
+        current_source = Resistor()(self.Z)
         discharger = Capacitor()(
             (self.Time_to_V_out / (current_source.value * log(self.V / (self.V - self.V_out)))) @ u_F
         )
 
-        if self.reverse:
+        if self.props.get('capacitor', None) == 'grounded':
             self.input & current_source & self.output
             self.gnd & discharger & self.output
         else:

@@ -13,12 +13,12 @@ class Modificator:
 
         spi = mcu & Plug(interface='spi')()
 
-        def led(color):
-            diode = Diode(type='led')(color=color)
-            driver = Led(via='resistor')(diodes=diode)
-
-            return driver
-
         tx_led = self.v_ref & led('green') & mcu['TX']
         rx_led = self.v_ref & led('red') & mcu['RX']
 
+
+def led(color):
+    diode = Diode(type='led')(color=color)
+    driver = Led(via='resistor')(diodes=diode)
+
+    return driver

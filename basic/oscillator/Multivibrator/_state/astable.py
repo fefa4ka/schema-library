@@ -43,13 +43,12 @@ class Modificator(Base):
 
         def Oscillator(controller, width):
             # R1 & R2 should be chosen such that it should give the required collector current during saturation state.
-            # Min. Base Current, Ibmin = Ic / β, where β is the hFE of the transistor
-            # Safe Base Current,Ib = 10 * Ibmin = 3 x Ic / β
-            return Decay()(
+            # Min. Base Current, `I_(bmin) = I_c / β`, where `β` is the `hFE` of the transistor
+            # Safe Base Current, `I_b = 10 * I_(bmin) = 3 x I_c / β`
+            return Decay(capacitor='grounded')(
                 V_out = self.V * 0.5,
                 Time_to_V_out = width,
-                Load = (self.V - controller.V_je) / (3 * self.I_load / controller.Beta), # * 10 because in Decay Load / 10
-                reverse = True
+                Load = (self.V - controller.V_je) / (3 * self.I_load / controller.Beta) # * 10 because in Decay Load / 10
             )
 
         def State():

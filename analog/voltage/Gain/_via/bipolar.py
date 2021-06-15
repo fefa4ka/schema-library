@@ -49,6 +49,7 @@ class Modificator(Electrical()):
         self.I_quiescent = self.I_load
 
     def circuit(self):
+        # TODO: pre_filter
         amplifier = Bipolar(type='npn', config='amplifier')(Frequency=self.f_3db)
         self.v_ref & amplifier.v_ref
         self.gnd & amplifier.gnd

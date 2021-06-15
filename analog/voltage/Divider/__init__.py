@@ -10,11 +10,22 @@ class Base(Electrical()):
 
     This isn’t as crazy as it sounds; it is possible to make devices with negative “incremental” resistances (e.g., the component known as a tunnel diode) or even true negative resistances (e.g., the negative-impedance converter). 
 
+
+    ```
+    vs = VS(flow='SINEV')(V=5, frequency=120)
+    divider = Example()
+    load = Resistor()(1000, V=divider.V_out)
+
+    vs & divider & load & vs
+
+    watch = divider
+    ```
+
     * Paul Horowitz and Winfield Hill. "1.2.3 Voltage Dividers" The Art of Electronics – 3rd Edition. Cambridge University Press, 2015, p. 7-8
     """
 
     # Props
-    def willMount(self, V=5 @ u_V, V_out=3 @ u_V, Load=0.01 @ u_A):
+    def willMount(self, V=5 @ u_V, V_out=3 @ u_V, Load=1000 @ u_Ohm):
         """
            V_out -- Note that the output voltage is always less than (or equal to) the input voltage; that’s why it’s called a divider.
         """
